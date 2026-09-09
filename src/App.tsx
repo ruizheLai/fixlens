@@ -1,29 +1,22 @@
 import { useState, useRef, useEffect } from "react";
-import Logo from "./imports/Logo/index";
-import FixLensWordmark from "./imports/FixLens/index";
-
-function LogoAvatar({ size = 32 }: { size?: number }) {
-  const pad = Math.round(size * 0.14);
-  return (
-    <div className="shrink-0 rounded-full overflow-hidden flex items-center justify-center" style={{ width: size, height: size, background: "#fff", border: "1px solid #E4E4E1", padding: pad }}>
-      <Logo />
-    </div>
-  );
-}
-
-// "Fix" portion is #1C4B88 navy, "Lens" is #2563EB blue — original proportions from Figma asset
-// Fix viewBox: 181.352 × 100, Lens viewBox: 251.448 × 94.5455
-// Combined wordmark natural width ≈ 181+251 = 432 units, height ≈ 100 units
-// At h=26px that's width ≈ 26 * (432/100) ≈ 112px
-// FixLens wordmark — grouped asset from Figma (viewBox 446.72 × 101.455)
-// Rendered at height 26px → width ≈ 26 * (446.72/101.455) ≈ 115px
-function HomeWordmark() {
-  return (
-    <div style={{ height: 26, width: 26 * (446.72 / 101.455), flexShrink: 0 }}>
-      <FixLensWordmark />
-    </div>
-  );
-}
+import LogoAvatar from "./components/brand/LogoAvatar";
+import HomeWordmark from "./components/brand/HomeWordmark";
+import PhoneShell from "./app/PhoneShell";
+import NavBar from "./components/navigation/NavBar";
+import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
+import Btn from "./components/common/Btn";
+import ScreenHeader from "./components/common/ScreenHeader";
+import SectionLabel from "./components/common/SectionLabel";
+import AssistantBubble from "./components/chat/AssistantBubble";
+import UserBubble from "./components/chat/UserBubble";
+import StatusPill from "./components/case/StatusPill";
+import ProgressTracker from "./components/case/ProgressTracker";
+import { IcoCases, IcoChat, IcoChevRight, IcoChevLeft, IcoBell, IcoPlus, IcoMic, IcoSend, IcoAlert, IcoX, IcoHelp, IcoUndo, IcoEdit, IcoCheck, IcoCheckCircle, IcoImg, IcoVideo, IcoUser, IcoClock, IcoMapPin, IcoFileText, IcoShield, IcoGallery, IcoFlash, IcoRedo, IcoPencil } from "./components/common/icons";
+import type { AppScreen, NavItemId } from "./types/navigation";
+import type { CaseActivityItem } from "./types/case";
+import type { ChatMessage } from "./types/chat";
+import type { AnnotationTool, DemoEvidence, PhotoType } from "./types/evidence";
+import type { ReportFieldRow } from "./types/presentation";
 
 // ─── Image URLs ───────────────────────────────────────────────────────────────
 const IMG_BEDROOM_WIDE =
@@ -34,135 +27,9 @@ const IMG_DAMAGED_WALL =
   "https://images.unsplash.com/photo-1542407424724-5426773d65a5?w=600&h=960&fit=crop&auto=format";
 
 // ─── App screen type ──────────────────────────────────────────────────────────
-type AppScreen =
-  | "home"
-  | "my-cases"
-  | "case-bedroom"
-  | "case-kitchen"
-  | "case-hotwater"
-  | "inbox"
-  | "profile"
-  | "report-chat"
-  | "support-chat"
-  | "submitted-report"
-  | "ar-overview"
-  | "photo-overview"
-  | "ar-closeup"
-  | "photo-closeup"
-  | "video-capture"
-  | "video-preview"
-  | "success"
-  | "k-ar"
-  | "k-photo";
 
 const REPORT_AR: AppScreen[] = ["ar-overview","photo-overview","ar-closeup","photo-closeup","video-capture","video-preview"];
 const AR_SCREENS: AppScreen[] = [...REPORT_AR, "k-ar", "k-photo"];
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-const IcoHome = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
-const IcoCases = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M9 9h6M9 13h4"/></svg>;
-const IcoChat = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>;
-const IcoInbox = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>;
-const IcoProfile = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-const IcoChevRight = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
-const IcoChevLeft = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
-const IcoBell = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>;
-const IcoPlus = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-const IcoMic = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>;
-const IcoSend = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-const IcoAlert = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
-const IcoX = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-const IcoHelp = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
-const IcoUndo = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>;
-const IcoEdit = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
-const IcoCheck = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
-const IcoCheckCircle = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
-const IcoImg = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
-const IcoVideo = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
-const IcoUser = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-const IcoClock = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-const IcoMapPin = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>;
-const IcoFileText = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>;
-const IcoShield = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-const IcoGallery = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
-const IcoFlash = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
-const IcoRedo = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>;
-const IcoPencil = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
-
-// ─── Shared shell + nav ───────────────────────────────────────────────────────
-
-function PhoneShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: "#E8E8E4" }}>
-      <div className="relative overflow-hidden flex flex-col" style={{ width: 390, height: 844, background: "var(--color-bg)", borderRadius: 44, boxShadow: "0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.08)", fontFamily: "var(--font-body)" }}>
-        <div className="flex items-center justify-between px-8 pt-4 pb-1 shrink-0" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", background: "var(--color-surface)" }}>
-          <span>9:41</span>
-          <div className="flex gap-1.5 items-center">
-            <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="4" width="3" height="7" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor" opacity="0.6"/><rect x="9" y="0" width="3" height="11" rx="0.5" fill="currentColor"/><rect x="13.5" y="3.5" width="2" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="none"/></svg>
-            <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.5C9.5 2.5 11.3 3.3 12.6 4.6L14 3.2C12.3 1.5 10 0.5 7.5 0.5S2.7 1.5 1 3.2L2.4 4.6C3.7 3.3 5.5 2.5 7.5 2.5z" fill="currentColor"/><path d="M7.5 5.5C8.7 5.5 9.8 6 10.6 6.8L12 5.4C10.8 4.3 9.2 3.5 7.5 3.5S4.2 4.3 3 5.4L4.4 6.8C5.2 6 6.3 5.5 7.5 5.5z" fill="currentColor"/><circle cx="7.5" cy="9" r="1.5" fill="currentColor"/></svg>
-            <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
-          </div>
-        </div>
-        <div className="flex-1 overflow-hidden relative">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function NavBar({ active, onNav }: { active: string; onNav?: (id: string) => void }) {
-  const items = [
-    { id: "home",    label: "Home",    I: IcoHome    },
-    { id: "cases",   label: "Cases",   I: IcoCases   },
-    { id: "inbox",   label: "Inbox",   I: IcoInbox   },
-    { id: "profile", label: "Profile", I: IcoProfile },
-  ];
-  return (
-    <div className="shrink-0 flex items-center justify-around pt-2.5 pb-6 px-2" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-      {items.map(({ id, label, I }) => {
-        const isActive = active === id;
-        return (
-          <button key={id} onClick={() => onNav?.(id)} className="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-colors" style={{ color: isActive ? "var(--color-blue)" : "#AEAEAD", minWidth: 56 }}>
-            <I />
-            <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 500, letterSpacing: "0.01em" }}>{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function Btn({ children, variant = "primary", onClick, fullWidth = true, small = false }: {
-  children: React.ReactNode; variant?: "primary" | "secondary" | "ghost";
-  onClick?: () => void; fullWidth?: boolean; small?: boolean;
-}) {
-  const s: Record<string, React.CSSProperties> = {
-    primary: { background: "var(--color-blue)", color: "#fff" },
-    secondary: { background: "var(--color-surface)", color: "var(--color-text)", border: "1.5px solid var(--color-border)" },
-    ghost: { background: "transparent", color: "var(--color-blue)" },
-  };
-  return (
-    <button onClick={onClick} className={`${small ? "py-2.5 px-4 text-xs" : "py-3.5 px-5 text-sm"} rounded-2xl font-semibold active:opacity-75 transition-opacity ${fullWidth ? "w-full" : ""}`} style={{ fontFamily: "var(--font-display)", ...s[variant] }}>
-      {children}
-    </button>
-  );
-}
-
-function AssistantBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex gap-2.5 items-start">
-      <LogoAvatar size={32} />
-      <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)", maxWidth: 268 }}>{children}</div>
-    </div>
-  );
-}
-
-function UserBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex justify-end">
-      <div className="rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed" style={{ background: "var(--color-blue)", color: "#fff", maxWidth: 260 }}>{children}</div>
-    </div>
-  );
-}
 
 // ─── Pre-capture chat cards ───────────────────────────────────────────────────
 
@@ -282,7 +149,7 @@ function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
     if (showReview) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   }, [showReview]);
 
-  const reportRows = [
+  const reportRows: ReportFieldRow[] = [
     { label: "Issue type", value: "Water leak" },
     { label: "Location", value: "Bedroom window" },
     { label: "Occurs", value: "When it rains" },
@@ -290,7 +157,7 @@ function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
     { label: "Safety", value: "No immediate danger reported", green: true },
   ];
 
-  const mediaItems = [
+  const mediaItems: DemoEvidence[] = [
     { label: "Overview photo", note: "Annotated — Leak point marked", src: IMG_BEDROOM_WIDE, type: "photo" },
     { label: "Close-up photo", note: "Captured", src: IMG_DAMAGED_WALL, type: "photo" },
     { label: "Short video", note: "0:04 · Captured", src: null, type: "video" },
@@ -360,7 +227,7 @@ function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
                 <div key={row.label} className="flex items-start justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
                   <div className="flex-1">
                     <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
-                    <p style={{ fontSize: 13, color: (row as any).green ? "var(--color-success)" : "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
+                    <p style={{ fontSize: 13, color: row.green ? "var(--color-success)" : "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
                   </div>
                   <button style={{ color: "var(--color-blue)", marginLeft: 10, marginTop: 1, flexShrink: 0, fontSize: 12, fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 6, background: "var(--color-blue-light)", border: "none", cursor: "pointer" }}>
                     <IcoEdit /><span>Edit</span>
@@ -765,8 +632,8 @@ const ANNO_TOOLS = [
   { id: "draw" as const, label: "Draw", icon: <IcoPencil /> },
 ];
 
-function PhotoPreview({ photoType, onRetake, onUse }: { photoType: "overview" | "closeup"; onRetake: () => void; onUse: () => void }) {
-  const [activeTool, setActiveTool] = useState<string | null>(null);
+function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoType; onRetake: () => void; onUse: () => void }) {
+  const [activeTool, setActiveTool] = useState<AnnotationTool | null>(null);
   const [tipVisible, setTipVisible] = useState(photoType === "overview");
   const src = photoType === "overview" ? IMG_BEDROOM_WIDE : IMG_DAMAGED_WALL;
   const title = photoType === "overview" ? "Overview — 1 of 3" : "Close-up — 2 of 3";
@@ -881,50 +748,10 @@ function VideoPreview({ onRetake, onUse }: { onRetake: () => void; onUse: () => 
   );
 }
 
-// ─── Shared components for new screens ────────────────────────────────────────
-
-function ScreenHeader({ title, subtitle, onBack, topLevel = false }: { title: string; subtitle?: string; onBack?: () => void; topLevel?: boolean }) {
-  return (
-    <div className="shrink-0 flex items-center gap-3 px-5" style={{
-      paddingTop: topLevel ? 20 : 14,
-      paddingBottom: topLevel ? 16 : 14,
-      borderBottom: topLevel ? "none" : "1px solid var(--color-border)",
-      background: "var(--color-surface)",
-    }}>
-      {onBack && (
-        <button onClick={onBack} className="p-1 -ml-1 rounded-lg active:bg-gray-100"><IcoChevLeft /></button>
-      )}
-      <div className="flex-1">
-        <p style={{ fontFamily: "var(--font-display)", fontWeight: topLevel ? 700 : 600, fontSize: topLevel ? 22 : 17, color: "var(--color-text)" }}>{title}</p>
-        {subtitle && <p style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
-function StatusPill({ status }: { status: "awaiting" | "action" | "completed" | "review" | "submitted" }) {
-  const map = {
-    awaiting: { label: "Awaiting approval", bg: "var(--color-amber-light)",  color: "var(--color-amber-text)" },
-    action:   { label: "Action required",   bg: "var(--color-danger-light)", color: "var(--color-danger-text)" },
-    completed:{ label: "Completed",         bg: "var(--color-success-light)", color: "#166534" },
-    review:   { label: "Under review",      bg: "var(--color-blue-light)",   color: "var(--color-blue)" },
-    submitted:{ label: "Submitted",         bg: "var(--color-blue-light)",   color: "var(--color-blue)" },
-  }[status];
-  return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: 11, letterSpacing: "0.01em", background: map.bg, color: map.color }}>
-      {map.label}
-    </span>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{children}</p>;
-}
-
 // ─── Home screen ──────────────────────────────────────────────────────────────
 
 function HomeScreen({ onReport, onMyCases, onCaseDetail, onInbox, onSupportChat, onNav }: {
-  onReport: () => void; onMyCases: () => void; onCaseDetail: () => void; onInbox: () => void; onSupportChat: () => void; onNav: (id: string) => void;
+  onReport: () => void; onMyCases: () => void; onCaseDetail: () => void; onInbox: () => void; onSupportChat: () => void; onNav: (id: NavItemId) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -985,7 +812,7 @@ function HomeScreen({ onReport, onMyCases, onCaseDetail, onInbox, onSupportChat,
 // ─── My Cases screen ──────────────────────────────────────────────────────────
 
 function MyCasesScreen({ onCaseBedroom, onCaseKitchen, onCaseHotwater, onNav }: {
-  onCaseBedroom: () => void; onCaseKitchen: () => void; onCaseHotwater: () => void; onNav: (id: string) => void;
+  onCaseBedroom: () => void; onCaseKitchen: () => void; onCaseHotwater: () => void; onNav: (id: NavItemId) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -1059,55 +886,9 @@ function MyCasesScreen({ onCaseBedroom, onCaseKitchen, onCaseHotwater, onNav }: 
   );
 }
 
-// ─── Progress Tracker ─────────────────────────────────────────────────────────
-
-const REPAIR_STAGES = ["Submitted","Under review","Awaiting approval","Arranging repair","Repair scheduled","Completed"];
-
-function ProgressTracker({ currentIndex, completedAll = false }: { currentIndex: number; completedAll?: boolean }) {
-  return (
-    <div className="flex flex-col">
-      {REPAIR_STAGES.map((stage, i) => {
-        const done = completedAll || i < currentIndex;
-        const current = !completedAll && i === currentIndex;
-        const future = !completedAll && i > currentIndex;
-        return (
-          <div key={stage} className="flex items-start gap-3">
-            {/* Dot + line */}
-            <div className="flex flex-col items-center" style={{ width: 20 }}>
-              <div className="rounded-full flex items-center justify-center shrink-0" style={{
-                width: current ? 20 : 16,
-                height: current ? 20 : 16,
-                marginTop: current ? 0 : 2,
-                background: done ? "var(--color-blue)" : current ? "var(--color-blue)" : "var(--color-bg)",
-                border: future ? "2px solid var(--color-border)" : done || current ? "none" : "none",
-                boxShadow: current ? "0 0 0 4px var(--color-blue-light)" : "none",
-              }}>
-                {done && <IcoCheck />}
-                {current && <div className="w-2 h-2 rounded-full bg-white" />}
-              </div>
-              {i < REPAIR_STAGES.length - 1 && (
-                <div style={{ width: 2, flex: 1, minHeight: 20, background: done ? "var(--color-blue)" : "var(--color-border)", marginTop: 2, marginBottom: 2 }} />
-              )}
-            </div>
-            {/* Label */}
-            <div className="pb-5">
-              <p style={{
-                fontFamily: "var(--font-display)", fontSize: 14, fontWeight: current ? 700 : done ? 500 : 400,
-                color: future ? "var(--color-muted)" : "var(--color-text)", marginTop: current ? 0 : 1,
-              }}>{stage}</p>
-              {current && <p style={{ fontSize: 12, color: "var(--color-blue)", fontWeight: 500, marginTop: 2 }}>Current</p>}
-              {done && i === 0 && <p style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 1 }}>Yesterday · 10:30 AM</p>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── Case Detail — Bedroom window leak (Awaiting approval) ────────────────────
 
-function CaseDetailBedroom({ onBack, onViewReport, onNav }: { onBack: () => void; onViewReport: () => void; onNav: (id: string) => void }) {
+function CaseDetailBedroom({ onBack, onViewReport, onNav }: { onBack: () => void; onViewReport: () => void; onNav: (id: NavItemId) => void }) {
   const [showFullActivity, setShowFullActivity] = useState(false);
   return (
     <div className="flex flex-col h-full">
@@ -1238,7 +1019,7 @@ function CaseDetailBedroom({ onBack, onViewReport, onNav }: { onBack: () => void
 // ─── Case Detail — Kitchen tap leak (Action required) ─────────────────────────
 
 function CaseDetailKitchen({ onBack, onAddEvidence, evidenceAdded, onNav }: {
-  onBack: () => void; onAddEvidence: () => void; evidenceAdded: boolean; onNav: (id: string) => void;
+  onBack: () => void; onAddEvidence: () => void; evidenceAdded: boolean; onNav: (id: NavItemId) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -1315,7 +1096,7 @@ function CaseDetailKitchen({ onBack, onAddEvidence, evidenceAdded, onNav }: {
               evidenceAdded && { time: "Just now", title: "Evidence submitted", desc: "Your additional photo has been added to the case." },
               { time: "2:15 PM", title: "More information requested", desc: "A clearer photo of the area beneath the tap is needed." },
               { time: "10:00 AM", title: "Report submitted", desc: "Your report and evidence were received." },
-            ].filter(Boolean).map((item: any, i, arr) => (
+            ].filter((item): item is CaseActivityItem => Boolean(item)).map((item, i, arr) => (
               <div key={item.time} className="px-5 py-4" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
                 <div className="flex items-start gap-3">
                   <span style={{ fontSize: 12, color: "var(--color-muted)", minWidth: 52, marginTop: 1 }}>{item.time}</span>
@@ -1338,7 +1119,7 @@ function CaseDetailKitchen({ onBack, onAddEvidence, evidenceAdded, onNav }: {
 
 // ─── Case Detail — Hot water issue (Completed) ────────────────────────────────
 
-function CaseDetailHotwater({ onBack, onViewReport, onNav }: { onBack: () => void; onViewReport: () => void; onNav: (id: string) => void }) {
+function CaseDetailHotwater({ onBack, onViewReport, onNav }: { onBack: () => void; onViewReport: () => void; onNav: (id: NavItemId) => void }) {
   const [showPrevActivity, setShowPrevActivity] = useState(false);
   return (
     <div className="flex flex-col h-full">
@@ -1440,7 +1221,7 @@ function CaseDetailHotwater({ onBack, onViewReport, onNav }: { onBack: () => voi
 // ─── Inbox screen ─────────────────────────────────────────────────────────────
 
 function InboxScreen({ onNotifBedroom, onNotifKitchen, onNav }: {
-  onNotifBedroom: () => void; onNotifKitchen: () => void; onNav: (id: string) => void;
+  onNotifBedroom: () => void; onNotifKitchen: () => void; onNav: (id: NavItemId) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -1531,7 +1312,7 @@ const SUPPORT_REPLIES: Record<string, string> = {
 };
 
 function SupportChatScreen({ onBack }: { onBack: () => void }) {
-  const [messages, setMessages] = useState<{ from: "assistant" | "user"; text: string }[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputVal, setInputVal] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -1625,7 +1406,7 @@ function SuccessScreen({ onViewCase, onHome }: { onViewCase: () => void; onHome:
 
 // ─── Profile screen ───────────────────────────────────────────────────────────
 
-function ProfileScreen({ onNav }: { onNav: (id: string) => void }) {
+function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => void }) {
   return (
     <div className="flex flex-col h-full">
       <ScreenHeader title="Profile" topLevel />
@@ -1745,7 +1526,7 @@ function SubmittedReportScreen({ onBack }: { onBack: () => void }) {
           ].map((row, i, arr) => (
             <div key={row.label} className="px-5 py-3.5" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{row.label}</p>
-              <p style={{ fontSize: 14, color: (row as any).green ? "var(--color-success)" : "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
+              <p style={{ fontSize: 14, color: row.green ? "var(--color-success)" : "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
             </div>
           ))}
         </div>
@@ -1791,28 +1572,6 @@ function SubmittedReportScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ─── Floating chat button ─────────────────────────────────────────────────────
-
-function FloatingChatBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        position: "absolute", bottom: 82, right: 18, zIndex: 40,
-        width: 52, height: 52, borderRadius: "50%",
-        background: "var(--color-blue)",
-        color: "#fff",
-        boxShadow: "0 4px 16px rgba(37,99,235,0.40)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        border: "none", cursor: "pointer",
-      }}
-      className="active:scale-95 transition-transform"
-    >
-      <IcoChat />
-    </button>
-  );
-}
-
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -1827,7 +1586,7 @@ export default function App() {
   const FLOAT_SCREENS: AppScreen[] = ["home","my-cases","inbox","profile","case-bedroom","case-kitchen","case-hotwater"];
   const showFloat = FLOAT_SCREENS.includes(screen);
 
-  function handleNav(id: string) {
+  function handleNav(id: NavItemId) {
     if (id === "home")    setScreen("home");
     else if (id === "cases")   setScreen("my-cases");
     else if (id === "inbox")   setScreen("inbox");
