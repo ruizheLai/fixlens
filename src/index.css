@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+@theme inline {
+  --font-display: 'Instrument Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  --color-bg: #F5F5F3;
+  --color-surface: #FFFFFF;
+  --color-border: #E6E6E2;
+  --color-border-subtle: #F0F0ED;
+  --color-muted: #8B8B85;
+  --color-text: #1A1A18;
+  --color-text-secondary: #5A5A55;
+  --color-blue: #2563EB;
+  --color-blue-light: #EBF0FD;
+  --color-blue-mid: #BFCFFB;
+  --color-danger: #DC2626;
+  --color-danger-light: #FFF1F1;
+  --color-danger-text: #991B1B;
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-amber-light: #FFFBEB;
+  --color-amber-text: #92400E;
+  --color-teal-light: #F0FDFA;
+  --color-teal-text: #0F766E;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #E8E8E4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* hide scrollbar */
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Card press feedback */
+button:active {
+  transform: scale(0.99);
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}

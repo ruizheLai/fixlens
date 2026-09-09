@@ -1,0 +1,10 @@
+{
+  "description": "Transforms lofi designs and markdown content into interactive, user-friendly web pages for efficient content presentation and prototyping.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
