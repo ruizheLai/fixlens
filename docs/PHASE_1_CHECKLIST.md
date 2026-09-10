@@ -66,3 +66,26 @@ Verified 10 September 2026 against the original prototype served alongside Batch
 - Both browser consoles had no warnings or errors. Capture/workflow function parity
   was also checked; existing placeholder controls and timer logic remain unchanged.
 - App.tsx: 1,955 → 1,714 lines. Brand assets, CSS, and dependencies unchanged.
+
+## Batch B verification
+
+Completed 11 September 2026; final TypeScript/build checks and reporting smoke test
+were rerun after the interrupted verification session.
+
+- Extracted ten renter/case screens; all 26 existing function implementations,
+  including root navigation and reporting/capture, match the Batch A source.
+- TypeScript (`tsc --noEmit`) and production build (`npm run build`) passed.
+- Side-by-side browser checks passed for Home/Recent Case, bottom navigation,
+  Inbox links, floating Support Chat, replies and reset-on-exit, all three case
+  variants, activity expansion, Submitted Report evidence and return destinations,
+  kitchen capture/retake/submission and retained evidence state.
+- Reporting smoke test covered both safety branches, simulated photo/video capture,
+  Final Review, Submission Success and its two destinations. Rendered DOM and
+  settled viewport screenshots matched Batch A; no regressions found.
+- Browser consoles contained no warnings or errors. Known limitations above remain.
+- All three shared image URLs loaded successfully in capture/review or expanded
+  Submitted Report evidence. Final git diff review found only the scoped extraction,
+  shared image constants and this verification record.
+- App.tsx: 1,714 → 886 lines. Only the three shared simulated image URLs moved to
+  demo fixtures. Navigation, report return destination and kitchen evidence state
+  remain in App.tsx. No routing or Batch C work was introduced.
