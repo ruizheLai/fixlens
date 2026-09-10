@@ -5,39 +5,39 @@ same viewport before/after; keep the fixed 390 × 844 renter shell and current f
 
 ## Regression checklist
 
-- [ ] Home: unchanged wordmark, greeting, bell → Inbox, Report an issue, My cases,
+- [x] Home: unchanged wordmark, greeting, bell → Inbox, Report an issue, My cases,
   Other questions, recent bedroom case, and floating support button.
-- [ ] Bottom navigation: Home / Cases / Inbox / Profile open the same screens and
+- [x] Bottom navigation: Home / Cases / Inbox / Profile open the same screens and
   retain their active-tab styling. Inbox notifications open the corresponding case.
-- [ ] Report: Confirm enables description entry; empty text does not advance;
+- [x] Report: Confirm enables description entry; empty text does not advance;
   Enter/send displays the typed description and the scripted bedroom-leak summary.
-- [ ] Looks right → safety: No, safe to continue → capture introduction;
+- [x] Looks right → safety: No, safe to continue → capture introduction;
   Yes, there may be danger → escalation card; Go back → safety choices.
-- [ ] Start guided capture → overview. The reporting conversation remains mounted
+- [x] Start guided capture → overview. The reporting conversation remains mounted
   but hidden during capture; closing capture restores it without repeating confirmation.
-- [ ] Overview and close-up: guidance/ready timing, help/dismiss, shutter → preview,
+- [x] Overview and close-up: guidance/ready timing, help/dismiss, shutter → preview,
   Retake → corresponding capture, Use photo → next step.
-- [ ] Preview: Circle / Arrow / Text / Draw select and deselect; overview annotation
+- [x] Preview: Circle / Arrow / Text / Draw select and deselect; overview annotation
   tip, fixed overlays, and existing undo/redo placeholders remain unchanged.
-- [ ] Video: recording timer runs and automatically opens preview after four seconds;
+- [x] Video: recording timer runs and automatically opens preview after four seconds;
   Retake → video capture; Use video → evidence-completed reporting view.
-- [ ] Final Review: Review report expands the existing fields/evidence; Submit report
+- [x] Final Review: Review report expands the existing fields/evidence; Submit report
   → success; View case → existing bedroom case; Back to home → Home.
-- [ ] Cases: bedroom awaiting approval, kitchen action required, quieter completed
+- [x] Cases: bedroom awaiting approval, kitchen action required, quieter completed
   hot-water case; detail content and progress retain their hierarchy.
-- [ ] Activity: bedroom View full activity / Hide activity and hot-water View previous
+- [x] Activity: bedroom View full activity / Hide activity and hot-water View previous
   activity / Hide previous activity work.
-- [ ] Submitted Report: read-only fields, evidence rows expand/collapse, no editable
+- [x] Submitted Report: read-only fields, evidence rows expand/collapse, no editable
   final-review controls; back returns to the originating bedroom/hot-water case.
-- [ ] Kitchen: Add requested evidence → close-up → preview; Retake works; Use photo
+- [x] Kitchen: Add requested evidence → close-up → preview; Retake works; Use photo
   → kitchen evidence-submitted state and added activity; state survives page navigation.
-- [ ] Support: Other questions and floating button open Support; chips and nonempty
+- [x] Support: Other questions and floating button open Support; chips and nonempty
   free text append scripted responses; empty input does nothing. Exit and reopen resets
   messages and restores chips.
-- [ ] Explicit back destinations: reporting/support → Home; case details → Cases;
+- [x] Explicit back destinations: reporting/support → Home; case details → Cases;
   main capture close → reporting; kitchen capture close → kitchen; submitted report →
   originating case. Refresh resets in-memory prototype state.
-- [ ] TypeScript, production build, browser console, and before/after UI comparison pass.
+- [x] TypeScript, production build, browser console, and before/after UI comparison pass.
 
 ## Known limitations — preserve in Batch A
 
@@ -57,4 +57,12 @@ same viewport before/after; keep the fixed 390 × 844 renter shell and current f
 
 ## Verification record
 
-Pending Batch A regression verification. Starting App.tsx: 1,955 lines.
+Verified 10 September 2026 against the original prototype served alongside Batch A.
+- TypeScript (`tsc --noEmit`) and production build (`npm run build`) passed.
+- Browser walkthrough covered the checklist, both safety branches, retakes, submission,
+  all case variants, additional evidence, support reset, and back destinations.
+- Compared DOM and viewport screenshots before/after; settled screens matched.
+  Timer/transition captures were compared after settling; no behaviour differences found.
+- Both browser consoles had no warnings or errors. Capture/workflow function parity
+  was also checked; existing placeholder controls and timer logic remain unchanged.
+- App.tsx: 1,955 → 1,714 lines. Brand assets, CSS, and dependencies unchanged.
