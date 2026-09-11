@@ -66,3 +66,39 @@ Verified 10 September 2026 against the original prototype served alongside Batch
 - Both browser consoles had no warnings or errors. Capture/workflow function parity
   was also checked; existing placeholder controls and timer logic remain unchanged.
 - App.tsx: 1,955 → 1,714 lines. Brand assets, CSS, and dependencies unchanged.
+
+## Batch B/C and Phase 1 closeout — 11 September 2026
+
+Verified committed code `fa20767` (Batch C), compared with the completed Batch B
+baseline `e966e72`. The working tree was clean before this documentation update.
+
+- [x] Batch B renter screens and three separate case variants remain extracted;
+  branding, CSS, fixed PhoneShell, fixture text and simulated evidence are preserved.
+- [x] React Router owns `/`, `/cases`, `/inbox`, `/profile`, `/support`,
+  `/cases/:caseId`, `/cases/:caseId/report` and `/report`.
+- [x] Stable IDs: `bedroom-window-leak`, `hot-water`, `kitchen-tap`. Unknown case
+  IDs redirect to Cases. Explicit back destinations and report return ownership pass.
+- [x] Browser Back/Forward, direct entry and refresh checked. Refreshing `/report`
+  starts at confirmation; no draft recovery or individual capture-step URLs exist.
+- [x] Home/Recent Case, Inbox links, bottom navigation, floating Support Chat,
+  chat replies/reset-on-exit, case activity and Submitted Report evidence checked.
+- [x] Kitchen capture/cancel/retake/submission works; its completion flag survives
+  route navigation and resets on refresh. It remains a prototype boolean in App.
+- [x] Reporting checks covered both safety branches, conversation continuity through
+  capture, retakes, annotation selection, Final Review and submission destinations.
+  Final closeout reran confirmation → description → safe capture → simulated video
+  → Final Review → submission success → existing bedroom case successfully.
+- [x] Early video exit no longer triggers a stale preview transition after four
+  seconds. Route exit stays on Home; Forward starts a fresh report. Normal video
+  completion passes. Delayed stage/scroll timers now clean up on unmount; capture
+  guidance cleanup remains intact. The earlier deferred timer limitation is resolved.
+- [x] Key screens matched Batch B in side-by-side DOM and settled screenshot checks.
+  Post-conflict navigation/support smoke checks and final reporting checks passed;
+  no new console warnings/errors or visual/behavioural regressions were found.
+- [x] Final `tsc --noEmit` and `npm run build` passed. No unmerged paths or conflict
+  markers remain. Merge resolution restored required Batch B files unchanged.
+
+Batch C changed App.tsx from 886 to 79 lines. AppScreen was replaced with local
+ReportStep state; report return ownership comes from the route parameter. The
+remaining fixture inconsistencies and placeholder controls listed above are still
+intentional. Phase 1 is complete and ready for Phase 2; Phase 2 has not started.
