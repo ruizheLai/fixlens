@@ -1802,3 +1802,40 @@ New evidence received
 If this complete loop works reliably, the technical implementation has successfully demonstrated the FixLens concept.
 
 Everything beyond this should be considered secondary.
+
+## Showcase Demo Sessions
+
+The exhibition build should support multiple visitors using FixLens on their own devices without requiring production authentication.
+
+Each browser/device should receive an anonymous demo session identifier.
+
+Recommended behaviour:
+
+1. On first visit, check localStorage for:
+
+   fixlens_demo_session_id
+
+2. If no ID exists, generate one using:
+
+   crypto.randomUUID()
+
+3. Store the ID in localStorage.
+
+4. Reuse the same ID on later visits from the same browser/device.
+
+5. Attach the ID to new renter-created maintenance cases.
+
+Example:
+
+```ts
+const existingSessionId = localStorage.getItem("fixlens_demo_session_id")
+
+const demoSessionId =
+  existingSessionId ?? crypto.randomUUID()
+
+if (!existingSessionId) {
+  localStorage.setItem(
+    "fixlens_demo_session_id",
+    demoSessionId
+  )
+}
