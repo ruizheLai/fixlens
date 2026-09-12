@@ -119,8 +119,8 @@ Planned:
 
 ## Local Development
 
-Supabase schema and seed are applied; publishable-key reads are verified. Renter
-screens remain fixture-driven. See [Backend setup](docs/BACKEND_SETUP.md).
+Supabase schema and seed are applied; the Cases list now reads live data. Other
+renter screens remain fixture-driven. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:
 

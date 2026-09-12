@@ -19,6 +19,16 @@ export type CaseStatusLabel = {
 // Existing visual variants, not persisted case statuses.
 export type StatusPillStatus = "awaiting" | "action" | "completed" | "review" | "submitted";
 
+export interface CaseListItem {
+  caseKey: string;
+  issueType: string;
+  location: string | null;
+  status: CaseStatus;
+  updatedAt: string;
+  title: string;
+  locationLabel: string;
+}
+
 // Current display-only activity rows; these are not backend CaseUpdate records.
 export interface CaseActivityItem {
   time: string;

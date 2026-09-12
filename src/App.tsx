@@ -65,7 +65,7 @@ export default function App() {
     <PhoneShell>
       <Routes>
         <Route path="/" element={<RenterPage><HomeScreen onReport={() => navigate("/report")} onMyCases={() => navigate("/cases")} onCaseDetail={bedroom} onInbox={() => navigate("/inbox")} onSupportChat={() => navigate("/support")} onNav={onNav} /></RenterPage>} />
-        <Route path="/cases" element={<RenterPage><CasesScreen onCaseBedroom={bedroom} onCaseKitchen={kitchen} onCaseHotwater={() => navigate(casePath("hot-water"))} onNav={onNav} /></RenterPage>} />
+        <Route path="/cases" element={<RenterPage><CasesScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
         <Route path="/inbox" element={<RenterPage><InboxScreen onNotifBedroom={bedroom} onNotifKitchen={kitchen} onNav={onNav} /></RenterPage>} />
         <Route path="/profile" element={<RenterPage><ProfileScreen onNav={onNav} /></RenterPage>} />
         <Route path="/support" element={<SupportChatScreen onBack={() => navigate("/")} />} />

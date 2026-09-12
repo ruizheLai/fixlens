@@ -1,7 +1,34 @@
 # Supabase backend foundation (Phase 2A)
 
-The renter UI remains entirely fixture-driven. This foundation does not add auth,
-uploads, screen queries or visitor case creation.
+Phase 2A established the backend foundation without changing renter data sources.
+
+## Phase 2B-A — Cases list read integration
+
+Cases now reads `cases` through `src/services/cases.ts`: a focused projection of
+case_key, issue_type, location, status and updated_at, excluding null case keys,
+ordered by updated_at descending then case_key ascending. No session filtering or
+evidence-request query is added. Rows map to camelCase list items; lifecycle labels
+and native date formatting are centralized in `src/data/casePresentation.ts`.
+Completed cases appear in History; other lifecycle statuses appear in Active.
+
+The kitchen Action Required badge/styling remains an explicit local visual fixture,
+independent of its backend under_review status. Case Detail, Home, Inbox, Profile,
+Submitted Report, reporting and capture remain fixture-driven. Card URLs still use
+case_key and open the existing demo detail routes. Only the three demo detail keys
+are currently supported; future visitor routes remain out of scope. List timestamps
+now reflect the backend and can differ from fixture dates on other screens.
+
+Cases shows restrained loading text and a calm failure message with Retry. There
+is no fixture fallback. Requests time out after 15 seconds and cancel on exit;
+failed reads log a sanitized diagnostic. No writes, RLS/schema changes, new
+dependencies, auth, uploads, or demo-session wiring were introduced.
+
+Verification: TypeScript and production build passed. Browser checks covered live
+Active/History records, stable-key routes, Back/Forward, direct entry and refresh,
+plus unchanged fixture-screen/report/capture/support smoke checks. A controlled
+503 read failure showed the calm error state and sanitized console diagnostic;
+Retry performed a real read and restored the seeded cards. The temporary failure
+page was removed. Normal success-path console and Git secret checks passed.
 
 ## Environment
 
