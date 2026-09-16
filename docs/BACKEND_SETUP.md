@@ -11,8 +11,8 @@ evidence-request query is added. Rows map to camelCase list items; lifecycle lab
 and native date formatting are centralized in `src/data/casePresentation.ts`.
 Completed cases appear in History; other lifecycle statuses appear in Active.
 
-The kitchen Action Required badge/styling remains an explicit local visual fixture,
-independent of its backend under_review status. Case Detail, Home, Inbox, Profile,
+At the Phase 2B-A closeout, the kitchen Action Required badge/styling remained a
+local visual fixture, independent of its backend under_review status. Case Detail, Home, Inbox, Profile,
 Submitted Report, reporting and capture remain fixture-driven. Card URLs still use
 case_key and open the existing demo detail routes. Only the three demo detail keys
 are currently supported; future visitor routes remain out of scope. List timestamps
@@ -29,6 +29,35 @@ plus unchanged fixture-screen/report/capture/support smoke checks. A controlled
 503 read failure showed the calm error state and sanitized console diagnostic;
 Retry performed a real read and restored the seeded cards. The temporary failure
 page was removed. Normal success-path console and Git secret checks passed.
+
+## Phase 2B-B — Case Detail read integration
+
+Case Detail now uses `getCaseByKey(caseKey)` in the existing case service. It
+reads the case with its handler and property/manager relationships, then its
+updates ordered newest first with an ID tie-breaker. Focused camelCase types keep
+database rows out of JSX. Current lifecycle comes from `cases.status`; explanatory
+copy and activity labels are centralized. Completed layout selection uses status,
+not the hot-water key. Unknown keys return to Cases after lookup; loading, timeout,
+cancellation, sanitized errors and real Retry follow the list pattern.
+
+The three layouts and activity expansion remain, showing only recorded history.
+A small `shrink-0` sizing correction prevents the existing detail status cards
+from collapsing and clipping their contents. Kitchen's banner, capture and local
+acknowledgement remain a documented simulation, separate from live Under review.
+No evidence-request reads/writes or session filtering were introduced.
+
+Cases and Case Detail are live. Home, Submitted Report, Inbox, Profile and the
+report workflow remain fixtures. Display references and evidence counts are still
+prototype values; Submitted Report still shows the bedroom fixture even for other
+case routes. These differences and fixture dates are intentional until later batches.
+
+Final verification (16 September 2026): TypeScript and production build passed.
+All three live details, recorded activity, unknown-key recovery, report links/back
+destinations and top-level navigation passed browser checks. Report/capture through
+simulated submission and Support Chat/reset also passed; normal-path console was
+clean. The earlier controlled 503 test recovered via a real HTTP 200 Retry.
+Temporary comparison/failure files were removed; diff and credential checks passed,
+and `.env.local` remains ignored. Phase 2B-B is complete; Phase 2B-C has not started.
 
 ## Environment
 

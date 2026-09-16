@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
@@ -15,6 +15,10 @@ import SubmittedReportScreen from "./screens/renter/SubmittedReportScreen";
 import ReportWorkflow from "./features/report/ReportWorkflow";
 import { casePath, isDemoCaseId } from "./data/demo/cases";
 import type { NavItemId } from "./types/navigation";
+import type { CaseDetail } from "./types/case";
+import { getCaseByKey } from "./services/cases";
+import ScreenHeader from "./components/common/ScreenHeader";
+import NavBar from "./components/navigation/NavBar";
 
 const NAV_PATHS: Record<NavItemId, string> = { home: "/", cases: "/cases", inbox: "/inbox", profile: "/profile" };
 
@@ -27,23 +31,57 @@ function CaseRoute({ evidenceAdded, onEvidenceAdded, onNav }: {
   evidenceAdded: boolean; onEvidenceAdded: () => void; onNav: (id: NavItemId) => void;
 }) {
   const { caseId } = useParams();
-  const navigate = useNavigate();
-  if (!isDemoCaseId(caseId)) return <Navigate to="/cases" replace />;
-  const common = { onBack: () => navigate("/cases"), onViewReport: () => navigate(`${casePath(caseId)}/report`), onNav };
-  if (caseId === "kitchen-tap") return <KitchenCaseRoute evidenceAdded={evidenceAdded} onEvidenceAdded={onEvidenceAdded} onNav={onNav} />;
-  return <RenterPage>{caseId === "bedroom-window-leak"
-    ? <BedroomCaseDetailScreen {...common} />
-    : <HotWaterCaseDetailScreen {...common} />}</RenterPage>;
+  return <LoadedCaseRoute key={caseId} caseKey={caseId ?? ""} evidenceAdded={evidenceAdded} onEvidenceAdded={onEvidenceAdded} onNav={onNav} />;
 }
 
-function KitchenCaseRoute({ evidenceAdded, onEvidenceAdded, onNav }: {
-  evidenceAdded: boolean; onEvidenceAdded: () => void; onNav: (id: NavItemId) => void;
+function LoadedCaseRoute({ caseKey, evidenceAdded, onEvidenceAdded, onNav }: {
+  caseKey: string; evidenceAdded: boolean; onEvidenceAdded: () => void; onNav: (id: NavItemId) => void;
+}) {
+  const navigate = useNavigate();
+  const [detail, setDetail] = useState<CaseDetail | null>(null);
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setState("loading");
+    getCaseByKey(caseKey, controller.signal).then((item) => {
+      if (controller.signal.aborted) return;
+      setDetail(item);
+      setState("ready");
+    }).catch((error: unknown) => {
+      if (controller.signal.aborted) return;
+      console.error("Case detail could not be loaded", error instanceof Error ? error.message : "Unknown read failure");
+      setState("error");
+    });
+    return () => controller.abort();
+  }, [caseKey, attempt]);
+  if (state === "ready" && !detail) return <Navigate to="/cases" replace />;
+  if (state !== "ready" || !detail) return <RenterPage><div className="flex flex-col h-full">
+    <ScreenHeader title="Case details" onBack={() => navigate("/cases")} />
+    <div className="flex-1 overflow-y-auto px-5 py-5">
+      {state === "loading" ? <p role="status" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading case details…</p> :
+        <div role="alert" style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
+          <p>We couldn't load this case. Please try again.</p>
+          <button onClick={() => setAttempt((value) => value + 1)} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
+        </div>}
+    </div>
+    <NavBar active="cases" onNav={onNav} />
+  </div></RenterPage>;
+  const common = { detail, onBack: () => navigate("/cases"), onViewReport: () => navigate(`/cases/${encodeURIComponent(caseKey)}/report`), onNav };
+  if (detail.status === "completed") return <RenterPage><HotWaterCaseDetailScreen {...common} /></RenterPage>;
+  // Transitional evidence simulation only; the primary status always comes from Supabase.
+  if (caseKey === "kitchen-tap") return <KitchenCaseRoute detail={detail} evidenceAdded={evidenceAdded} onEvidenceAdded={onEvidenceAdded} onNav={onNav} />;
+  return <RenterPage><BedroomCaseDetailScreen {...common} /></RenterPage>;
+}
+
+function KitchenCaseRoute({ detail, evidenceAdded, onEvidenceAdded, onNav }: {
+  detail: CaseDetail; evidenceAdded: boolean; onEvidenceAdded: () => void; onNav: (id: NavItemId) => void;
 }) {
   const [step, setStep] = useState<"case" | "capture" | "preview">("case");
   const navigate = useNavigate();
   if (step === "capture") return <ARCloseupScreen onCapture={() => setStep("preview")} onClose={() => setStep("case")} />;
   if (step === "preview") return <PhotoPreview photoType="closeup" onRetake={() => setStep("capture")} onUse={() => { onEvidenceAdded(); setStep("case"); }} />;
-  return <RenterPage><KitchenCaseDetailScreen evidenceAdded={evidenceAdded} onAddEvidence={() => setStep("capture")} onBack={() => navigate("/cases")} onNav={onNav} /></RenterPage>;
+  return <RenterPage><KitchenCaseDetailScreen detail={detail} evidenceAdded={evidenceAdded} onAddEvidence={() => setStep("capture")} onBack={() => navigate("/cases")} onNav={onNav} /></RenterPage>;
 }
 
 function SubmittedReportRoute() {

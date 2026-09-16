@@ -29,6 +29,23 @@ export interface CaseListItem {
   locationLabel: string;
 }
 
+export interface CaseUpdate {
+  id: string;
+  updateType: string;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface CaseDetail extends CaseListItem {
+  description: string;
+  condition: string | null;
+  safetyResponse: string | null;
+  createdAt: string;
+  propertyAddress: string | null;
+  handler: { name: string; role: string; agencyName: string | null } | null;
+  updates: CaseUpdate[];
+}
+
 // Current display-only activity rows; these are not backend CaseUpdate records.
 export interface CaseActivityItem {
   time: string;

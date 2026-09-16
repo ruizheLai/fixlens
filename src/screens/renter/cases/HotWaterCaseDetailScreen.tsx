@@ -1,3 +1,7 @@
+import type { CaseDetail } from "../../../types/case";
+import CaseActivity from "../../../components/case/CaseActivity";
+import { caseStatusMessage, formatCaseDate } from "../../../data/casePresentation";
+import { demoCaseReference } from "../../../data/demo/cases";
 import { useState } from "react";
 import NavBar from "../../../components/navigation/NavBar";
 import ScreenHeader from "../../../components/common/ScreenHeader";
@@ -6,24 +10,24 @@ import StatusPill from "../../../components/case/StatusPill";
 import { IcoCheckCircle, IcoImg, IcoFileText, IcoShield } from "../../../components/common/icons";
 import type { NavItemId } from "../../../types/navigation";
 
-export default function CaseDetailHotwater({ onBack, onViewReport, onNav }: { onBack: () => void; onViewReport: () => void; onNav: (id: NavItemId) => void }) {
+export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav }: { detail: CaseDetail; onBack: () => void; onViewReport: () => void; onNav: (id: NavItemId) => void }) {
   const [showPrevActivity, setShowPrevActivity] = useState(false);
   return (
     <div className="flex flex-col h-full">
-      <ScreenHeader title="Hot water issue" subtitle="Case #FL-0987" onBack={onBack} />
+      <ScreenHeader title={detail.title} subtitle={demoCaseReference(detail.caseKey)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
 
         <div className="flex items-center gap-3">
-          <StatusPill status="completed" />
-          <span style={{ fontSize: 12, color: "var(--color-muted)" }}>Completed 12 Aug</span>
+          <StatusPill status={detail.status} />
+          <span style={{ fontSize: 12, color: "var(--color-muted)" }}>Completed {formatCaseDate(detail.updatedAt, true)}</span>
         </div>
 
         {/* Resolved summary — quiet, light */}
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", opacity: 0.85 }}>
+        <div className="shrink-0 rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", opacity: 0.85 }}>
           <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Final update</p>
             <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>Repair completed</p>
-            <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 4 }}>Repair completed on 12 Aug. Hot water has been restored.</p>
+            <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 4 }}>{caseStatusMessage(detail)}</p>
           </div>
           <div className="px-5 py-3.5">
             <div className="flex items-center gap-2" style={{ color: "var(--color-success)" }}>
@@ -36,42 +40,10 @@ export default function CaseDetailHotwater({ onBack, onViewReport, onNav }: { on
         <div>
           <SectionLabel>Case activity</SectionLabel>
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", opacity: 0.85 }}>
-            {/* Final update always visible */}
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <div className="flex items-start gap-3">
-                <div style={{ minWidth: 60 }}>
-                  <p style={{ fontSize: 11, color: "var(--color-muted)" }}>12 Aug</p>
-                  <p style={{ fontSize: 11, color: "var(--color-muted)" }}>2:00 PM</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>Repair completed</p>
-                  <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 2 }}>Hot water restored. Case closed.</p>
-                </div>
-              </div>
-            </div>
-
-            {showPrevActivity && [
-              { date: "10 Aug", time: "9:00 AM", title: "Repair scheduled", desc: "Technician visit confirmed for 12 Aug." },
-              { date: "5 Aug",  time: "3:30 PM", title: "Repair approved",  desc: "Landlord approved. Repair arranged." },
-              { date: "4 Aug",  time: "11:00 AM", title: "Report submitted", desc: "Report and evidence received." },
-            ].map((item) => (
-              <div key={item.title} className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                <div className="flex items-start gap-3">
-                  <div style={{ minWidth: 60 }}>
-                    <p style={{ fontSize: 11, color: "var(--color-muted)" }}>{item.date}</p>
-                    <p style={{ fontSize: 11, color: "var(--color-muted)" }}>{item.time}</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>{item.title}</p>
-                    <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 2 }}>{item.desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <button onClick={() => setShowPrevActivity(!showPrevActivity)} className="w-full px-5 py-3.5 text-left" style={{ color: "var(--color-muted)", fontSize: 13, fontWeight: 500 }}>
+            <CaseActivity completed updates={showPrevActivity ? detail.updates : detail.updates.slice(0, 1)} />
+            {detail.updates.length > 1 && <button onClick={() => setShowPrevActivity(!showPrevActivity)} className="w-full px-5 py-3.5 text-left" style={{ color: "var(--color-muted)", fontSize: 13, fontWeight: 500 }}>
               {showPrevActivity ? "Hide previous activity" : "View previous activity"}
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -80,9 +52,9 @@ export default function CaseDetailHotwater({ onBack, onViewReport, onNav }: { on
           <SectionLabel>Your report</SectionLabel>
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", opacity: 0.85 }}>
             {[
-              { icon: <IcoFileText />, label: "Issue summary", value: "Hot water system failure · Bathroom" },
+              { icon: <IcoFileText />, label: "Issue summary", value: [detail.issueType, detail.location].filter(Boolean).join(" · ") },
               { icon: <IcoImg />, label: "Photos", value: "2 captured" },
-              { icon: <IcoShield />, label: "Safety", value: "No immediate danger reported" },
+              { icon: <IcoShield />, label: "Safety", value: detail.safetyResponse || "Not recorded" },
             ].map((row, i, arr) => (
               <div key={row.label} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
                 <div style={{ color: "var(--color-muted)" }}>{row.icon}</div>

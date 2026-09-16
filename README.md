@@ -119,7 +119,7 @@ Planned:
 
 ## Local Development
 
-Supabase schema and seed are applied; the Cases list now reads live data. Other
+Supabase schema and seed are applied; Cases and Case Detail now read live data. Other
 renter screens remain fixture-driven. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:

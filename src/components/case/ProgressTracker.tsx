@@ -1,9 +1,9 @@
 import { IcoCheck } from "../common/icons";
-import type { CaseStatusLabel } from "../../types/case";
+import { CASE_STATUS_LABELS } from "../../data/casePresentation";
 
-const REPAIR_STAGES: CaseStatusLabel[] = ["Submitted","Under review","Awaiting approval","Arranging repair","Repair scheduled","Completed"];
+const REPAIR_STAGES = Object.values(CASE_STATUS_LABELS);
 
-export default function ProgressTracker({ currentIndex, completedAll = false }: { currentIndex: number; completedAll?: boolean }) {
+export default function ProgressTracker({ currentIndex, completedAll = false, submittedLabel }: { currentIndex: number; completedAll?: boolean; submittedLabel?: string }) {
   return (
     <div className="flex flex-col">
       {REPAIR_STAGES.map((stage, i) => {
@@ -36,7 +36,7 @@ export default function ProgressTracker({ currentIndex, completedAll = false }: 
                 color: future ? "var(--color-muted)" : "var(--color-text)", marginTop: current ? 0 : 1,
               }}>{stage}</p>
               {current && <p style={{ fontSize: 12, color: "var(--color-blue)", fontWeight: 500, marginTop: 2 }}>Current</p>}
-              {done && i === 0 && <p style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 1 }}>Yesterday · 10:30 AM</p>}
+              {done && i === 0 && submittedLabel && <p style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 1 }}>{submittedLabel}</p>}
             </div>
           </div>
         );
