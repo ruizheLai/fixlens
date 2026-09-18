@@ -13,7 +13,7 @@ import HotWaterCaseDetailScreen from "./screens/renter/cases/HotWaterCaseDetailS
 import KitchenCaseDetailScreen from "./screens/renter/cases/KitchenCaseDetailScreen";
 import SubmittedReportScreen from "./screens/renter/SubmittedReportScreen";
 import ReportWorkflow from "./features/report/ReportWorkflow";
-import { casePath, isDemoCaseId } from "./data/demo/cases";
+import { casePath } from "./data/demo/cases";
 import type { NavItemId } from "./types/navigation";
 import type { CaseDetail } from "./types/case";
 import { getCaseByKey } from "./services/cases";
@@ -82,14 +82,13 @@ function RequestedEvidenceCaseRoute({ detail, evidenceAdded, onEvidenceAdded, on
   const navigate = useNavigate();
   if (step === "capture") return <ARCloseupScreen onCapture={() => setStep("preview")} onClose={() => setStep("case")} />;
   if (step === "preview") return <PhotoPreview photoType="closeup" onRetake={() => setStep("capture")} onUse={() => { if (requestId) onEvidenceAdded(requestId); setStep("case"); }} />;
-  return <RenterPage><KitchenCaseDetailScreen detail={detail} evidenceAdded={evidenceAdded} onAddEvidence={(id) => { setRequestId(id); setStep("capture"); }} onBack={() => navigate("/cases")} onNav={onNav} /></RenterPage>;
+  return <RenterPage><KitchenCaseDetailScreen detail={detail} evidenceAdded={evidenceAdded} onAddEvidence={(id) => { setRequestId(id); setStep("capture"); }} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
 
 function SubmittedReportRoute() {
   const { caseId } = useParams();
   const navigate = useNavigate();
-  if (!isDemoCaseId(caseId)) return <Navigate to="/cases" replace />;
-  return <SubmittedReportScreen key={caseId} onBack={() => navigate(casePath(caseId))} />;
+  return <SubmittedReportScreen key={caseId} caseKey={caseId ?? ""} onBack={() => navigate(`/cases/${encodeURIComponent(caseId ?? "")}`)} />;
 }
 
 export default function App() {

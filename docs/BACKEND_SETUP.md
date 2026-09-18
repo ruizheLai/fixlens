@@ -94,6 +94,35 @@ A stale local-acknowledgement edge case was guarded when request status changes.
 Temporary failure pages were removed; Git diff, ignored environment and credential
 checks passed. Phase 2B-C is complete; backend write integration has not started.
 
+## Phase 2B-D — Submitted Report reads
+
+Submitted Report reuses getCaseByKey and the mapped CaseDetail fields for its
+case-key route: issue type, location, description, condition, safety response,
+identity and created timestamp. Missing optional fields show Not provided. The
+page remains read-only; loading, cancellation, sanitized error/Retry and unknown
+case recovery follow the existing pattern. Kitchen Detail now has the same-style
+report link; its container cannot shrink and clip the button.
+
+Only Bedroom retains the existing prototype evidence imagery. Kitchen and Hot
+Water show no evidence available; no evidence rows or uploads were fabricated.
+Submitted Report currently reflects the stored case report fields; immutable
+historical snapshot semantics are not yet separately modeled.
+
+Cases, Case Detail, current evidence requests, Inbox and Submitted Report fields
+are live. Home, Profile, report creation, Bedroom evidence imagery and requested
+capture acknowledgements remain local/fixture. Existing detail evidence counts,
+display references and conflicting property fixtures remain transitional.
+
+Verification (18 September 2026): all three live reports, direct URLs/refresh,
+correct detail return routes, browser Back/Forward and unknown-report recovery
+passed. Controlled Kitchen report failure showed a calm error; Retry made a new
+HTTP 200 request and restored Kitchen fields without Bedroom fallback. Report
+creation through simulated submission, capture, Support Chat/reset and top-level
+navigation passed regression checks. TypeScript and production build passed;
+normal browser console was clean. Temporary failure injection was removed.
+No backend writes, schema/RLS/seed changes, dependencies or credentials were added.
+Phase 2B-D is complete; backend write integration has not started.
+
 ## Environment
 
 Use a Supabase project with its Postgres database and Data API enabled. Install the

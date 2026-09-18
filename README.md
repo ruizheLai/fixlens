@@ -120,8 +120,9 @@ Planned:
 ## Local Development
 
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
-and Inbox now read live data. Home, Profile, Submitted Report, report creation, and
-requested-evidence capture acknowledgements remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
+Inbox, and Submitted Report structured fields now read live data. Home, Profile,
+report creation, Bedroom report evidence imagery, and requested-evidence capture
+acknowledgements remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:
 

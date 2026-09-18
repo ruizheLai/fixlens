@@ -12,8 +12,8 @@ import { IcoAlert, IcoCheckCircle, IcoUser } from "../../../components/common/ic
 import type { NavItemId } from "../../../types/navigation";
 
 // Request state is live. Captured photos and acknowledgements remain local.
-export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evidenceAdded, onNav }: {
-  detail: CaseDetail; onBack: () => void; onAddEvidence: (requestId: string) => void; evidenceAdded: string[]; onNav: (id: NavItemId) => void;
+export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evidenceAdded, onViewReport, onNav }: {
+  detail: CaseDetail; onBack: () => void; onViewReport: () => void; onAddEvidence: (requestId: string) => void; evidenceAdded: string[]; onNav: (id: NavItemId) => void;
 }) {
   const handler = caseHandlerPresentation(detail);
   const request = currentEvidenceRequest(detail.evidenceRequests);
@@ -102,6 +102,11 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evide
           </div>
         </div>
 
+        <div className="shrink-0 rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <button onClick={onViewReport} className="w-full px-5 py-3.5 text-left" style={{ color: "var(--color-blue)", fontSize: 13, fontWeight: 600 }}>
+            View submitted report
+          </button>
+        </div>
         <div style={{ height: 8 }} />
       </div>
       <NavBar active="cases" onNav={onNav} />
