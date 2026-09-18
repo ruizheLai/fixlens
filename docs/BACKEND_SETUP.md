@@ -57,7 +57,42 @@ destinations and top-level navigation passed browser checks. Report/capture thro
 simulated submission and Support Chat/reset also passed; normal-path console was
 clean. The earlier controlled 503 test recovered via a real HTTP 200 Retry.
 Temporary comparison/failure files were removed; diff and credential checks passed,
-and `.env.local` remains ignored. Phase 2B-B is complete; Phase 2B-C has not started.
+and `.env.local` remains ignored. Phase 2B-B is complete. The following section records the subsequent Phase 2B-C work.
+
+## Phase 2B-C — Evidence requests and Inbox reads
+
+Cases and Case Detail now read evidence_requests joined to cases to resolve case_key.
+A batched request read serves the list; detail filters by its key. Centralized
+requested/submitted/resolved rules mean only requested requires renter action.
+Kitchen remains Under review with a separate Action Required badge and the live
+instruction. Any active case with requests uses the same request presentation.
+No case-key special case determines action, and historical updates cannot create it.
+
+Inbox reads the six recorded case_updates with joined case context, ordered by
+created_at descending then ID ascending. Titles are human-readable and messages
+come from the backend; links use case_key. The latest item receives deterministic
+visual emphasis, not a stored unread flag. Evidence-event action styling consults
+current requests. Loading, cancellation, sanitized errors and Retry follow the
+existing read pattern; failed request reads do not silently imply no action.
+
+Capture/retake/preview remain simulated. Request-ID-scoped local acknowledgements
+survive navigation and reset on refresh, explicitly say no submission occurred,
+and leave live action/status unchanged. No writes, schema/RLS/seed changes, uploads,
+session filtering, dependencies or authentication changes were introduced.
+Home, Profile, Submitted Report and report creation remain fixture/local, including
+the known non-bedroom Submitted Report content and conflicting property fixtures.
+
+Verification (18 September 2026): TypeScript and production build passed. Browser
+checks covered all three cases, six Inbox events and their case-key links, direct
+Inbox/refresh and case URLs, Back/Forward, local requested-evidence capture,
+Submitted Report return routes, Home/Profile/navigation, Support Chat/reset, and
+report capture through simulated submission. Normal console had no warnings/errors.
+Controlled Inbox and evidence-request failures in Cases/Case Detail showed calm
+errors; Retry performed new HTTP 200 reads. Local response tests verified all three
+request statuses and removal of historical Inbox action without any backend writes.
+A stale local-acknowledgement edge case was guarded when request status changes.
+Temporary failure pages were removed; Git diff, ignored environment and credential
+checks passed. Phase 2B-C is complete; backend write integration has not started.
 
 ## Environment
 

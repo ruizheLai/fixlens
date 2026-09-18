@@ -20,6 +20,7 @@ export type CaseStatusLabel = {
 export type StatusPillStatus = "awaiting" | "action" | "completed" | "review" | "submitted";
 
 export interface CaseListItem {
+  evidenceRequests: import("./evidence").EvidenceRequest[];
   caseKey: string;
   issueType: string;
   location: string | null;

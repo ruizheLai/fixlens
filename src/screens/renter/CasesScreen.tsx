@@ -1,3 +1,4 @@
+import { hasRequestedEvidence } from "../../data/evidenceRequestPresentation";
 import { useEffect, useState } from "react";
 import { getCases } from "../../services/cases";
 import { formatCaseDate } from "../../data/casePresentation";
@@ -47,8 +48,8 @@ export default function MyCasesScreen({ onCase, onNav }: {
           <div className="flex flex-col gap-3">
 
             {state === "ready" && active.map((item) => {
-              // Temporary visual fixture; evidence-request integration is a later batch.
-              const actionRequired = item.caseKey === "kitchen-tap";
+              // Current action is independent of the primary lifecycle.
+              const actionRequired = hasRequestedEvidence(item.evidenceRequests);
               return (
             <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" style={actionRequired ? { background: "#FFF8F8", border: "1.5px solid #FECACA" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <div className="flex items-start justify-between gap-2">
@@ -58,7 +59,8 @@ export default function MyCasesScreen({ onCase, onNav }: {
                     <IcoMapPin /><span style={{ fontSize: 12 }}>{item.locationLabel}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <StatusPill status={actionRequired ? "action" : item.status} />
+                    <StatusPill status={item.status} />
+                    {actionRequired && <StatusPill status="action" />}
                     <div className="flex items-center gap-1" style={{ color: "var(--color-muted)" }}>
                       <IcoClock /><span style={{ fontSize: 11 }}>{formatCaseDate(item.updatedAt, false)}</span>
                     </div>

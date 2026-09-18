@@ -1,3 +1,4 @@
+import { getEvidenceRequests } from "./evidenceRequests";
 import { CASE_STATUS_LABELS } from "../data/casePresentation";
 import type { CaseDetail, CaseListItem, CaseStatus } from "../types/case";
 
@@ -18,6 +19,7 @@ export function mapCaseRow(row: CaseListRow): CaseListItem {
   // Keep useful fixture-style titles without matching particular case IDs.
   const title = row.issue_type === "Water leak" && location ? `${location} leak` : row.issue_type;
   return {
+    evidenceRequests: [],
     caseKey: row.case_key,
     issueType: row.issue_type,
     location,
@@ -45,7 +47,8 @@ export async function getCases(signal?: AbortSignal): Promise<CaseListItem[]> {
     // Keep diagnostics useful without retaining raw server text, URLs or keys.
     throw new Error(`Case read failed (HTTP ${status}, code ${error.code || "network"})`);
   }
-  return (data ?? []).map(mapCaseRow);
+  const requests = await getEvidenceRequests(signal);
+  return (data ?? []).map((row) => ({ ...mapCaseRow(row), evidenceRequests: requests.filter((request) => request.caseKey === row.case_key) }));
 }
 
 interface HandlerRow { name: string; role: string; agency_name: string | null }
@@ -84,9 +87,10 @@ export async function getCaseByKey(caseKey: string, signal?: AbortSignal): Promi
   if (!Number.isFinite(Date.parse(row.created_at)) || (updates ?? []).some((item) => !Number.isFinite(Date.parse(item.created_at)))) {
     throw new Error("Invalid case detail record");
   }
+  const evidenceRequests = await getEvidenceRequests(readSignal, caseKey);
   const handler = row.handler ?? row.property?.manager;
   return {
-    ...mapCaseRow(row), description: row.description, condition: row.condition,
+    ...mapCaseRow(row), evidenceRequests, description: row.description, condition: row.condition,
     safetyResponse: row.safety_response, createdAt: row.created_at,
     propertyAddress: row.property?.address ?? null,
     handler: handler ? { name: handler.name, role: handler.role, agencyName: handler.agency_name } : null,

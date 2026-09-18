@@ -33,6 +33,7 @@ export function caseUpdateTitle(update: CaseUpdate): string {
   const labels: Record<string, string> = {
     submitted: "Report submitted", status_changed: "Status updated", completed: "Repair completed",
     evidence_requested: "More information requested", evidence_submitted: "Evidence submitted",
+    review_started: "Review started", repair_scheduled: "Repair scheduled", message: "Case update",
     note: "Case update",
   };
   return labels[update.updateType] ?? "Case update";
