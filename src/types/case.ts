@@ -19,6 +19,34 @@ export type CaseStatusLabel = {
 // Existing visual variants, not persisted case statuses.
 export type StatusPillStatus = "awaiting" | "action" | "completed" | "review" | "submitted";
 
+export interface CaseListItem {
+  evidenceRequests: import("./evidence").EvidenceRequest[];
+  caseKey: string;
+  issueType: string;
+  location: string | null;
+  status: CaseStatus;
+  updatedAt: string;
+  title: string;
+  locationLabel: string;
+}
+
+export interface CaseUpdate {
+  id: string;
+  updateType: string;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface CaseDetail extends CaseListItem {
+  description: string;
+  condition: string | null;
+  safetyResponse: string | null;
+  createdAt: string;
+  propertyAddress: string | null;
+  handler: { name: string; role: string; agencyName: string | null } | null;
+  updates: CaseUpdate[];
+}
+
 // Current display-only activity rows; these are not backend CaseUpdate records.
 export interface CaseActivityItem {
   time: string;

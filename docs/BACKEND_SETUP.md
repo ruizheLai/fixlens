@@ -1,7 +1,127 @@
 # Supabase backend foundation (Phase 2A)
 
-The renter UI remains entirely fixture-driven. This foundation does not add auth,
-uploads, screen queries or visitor case creation.
+Phase 2A established the backend foundation without changing renter data sources.
+
+## Phase 2B-A — Cases list read integration
+
+Cases now reads `cases` through `src/services/cases.ts`: a focused projection of
+case_key, issue_type, location, status and updated_at, excluding null case keys,
+ordered by updated_at descending then case_key ascending. No session filtering or
+evidence-request query is added. Rows map to camelCase list items; lifecycle labels
+and native date formatting are centralized in `src/data/casePresentation.ts`.
+Completed cases appear in History; other lifecycle statuses appear in Active.
+
+At the Phase 2B-A closeout, the kitchen Action Required badge/styling remained a
+local visual fixture, independent of its backend under_review status. Case Detail, Home, Inbox, Profile,
+Submitted Report, reporting and capture remain fixture-driven. Card URLs still use
+case_key and open the existing demo detail routes. Only the three demo detail keys
+are currently supported; future visitor routes remain out of scope. List timestamps
+now reflect the backend and can differ from fixture dates on other screens.
+
+Cases shows restrained loading text and a calm failure message with Retry. There
+is no fixture fallback. Requests time out after 15 seconds and cancel on exit;
+failed reads log a sanitized diagnostic. No writes, RLS/schema changes, new
+dependencies, auth, uploads, or demo-session wiring were introduced.
+
+Verification: TypeScript and production build passed. Browser checks covered live
+Active/History records, stable-key routes, Back/Forward, direct entry and refresh,
+plus unchanged fixture-screen/report/capture/support smoke checks. A controlled
+503 read failure showed the calm error state and sanitized console diagnostic;
+Retry performed a real read and restored the seeded cards. The temporary failure
+page was removed. Normal success-path console and Git secret checks passed.
+
+## Phase 2B-B — Case Detail read integration
+
+Case Detail now uses `getCaseByKey(caseKey)` in the existing case service. It
+reads the case with its handler and property/manager relationships, then its
+updates ordered newest first with an ID tie-breaker. Focused camelCase types keep
+database rows out of JSX. Current lifecycle comes from `cases.status`; explanatory
+copy and activity labels are centralized. Completed layout selection uses status,
+not the hot-water key. Unknown keys return to Cases after lookup; loading, timeout,
+cancellation, sanitized errors and real Retry follow the list pattern.
+
+The three layouts and activity expansion remain, showing only recorded history.
+A small `shrink-0` sizing correction prevents the existing detail status cards
+from collapsing and clipping their contents. Kitchen's banner, capture and local
+acknowledgement remain a documented simulation, separate from live Under review.
+No evidence-request reads/writes or session filtering were introduced.
+
+Cases and Case Detail are live. Home, Submitted Report, Inbox, Profile and the
+report workflow remain fixtures. Display references and evidence counts are still
+prototype values; Submitted Report still shows the bedroom fixture even for other
+case routes. These differences and fixture dates are intentional until later batches.
+
+Final verification (16 September 2026): TypeScript and production build passed.
+All three live details, recorded activity, unknown-key recovery, report links/back
+destinations and top-level navigation passed browser checks. Report/capture through
+simulated submission and Support Chat/reset also passed; normal-path console was
+clean. The earlier controlled 503 test recovered via a real HTTP 200 Retry.
+Temporary comparison/failure files were removed; diff and credential checks passed,
+and `.env.local` remains ignored. Phase 2B-B is complete. The following section records the subsequent Phase 2B-C work.
+
+## Phase 2B-C — Evidence requests and Inbox reads
+
+Cases and Case Detail now read evidence_requests joined to cases to resolve case_key.
+A batched request read serves the list; detail filters by its key. Centralized
+requested/submitted/resolved rules mean only requested requires renter action.
+Kitchen remains Under review with a separate Action Required badge and the live
+instruction. Any active case with requests uses the same request presentation.
+No case-key special case determines action, and historical updates cannot create it.
+
+Inbox reads the six recorded case_updates with joined case context, ordered by
+created_at descending then ID ascending. Titles are human-readable and messages
+come from the backend; links use case_key. The latest item receives deterministic
+visual emphasis, not a stored unread flag. Evidence-event action styling consults
+current requests. Loading, cancellation, sanitized errors and Retry follow the
+existing read pattern; failed request reads do not silently imply no action.
+
+Capture/retake/preview remain simulated. Request-ID-scoped local acknowledgements
+survive navigation and reset on refresh, explicitly say no submission occurred,
+and leave live action/status unchanged. No writes, schema/RLS/seed changes, uploads,
+session filtering, dependencies or authentication changes were introduced.
+Home, Profile, Submitted Report and report creation remain fixture/local, including
+the known non-bedroom Submitted Report content and conflicting property fixtures.
+
+Verification (18 September 2026): TypeScript and production build passed. Browser
+checks covered all three cases, six Inbox events and their case-key links, direct
+Inbox/refresh and case URLs, Back/Forward, local requested-evidence capture,
+Submitted Report return routes, Home/Profile/navigation, Support Chat/reset, and
+report capture through simulated submission. Normal console had no warnings/errors.
+Controlled Inbox and evidence-request failures in Cases/Case Detail showed calm
+errors; Retry performed new HTTP 200 reads. Local response tests verified all three
+request statuses and removal of historical Inbox action without any backend writes.
+A stale local-acknowledgement edge case was guarded when request status changes.
+Temporary failure pages were removed; Git diff, ignored environment and credential
+checks passed. Phase 2B-C is complete; backend write integration has not started.
+
+## Phase 2B-D — Submitted Report reads
+
+Submitted Report reuses getCaseByKey and the mapped CaseDetail fields for its
+case-key route: issue type, location, description, condition, safety response,
+identity and created timestamp. Missing optional fields show Not provided. The
+page remains read-only; loading, cancellation, sanitized error/Retry and unknown
+case recovery follow the existing pattern. Kitchen Detail now has the same-style
+report link; its container cannot shrink and clip the button.
+
+Only Bedroom retains the existing prototype evidence imagery. Kitchen and Hot
+Water show no evidence available; no evidence rows or uploads were fabricated.
+Submitted Report currently reflects the stored case report fields; immutable
+historical snapshot semantics are not yet separately modeled.
+
+Cases, Case Detail, current evidence requests, Inbox and Submitted Report fields
+are live. Home, Profile, report creation, Bedroom evidence imagery and requested
+capture acknowledgements remain local/fixture. Existing detail evidence counts,
+display references and conflicting property fixtures remain transitional.
+
+Verification (18 September 2026): all three live reports, direct URLs/refresh,
+correct detail return routes, browser Back/Forward and unknown-report recovery
+passed. Controlled Kitchen report failure showed a calm error; Retry made a new
+HTTP 200 request and restored Kitchen fields without Bedroom fallback. Report
+creation through simulated submission, capture, Support Chat/reset and top-level
+navigation passed regression checks. TypeScript and production build passed;
+normal browser console was clean. Temporary failure injection was removed.
+No backend writes, schema/RLS/seed changes, dependencies or credentials were added.
+Phase 2B-D is complete; backend write integration has not started.
 
 ## Environment
 
