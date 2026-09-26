@@ -1,4 +1,5 @@
 import type { CaseDetail } from "../../../types/case";
+import { PROTOTYPE_EVIDENCE_COUNTS } from "../../../data/demo/evidence";
 import CaseActivity from "../../../components/case/CaseActivity";
 import { CASE_STATUS_COPY, CASE_STATUS_LABELS, caseHandlerPresentation, caseStatusMessage, formatCaseDate, formatActivityTime } from "../../../data/casePresentation";
 import { demoCaseReference } from "../../../data/demo/cases";
@@ -15,6 +16,7 @@ export default function CaseDetailBedroom({ detail, onBack, onViewReport, onNav 
   const [showFullActivity, setShowFullActivity] = useState(false);
   const copy = CASE_STATUS_COPY[detail.status];
   const handler = caseHandlerPresentation(detail);
+  const prototypeEvidence = PROTOTYPE_EVIDENCE_COUNTS[detail.caseKey];
   return (
     <div className="flex flex-col h-full">
       <ScreenHeader title={detail.title} subtitle={demoCaseReference(detail.caseKey)} onBack={onBack} />
@@ -84,8 +86,9 @@ export default function CaseDetailBedroom({ detail, onBack, onViewReport, onNav 
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
             {[
               { icon: <IcoFileText />, label: "Issue summary", value: [detail.issueType, detail.location].filter(Boolean).join(" · ") },
-              { icon: <IcoImg />, label: "Photos", value: "2 captured" },
-              { icon: <IcoVideo />, label: "Video", value: "1 captured" },
+              { icon: <IcoFileText />, label: "Description", value: detail.description },
+              { icon: <IcoImg />, label: "Photos", value: prototypeEvidence ? `${prototypeEvidence.photos} captured` : "No saved evidence" },
+              { icon: <IcoVideo />, label: "Video", value: prototypeEvidence ? `${prototypeEvidence.videos} captured` : "No saved evidence" },
               { icon: <IcoShield />, label: "Safety", value: detail.safetyResponse || "Not recorded" },
             ].map((row, i, arr) => (
               <div key={row.label} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>

@@ -120,8 +120,10 @@ Planned:
 ## Local Development
 
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
-Inbox, and Submitted Report structured fields now read live data. Home, Profile,
-report creation, Bedroom report evidence imagery, and requested-evidence capture
+Inbox, and Submitted Report structured fields now read live data. Report submission
+creates real visitor cases and initial activity, with browser demo-session isolation
+and idempotent Retry. This is not production authentication. Evidence persistence
+is deferred; Home, Profile, scripted support, capture and requested-evidence
 acknowledgements remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:

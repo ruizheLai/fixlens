@@ -5,7 +5,7 @@ export function isDemoCaseId(value: string | undefined): value is DemoCaseId {
   return DEMO_CASE_IDS.some((id) => id === value);
 }
 
-export const casePath = (id: DemoCaseId) => `/cases/${id}`;
+export const casePath = (id: string) => `/cases/${encodeURIComponent(id)}`;
 
 // Display references only: these are not database IDs. Evidence and Submitted
 // Report remain prototype-backed until their dedicated integration batch.

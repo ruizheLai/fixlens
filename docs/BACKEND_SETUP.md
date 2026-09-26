@@ -1,6 +1,8 @@
-# Supabase backend foundation (Phase 2A)
+# Supabase backend setup
 
 Phase 2A established the backend foundation without changing renter data sources.
+The Phase 2A/2B sections below are historical verification records. Current write
+capabilities and limitations are recorded in Phase 2C-A and the RLS section.
 
 ## Phase 2B-A — Cases list read integration
 
@@ -123,6 +125,64 @@ normal browser console was clean. Temporary failure injection was removed.
 No backend writes, schema/RLS/seed changes, dependencies or credentials were added.
 Phase 2B-D is complete; backend write integration has not started.
 
+## Phase 2C-A — Real case creation and demo session
+
+Visitor report submission now calls the typed createMaintenanceCase service.
+The actual trimmed renter description is preserved through summary, Final Review
+and INSERT. Issue type (Water leak), location (Bedroom window) and condition
+(When it rains) remain deterministic prototype values; safety records the user's
+safe-to-continue response. Canonical demo relationships live in demoBackend.ts.
+No AI interpretation has been added.
+
+The shared client sends x-fixlens-demo-session from the persisted
+fixlens_demo_session_id localStorage value on every browser request. RLS permits
+seeded cases plus the matching visitor session's cases and their child records.
+This is exhibition-level isolation, NOT secure production authentication: the
+header is caller-controlled. Review RLS and grants before public deployment.
+
+Submit freezes the report, session and generated demo-<uuid> case key for that
+workflow. Pending submission disables duplicate actions. Failure preserves the
+review and shows a calm Retry. Retry queries the same key/session first, recovering
+a committed INSERT with a lost response without another INSERT, UPDATE or upsert.
+Only confirmed creation opens success; View case uses the returned case key.
+A private database trigger creates one submitted activity in the same transaction.
+
+Migration: supabase/migrations/20260925021524_demo_case_creation.sql, applied live
+as demo_case_creation (remote migration version 20260925023411). The initial
+migration and seed were not edited or reapplied. For a fresh project, apply this
+migration after the initial schema and seed. Do not reapply it to the live project.
+The CLI and administrative migration tool assigned different timestamps; this is
+one migration, not two pending migrations.
+
+Real: visitor cases, initial submitted activity, Cases/Detail/Inbox visibility,
+Submitted Report fields and persistence after refresh. Evidence remains local:
+no files uploaded, evidence rows created or storage bucket provisioned. New cases
+show no saved evidence; the seeded Bedroom evidence fixture remains. Home/Profile,
+scripted support, prototype capture/annotations and local requested-evidence
+acknowledgements remain unchanged. PM writes, realtime, AI and production auth are
+deferred. An unfinished report/Retry attempt is retained only while /report stays
+mounted; draft recovery after leaving/reloading is not implemented.
+
+Closeout verification (26 September 2026): TypeScript and production build passed.
+Real browser submission, Cases/Detail refresh, visitor Submitted Report, Inbox
+links, Back/Forward and separate-origin session isolation passed. A real rejected
+INSERT left zero rows and retained Final Review/description/Retry. A subsequent
+INSERT returned HTTP 201 before its response was deliberately hidden; Retry
+recovered it through SELECT with no third POST. Instrumented comparisons confirmed
+the same case key, session and payload throughout. Each test submission had exactly
+one case and one submitted event, with zero evidence rows/requests. Pending Submit
+was disabled. The ten negative INSERT-policy checks passed; catalog checks confirmed
+no browser UPDATE/DELETE, activity INSERT or private-trigger EXECUTE privilege.
+
+Seeded cases, Home/Profile, Support/reset, request Action Required/local capture,
+report/capture and navigation regression checks passed. Normal-path consoles were
+clean. The temporary harness and CLI cache were removed; the three exact test cases
+and their cascading activity were cleaned administratively. Final counts returned
+to 3 seeded cases, 6 updates, 1 evidence request and 0 evidence. Git/secret review
+passed; .env.local remains ignored. Security advisor findings remain limited to the
+pre-existing public.rls_auto_enable() warning described below. Phase 2C-A is complete;
+Phase 2C-B and evidence upload have not started.
+
 ## Environment
 
 Use a Supabase project with its Postgres database and Data API enabled. Install the
@@ -184,16 +244,17 @@ representative case updates, two per case. Evidence is intentionally empty.
 
 ## Temporary demo-development RLS
 
-All six tables enable RLS. Six SELECT policies and explicit SELECT grants allow
-anon/authenticated roles to read only the fixed seeded profiles/property/cases and
-child records of those cases. Cases must also have null demo_session_id. These
-records are publicly readable demo data; do not insert real personal information
-into them. This is not user-level authorization.
+All six tables enable RLS. Existing policies preserve fixed seeded profile/property/case
+reads. Visitor SELECT additionally requires demo_session_id to match the request
+header. Child policies use the RLS-visible parent case, including submitted activity.
+Seeded records remain public demo data; this is not user-level authentication.
 
-Browser INSERT/UPDATE/DELETE privileges are revoked and no write policies exist.
-Write/delete connectivity tests are intentionally deferred; do not widen domain
-permissions to make a smoke test pass. The visitor creation path belongs to Phase
-2C. **TODO: review grants and RLS before public showcase deployment.** See
+Browser INSERT is granted only for required case columns. RLS requires a matching
+session, valid demo case key, Submitted status, canonical renter/property/handler
+and non-empty issue type/description. Browser roles cannot supply IDs/timestamps,
+UPDATE/DELETE cases, or write case_updates/evidence/evidence_requests. The private
+trigger has an empty search_path and no public/anon/authenticated EXECUTE grant.
+**TODO: review grants and RLS before public showcase deployment.** See
 [Supabase RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 ## Verify
@@ -278,9 +339,10 @@ This scoped closeout is not a full security audit.
 ## Deferred infrastructure
 
 The intended future bucket is `case-evidence`; creation and access policies are
-deferred to Phase 2C alongside uploads. No demo/Unsplash URLs are migrated.
+deferred to Phase 2C-B alongside uploads. No demo/Unsplash URLs are migrated.
 
 `getDemoSessionId()` in `src/utils/demoSession.ts` lazily creates and persists a UUID
-under localStorage key `fixlens_demo_session_id`. It is unused by current screens,
-does not filter or label existing cases, and is not authentication or authorization.
-Later visitor-created cases may use it; seeded cases retain a null session ID.
+under localStorage key `fixlens_demo_session_id`. The shared client sends it as the
+request header and case creation stores it on the case. Clearing storage creates
+a new identity, hiding previous visitor cases. Seeded cases retain a null session
+ID. No session IDs are shown in the renter UI.

@@ -1,6 +1,44 @@
 import { getEvidenceRequests } from "./evidenceRequests";
 import { CASE_STATUS_LABELS } from "../data/casePresentation";
 import type { CaseDetail, CaseListItem, CaseStatus } from "../types/case";
+import type { CaseCreationAttempt, CreatedMaintenanceCase } from "../types/report";
+import { DEMO_BACKEND } from "../config/demoBackend";
+import { getDemoSessionId } from "../utils/demoSession";
+
+export async function createMaintenanceCase(input: CaseCreationAttempt, signal?: AbortSignal): Promise<CreatedMaintenanceCase> {
+  if (getDemoSessionId() !== input.demoSessionId) throw new Error("Submission session changed");
+  if (!input.description.trim() || !input.issueType.trim()) throw new Error("Report fields missing");
+  const { supabase } = await import("./supabase");
+  const timeout = AbortSignal.timeout(15000);
+  const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+  const projection = "case_key,issue_type,location,status,updated_at";
+  const findExisting = async () => {
+    const { data, error, status } = await supabase.from("cases").select(projection)
+      .eq("case_key", input.caseKey).eq("demo_session_id", input.demoSessionId)
+      .abortSignal(requestSignal).maybeSingle<CaseListRow>();
+    if (error) throw new Error(`Submission lookup failed (HTTP ${status}, code ${error.code || "network"})`);
+    return data ? mapCaseRow(data) : null;
+  };
+  // Recover a committed insert whose response was lost; never require UPDATE.
+  const existing = await findExisting();
+  if (existing) return existing;
+  const { data, error, status } = await supabase.from("cases").insert({
+    case_key: input.caseKey, demo_session_id: input.demoSessionId,
+    renter_id: DEMO_BACKEND.renterId, property_id: DEMO_BACKEND.propertyId,
+    handled_by: DEMO_BACKEND.managerId, status: "submitted",
+    issue_type: input.issueType, location: input.location, description: input.description,
+    condition: input.condition, safety_response: input.safetyResponse,
+  }).select(projection).abortSignal(requestSignal).single<CaseListRow>();
+  if (error) {
+    if (error.code === "23505") {
+      const recovered = await findExisting();
+      if (recovered) return recovered;
+    }
+    throw new Error(`Case submission failed (HTTP ${status}, code ${error.code || "network"})`);
+  }
+  if (!data) throw new Error("Submission confirmation missing");
+  return mapCaseRow(data);
+}
 
 // Focused projection of the Phase 2A schema; no generated/full-schema abstraction.
 export interface CaseListRow {
