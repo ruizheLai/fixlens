@@ -1,7 +1,7 @@
 import Btn from "../../components/common/Btn";
 import StatusPill from "../../components/case/StatusPill";
 
-export default function SuccessScreen({ onViewCase, onHome }: { onViewCase: () => void; onHome: () => void }) {
+export default function SuccessScreen({ title, onViewCase, onHome }: { title: string; onViewCase: () => void; onHome: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
@@ -16,7 +16,7 @@ export default function SuccessScreen({ onViewCase, onHome }: { onViewCase: () =
           <div className="flex items-center justify-between">
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Case</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text)", marginTop: 2 }}>Bedroom window leak</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text)", marginTop: 2 }}>{title}</p>
             </div>
             <StatusPill status="submitted" />
           </div>

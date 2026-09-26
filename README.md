@@ -120,8 +120,10 @@ Planned:
 ## Local Development
 
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
-Inbox, and Submitted Report structured fields now read live data. Home, Profile,
-report creation, Bedroom report evidence imagery, and requested-evidence capture
+Inbox, and Submitted Report structured fields now read live data. Report submission
+creates real visitor cases and initial activity, with browser demo-session isolation
+and idempotent Retry. This is not production authentication. Evidence persistence
+is deferred; Home, Profile, scripted support, capture and requested-evidence
 acknowledgements remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:
@@ -143,6 +145,54 @@ npm run build
 ```
 
 ---
+
+## Vercel deployment (manual step pending)
+
+Import `ruizheLai/fixlens` with Framework Preset **Vite**, Root Directory **./**,
+the default build command (**npm run build**) and output directory (**dist**).
+Keep the default install command. First commit/push the reviewed deployment changes
+to the branch Vercel will deploy; these changes are not published automatically.
+Confirm that the selected production branch includes Phase 2C-A and vercel.json.
+
+Enter these variables manually in Vercel for Production and Preview when testing
+preview deployments (names only; never commit their values):
+
+```dotenv
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+```
+
+Vite embeds these browser-safe values at build time; redeploy after changing them.
+Never enter a database password, service-role key or private key in a VITE variable.
+The shared client and its x-fixlens-demo-session header remain unchanged. Sessions
+are localStorage/origin-specific: localhost, preview and production URLs have
+different demo identities. This is exhibition isolation, not secure authentication.
+
+The minimal vercel.json rewrite serves index.html for React Router deep links,
+following [Vercel's Vite guidance](https://vercel.com/docs/frameworks/frontend/vite).
+No server, middleware or functions are required. Click Create Project / Deploy
+after entering the variables and confirming the branch. Share the resulting HTTPS
+URL for verification; no public deployment or QR-ready URL is verified yet.
+
+Phone viewports below 768px use full width and 100dvh without a fake status bar,
+rounded device frame or shadow. Larger viewports retain the centered 390×844
+maximum phone preview. Local production-preview checks passed at 375×667,
+390×844, 360×800 and desktop 1280×900, including scrolling, navigation, report
+review/success and live submission. TypeScript/build and normal console checks
+passed. No safe-area override was needed in desktop viewport testing; actual
+phone browser chrome, keyboard, touch and safe-area behaviour remain unverified.
+
+After deployment, verify HTTPS/secure context and direct entry/refresh/Back/Forward
+for `/`, `/cases`, `/inbox`, `/profile`, `/support`, `/report`, all three seeded
+case routes and `/cases/bedroom-window-leak/report`. On iPhone Safari or Android
+Chrome, complete a report through submission, open its generated case and report,
+refresh Cases/Detail, check Inbox and confirm a second browser cannot read it.
+Check keyboard visibility, scrolling and bottom navigation without camera access.
+Keep the existing backend security-review item documented in
+[Backend setup](docs/BACKEND_SETUP.md) before public showcase use.
+
+Evidence/capture remains local. Phase 2C-B camera/evidence persistence, PWA,
+service workers, AI, realtime and PM writes have not started.
 
 ## Project Structure
 

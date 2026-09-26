@@ -1,8 +1,8 @@
 import type * as React from "react";
 
-export default function Btn({ children, variant = "primary", onClick, fullWidth = true, small = false }: {
+export default function Btn({ children, variant = "primary", onClick, fullWidth = true, small = false, disabled = false }: {
   children: React.ReactNode; variant?: "primary" | "secondary" | "ghost";
-  onClick?: () => void; fullWidth?: boolean; small?: boolean;
+  onClick?: () => void; fullWidth?: boolean; small?: boolean; disabled?: boolean;
 }) {
   const s: Record<string, React.CSSProperties> = {
     primary: { background: "var(--color-blue)", color: "#fff" },
@@ -10,7 +10,7 @@ export default function Btn({ children, variant = "primary", onClick, fullWidth 
     ghost: { background: "transparent", color: "var(--color-blue)" },
   };
   return (
-    <button onClick={onClick} className={`${small ? "py-2.5 px-4 text-xs" : "py-3.5 px-5 text-sm"} rounded-2xl font-semibold active:opacity-75 transition-opacity ${fullWidth ? "w-full" : ""}`} style={{ fontFamily: "var(--font-display)", ...s[variant] }}>
+    <button disabled={disabled} onClick={onClick} className={`${small ? "py-2.5 px-4 text-xs" : "py-3.5 px-5 text-sm"} rounded-2xl font-semibold active:opacity-75 transition-opacity ${fullWidth ? "w-full" : ""}`} style={{ fontFamily: "var(--font-display)", ...s[variant] }}>
       {children}
     </button>
   );

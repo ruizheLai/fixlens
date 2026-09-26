@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { createMaintenanceCase } from "../../services/cases";
+import { getDemoSessionId } from "../../utils/demoSession";
+import type { MaintenanceReportInput, CaseCreationAttempt, CreatedMaintenanceCase } from "../../types/report";
 import { useNavigate } from "react-router-dom";
 import type { ReportStep } from "../../types/navigation";
 import { casePath } from "../../data/demo/cases";
@@ -40,11 +43,11 @@ function PropertyCard({ confirmed, onConfirm }: { confirmed: boolean; onConfirm:
   );
 }
 
-function IssueSummaryCard({ confirmed, onContinue }: { confirmed: boolean; onContinue: () => void }) {
+function IssueSummaryCard({ description, confirmed, onContinue }: { description: string; confirmed: boolean; onContinue: () => void }) {
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ label: "Issue type", value: "Water leak" }, { label: "Location", value: "Bedroom window" }, { label: "Occurs", value: "When it rains" }, { label: "Description", value: "Water leaking from the top of the bedroom window, dripping down the wall." }].map((row, i, arr) => (
+        {[{ label: "Issue type", value: "Water leak" }, { label: "Location", value: "Bedroom window" }, { label: "Occurs", value: "When it rains" }, { label: "Description", value: description }].map((row, i, arr) => (
           <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
             <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
@@ -123,7 +126,7 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
 
 // ─── Post-capture view ────────────────────────────────────────────────────────
 
-function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
+function PostCaptureView({ report, submitting, error, onSubmit }: { report: MaintenanceReportInput; submitting: boolean; error: boolean; onSubmit: () => void }) {
   const [showReview, setShowReview] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -134,11 +137,11 @@ function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
   }, [showReview]);
 
   const reportRows: ReportFieldRow[] = [
-    { label: "Issue type", value: "Water leak" },
-    { label: "Location", value: "Bedroom window" },
-    { label: "Occurs", value: "When it rains" },
-    { label: "Description", value: "Water leaking from the top of the bedroom window, dripping down the wall." },
-    { label: "Safety", value: "No immediate danger reported", green: true },
+    { label: "Issue type", value: report.issueType },
+    { label: "Location", value: report.location || "Not provided" },
+    { label: "Occurs", value: report.condition || "Not provided" },
+    { label: "Description", value: report.description },
+    { label: "Safety", value: report.safetyResponse || "Not provided", green: true },
   ];
 
   const mediaItems: DemoEvidence[] = [
@@ -249,7 +252,8 @@ function PostCaptureView({ onSubmit }: { onSubmit: () => void }) {
 
             {/* Submit CTA */}
             <div className="mt-3">
-              <Btn onClick={onSubmit}>Submit report</Btn>
+              {error && <p role="alert" className="mb-3" style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>We couldn't confirm your submission. Your report is still here. Please try again.</p>}
+              <Btn disabled={submitting} onClick={onSubmit}>{submitting ? "Submitting…" : error ? "Retry" : "Submit report"}</Btn>
             </div>
           </div>
         )}
@@ -279,7 +283,7 @@ type ChatStage =
   | "safety-danger"
   | "capture-expectation";
 
-function PreCaptureChat({ onBack, onStartCapture }: { onBack: () => void; onStartCapture: () => void }) {
+function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture }: { onDescription: (value: string) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
   const [stage, setStage] = useState<ChatStage>("confirming-details");
   const [propConfirmed, setPropConfirmed] = useState(false);
   const [issueText, setIssueText] = useState("");
@@ -306,11 +310,12 @@ function PreCaptureChat({ onBack, onStartCapture }: { onBack: () => void; onStar
   const handleIssueSend = () => {
     if (!inputVal.trim()) return;
     setIssueText(inputVal.trim());
+    onDescription(inputVal.trim());
     setInputVal("");
     advance("reviewing-summary");
   };
   const handleSummaryConfirm = () => { setSummaryConfirmed(true); advance("safety-check"); };
-  const handleSafe = () => { setSafetyAnswered(true); advance("capture-expectation"); };
+  const handleSafe = () => { onSafeResponse(); setSafetyAnswered(true); advance("capture-expectation"); };
   const handleDanger = () => setStage("safety-danger");
   const handleDangerBack = () => setStage("safety-check");
 
@@ -347,7 +352,7 @@ function PreCaptureChat({ onBack, onStartCapture }: { onBack: () => void; onStar
         {(["reviewing-summary", ...afterSummary] as ChatStage[]).includes(stage) && issueText && (
           <>
             <AssistantBubble>Thanks! Here's what I got — does this look right?</AssistantBubble>
-            <IssueSummaryCard confirmed={summaryConfirmed} onContinue={handleSummaryConfirm} />
+            <IssueSummaryCard description={issueText} confirmed={summaryConfirmed} onContinue={handleSummaryConfirm} />
           </>
         )}
 
@@ -398,18 +403,48 @@ function PreCaptureChat({ onBack, onStartCapture }: { onBack: () => void; onStar
 export default function ReportWorkflow() {
   const [step, setStep] = useState<ReportStep>("report-chat");
   const [postCapture, setPostCapture] = useState(false);
+  // Type/location/condition remain the existing deterministic prototype summary.
+  const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Water leak", location: "Bedroom window", condition: "When it rains", description: "", safetyResponse: null });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+  const [createdCase, setCreatedCase] = useState<CreatedMaintenanceCase | null>(null);
+  const submission = useRef<CaseCreationAttempt | null>(null);
+  const pending = useRef(false);
+  const submitController = useRef<AbortController | null>(null);
+  useEffect(() => () => submitController.current?.abort(), []);
+  const submit = async () => {
+    if (pending.current) return;
+    pending.current = true;
+    setSubmitting(true); setSubmitError(false);
+    const controller = new AbortController();
+    submitController.current = controller;
+    try {
+      submission.current ??= { ...report, demoSessionId: getDemoSessionId(), caseKey: `demo-${crypto.randomUUID()}` };
+      const result = await createMaintenanceCase(submission.current, controller.signal);
+      if (controller.signal.aborted) return;
+      setCreatedCase(result); setStep("success");
+    } catch (error: unknown) {
+      if (controller.signal.aborted) return;
+      // Service errors contain status/code only; never log input or credentials.
+      console.error("Report submission could not be confirmed", error instanceof Error && /^(Case submission|Submission lookup) failed \(HTTP/.test(error.message) ? error.message : "Submission unavailable");
+      setSubmitError(true);
+    } finally {
+      pending.current = false;
+      if (!controller.signal.aborted) setSubmitting(false);
+    }
+  };
   const navigate = useNavigate();
   const inCapture = step !== "report-chat" && step !== "success";
 
   return (
     <>
-      {step === "success" && <SuccessScreen onViewCase={() => navigate(casePath("bedroom-window-leak"))} onHome={() => navigate("/")} />}
+      {step === "success" && createdCase && <SuccessScreen title={createdCase.title} onViewCase={() => navigate(casePath(createdCase.caseKey))} onHome={() => navigate("/")} />}
       {/* Preserve the conversation while capture overlays are shown. */}
       {step !== "success" && (
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {postCapture
-            ? <PostCaptureView onSubmit={() => setStep("success")} />
-            : <PreCaptureChat onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
+            ? <PostCaptureView report={report} submitting={submitting} error={submitError} onSubmit={submit} />
+            : <PreCaptureChat onDescription={(description) => setReport((current) => ({ ...current, description }))} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
       {step === "ar-overview" && <AROverviewScreen onCapture={() => setStep("photo-overview")} onClose={() => setStep("report-chat")} />}

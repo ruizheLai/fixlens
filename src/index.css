@@ -43,6 +43,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Use the real viewport on phones, without simulated device chrome. */
+.fixlens-phone {
+  width: 100%;
+  height: 100dvh;
+}
+
+/* Keep the original device preview only on larger viewports. */
+@media (min-width: 768px) {
+  .fixlens-phone {
+    width: 390px;
+    max-width: 100%;
+    height: min(844px, 100dvh);
+    border-radius: 44px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.08);
+  }
+}
+
 /* hide scrollbar */
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
