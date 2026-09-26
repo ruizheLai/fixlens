@@ -2,9 +2,9 @@ import type * as React from "react";
 
 export default function PhoneShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: "#E8E8E4" }}>
-      <div className="relative overflow-hidden flex flex-col" style={{ width: 390, height: 844, background: "var(--color-bg)", borderRadius: 44, boxShadow: "0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.08)", fontFamily: "var(--font-body)" }}>
-        <div className="flex items-center justify-between px-8 pt-4 pb-1 shrink-0" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", background: "var(--color-surface)" }}>
+    <div className="flex items-center justify-center min-h-screen" style={{ minHeight: "100dvh", background: "#E8E8E4" }}>
+      <div className="fixlens-phone relative overflow-hidden flex flex-col" style={{ background: "var(--color-bg)", fontFamily: "var(--font-body)" }}>
+        <div className="hidden md:flex items-center justify-between px-8 pt-4 pb-1 shrink-0" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", background: "var(--color-surface)" }}>
           <span>9:41</span>
           <div className="flex gap-1.5 items-center">
             <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="4" width="3" height="7" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor" opacity="0.6"/><rect x="9" y="0" width="3" height="11" rx="0.5" fill="currentColor"/><rect x="13.5" y="3.5" width="2" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="none"/></svg>
@@ -12,7 +12,7 @@ export default function PhoneShell({ children }: { children: React.ReactNode }) 
             <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden relative">{children}</div>
+        <div className="flex-1 min-h-0 overflow-hidden relative">{children}</div>
       </div>
     </div>
   );
