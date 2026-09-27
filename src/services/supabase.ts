@@ -15,7 +15,11 @@ export const supabase = createClient(url, publishableKey, {
     fetch: (input, init) => {
       const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
       if (typeof window !== "undefined") headers.set("x-fixlens-demo-session", getDemoSessionId());
-      return fetch(input, { ...init, headers });
+      // Storage upload() currently has no AbortSignal option. Bound its network
+      // wait as well as reads; caller signals still cancel supported operations.
+      const signal = init?.signal ?? (input instanceof Request ? input.signal : null);
+      const timeout = AbortSignal.timeout(90000);
+      return fetch(input, { ...init, headers, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
     },
   },
 });

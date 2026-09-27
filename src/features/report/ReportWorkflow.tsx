@@ -6,15 +6,16 @@ import { useNavigate } from "react-router-dom";
 import type { ReportStep } from "../../types/navigation";
 import { casePath } from "../../data/demo/cases";
 import SuccessScreen from "../../screens/renter/SubmissionSuccessScreen";
-import { AROverviewScreen, ARCloseupScreen, ARVideoScreen, PhotoPreview, VideoPreview } from "../../components/capture/PrototypeCapture";
+import { ARVideoScreen, PhotoPreview, VideoPreview } from "../../components/capture/PrototypeCapture";
 import LogoAvatar from "../../components/brand/LogoAvatar";
 import Btn from "../../components/common/Btn";
 import AssistantBubble from "../../components/chat/AssistantBubble";
 import UserBubble from "../../components/chat/UserBubble";
 import { IcoChevLeft, IcoMic, IcoSend, IcoAlert, IcoEdit, IcoCheck, IcoCheckCircle, IcoImg, IcoVideo } from "../../components/common/icons";
-import type { DemoEvidence } from "../../types/evidence";
+import type { DemoEvidence, LocalPhoto, PhotoType, PhotoAnnotation } from "../../types/evidence";
 import type { ReportFieldRow } from "../../types/presentation";
-import { IMG_BEDROOM_WIDE, IMG_DAMAGED_WALL } from "../../data/demo/evidence";
+import PhotoSource from "../../components/capture/PhotoSource";
+import { persistReportPhotos } from "../../services/evidence";
 
 // ─── Pre-capture chat cards ───────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
 
 // ─── Post-capture view ────────────────────────────────────────────────────────
 
-function PostCaptureView({ report, submitting, error, onSubmit }: { report: MaintenanceReportInput; submitting: boolean; error: boolean; onSubmit: () => void }) {
+function PostCaptureView({ report, photos, submitting, error, uploading, locked, onSubmit, onReplace }: { report: MaintenanceReportInput; photos: Partial<Record<PhotoType, LocalPhoto>>; submitting: boolean; error: string; uploading: boolean; locked: boolean; onSubmit: () => void; onReplace: (role: PhotoType) => void }) {
   const [showReview, setShowReview] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -145,9 +146,9 @@ function PostCaptureView({ report, submitting, error, onSubmit }: { report: Main
   ];
 
   const mediaItems: DemoEvidence[] = [
-    { label: "Overview photo", note: "Annotated — Leak point marked", src: IMG_BEDROOM_WIDE, type: "photo" },
-    { label: "Close-up photo", note: "Captured", src: IMG_DAMAGED_WALL, type: "photo" },
-    { label: "Short video", note: "0:04 · Captured", src: null, type: "video" },
+    { label: "Overview photo", note: photos.overview?.annotations.length ? "Annotated" : "Captured", src: photos.overview?.previewUrl ?? null, type: "photo" },
+    { label: "Close-up photo", note: photos.closeup?.annotations.length ? "Annotated" : "Captured", src: photos.closeup?.previewUrl ?? null, type: "photo" },
+    { label: "Short video", note: "Demo only · Not uploaded", src: null, type: "video" },
   ];
 
   return (
@@ -171,14 +172,14 @@ function PostCaptureView({ report, submitting, error, onSubmit }: { report: Main
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
 
         {/* Evidence captured */}
-        <AssistantBubble>Great — your evidence has been captured.</AssistantBubble>
+        <AssistantBubble>Your photos are ready to review. Video is a local demo only.</AssistantBubble>
 
         {/* Evidence completion card */}
         <div className="ml-9">
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
             {[
-              { label: "Overview photo", thumb: IMG_BEDROOM_WIDE, type: "photo" },
-              { label: "Close-up photo", thumb: IMG_DAMAGED_WALL, type: "photo" },
+              { label: "Overview photo", thumb: photos.overview?.previewUrl, type: "photo" },
+              { label: "Close-up photo", thumb: photos.closeup?.previewUrl, type: "photo" },
               { label: "Short video", thumb: null, type: "video" },
             ].map((item, i, arr) => (
               <div key={item.label} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
@@ -223,7 +224,7 @@ function PostCaptureView({ report, submitting, error, onSubmit }: { report: Main
               ))}
 
               {/* Media rows */}
-              {mediaItems.map((m) => (
+              {mediaItems.map((m, index) => (
                 <div key={m.label} className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
                   <div className="flex items-center gap-3 flex-1">
                     <div className="rounded-xl overflow-hidden shrink-0" style={{ width: 52, height: 40, background: "#1a1a2a" }}>
@@ -237,7 +238,7 @@ function PostCaptureView({ report, submitting, error, onSubmit }: { report: Main
                       <p style={{ fontSize: 11, color: "var(--color-success)" }}>{m.note}</p>
                     </div>
                   </div>
-                  <button style={{ color: "var(--color-blue)", fontSize: 12, fontWeight: 600, fontFamily: "var(--font-display)", flexShrink: 0, padding: "2px 8px", borderRadius: 6, background: "var(--color-blue-light)", border: "none", cursor: "pointer" }}>
+                  <button disabled={locked || m.type === "video"} aria-label={`Replace ${m.label}`} onClick={() => onReplace(index === 0 ? "overview" : "closeup")} style={{ opacity: locked || m.type === "video" ? 0.4 : 1, color: "var(--color-blue)", fontSize: 12, fontWeight: 600, fontFamily: "var(--font-display)", flexShrink: 0, padding: "2px 8px", borderRadius: 6, background: "var(--color-blue-light)", border: "none", cursor: "pointer" }}>
                     Replace
                   </button>
                 </div>
@@ -252,8 +253,8 @@ function PostCaptureView({ report, submitting, error, onSubmit }: { report: Main
 
             {/* Submit CTA */}
             <div className="mt-3">
-              {error && <p role="alert" className="mb-3" style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>We couldn't confirm your submission. Your report is still here. Please try again.</p>}
-              <Btn disabled={submitting} onClick={onSubmit}>{submitting ? "Submitting…" : error ? "Retry" : "Submit report"}</Btn>
+              {error && <p role="alert" className="mb-3" style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>{error}</p>}
+              <Btn disabled={submitting || !photos.overview || !photos.closeup} onClick={onSubmit}>{submitting ? uploading ? "Uploading photos…" : "Submitting…" : error ? "Retry" : "Submit report"}</Btn>
             </div>
           </div>
         )}
@@ -406,28 +407,48 @@ export default function ReportWorkflow() {
   // Type/location/condition remain the existing deterministic prototype summary.
   const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Water leak", location: "Bedroom window", condition: "When it rains", description: "", safetyResponse: null });
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<Partial<Record<PhotoType, LocalPhoto>>>({});
+  const photoRef = useRef(photos);
+  const [replacing, setReplacing] = useState(false);
+  useEffect(() => () => { Object.values(photoRef.current).forEach(photo => URL.revokeObjectURL(photo.previewUrl)); }, []);
+  const acceptPhoto = (photo: LocalPhoto) => {
+    const old = photoRef.current[photo.role];
+    if (old) URL.revokeObjectURL(old.previewUrl);
+    photoRef.current = { ...photoRef.current, [photo.role]: photo };
+    setPhotos(photoRef.current);
+    setStep(photo.role === "overview" ? "photo-overview" : "photo-closeup");
+  };
+  const annotate = (role: PhotoType, annotations: PhotoAnnotation[]) => {
+    const photo = photoRef.current[role]; if (!photo) return;
+    photoRef.current = { ...photoRef.current, [role]: { ...photo, annotations } };
+    setPhotos(photoRef.current);
+  };
   const [createdCase, setCreatedCase] = useState<CreatedMaintenanceCase | null>(null);
   const submission = useRef<CaseCreationAttempt | null>(null);
   const pending = useRef(false);
   const submitController = useRef<AbortController | null>(null);
   useEffect(() => () => submitController.current?.abort(), []);
   const submit = async () => {
-    if (pending.current) return;
+    if (pending.current || !photos.overview || !photos.closeup) return;
     pending.current = true;
-    setSubmitting(true); setSubmitError(false);
+    setSubmitting(true); setSubmitError(""); setUploading(false);
     const controller = new AbortController();
     submitController.current = controller;
     try {
       submission.current ??= { ...report, demoSessionId: getDemoSessionId(), caseKey: `demo-${crypto.randomUUID()}` };
       const result = await createMaintenanceCase(submission.current, controller.signal);
       if (controller.signal.aborted) return;
-      setCreatedCase(result); setStep("success");
+      setCreatedCase(result); setUploading(true);
+      await persistReportPhotos(result.caseKey, submission.current.demoSessionId, [photos.overview, photos.closeup], controller.signal);
+      if (controller.signal.aborted) return;
+      setStep("success");
     } catch (error: unknown) {
       if (controller.signal.aborted) return;
       // Service errors contain status/code only; never log input or credentials.
       console.error("Report submission could not be confirmed", error instanceof Error && /^(Case submission|Submission lookup) failed \(HTTP/.test(error.message) ? error.message : "Submission unavailable");
-      setSubmitError(true);
+      setSubmitError("We couldn't finish your submission and photo upload. Your report is still here. Try again.");
     } finally {
       pending.current = false;
       if (!controller.signal.aborted) setSubmitting(false);
@@ -443,14 +464,14 @@ export default function ReportWorkflow() {
       {step !== "success" && (
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {postCapture
-            ? <PostCaptureView report={report} submitting={submitting} error={submitError} onSubmit={submit} />
+            ? <PostCaptureView report={report} photos={photos} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
             : <PreCaptureChat onDescription={(description) => setReport((current) => ({ ...current, description }))} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
-      {step === "ar-overview" && <AROverviewScreen onCapture={() => setStep("photo-overview")} onClose={() => setStep("report-chat")} />}
-      {step === "photo-overview" && <PhotoPreview photoType="overview" onRetake={() => setStep("ar-overview")} onUse={() => setStep("ar-closeup")} />}
-      {step === "ar-closeup" && <ARCloseupScreen onCapture={() => setStep("photo-closeup")} onClose={() => setStep("report-chat")} />}
-      {step === "photo-closeup" && <PhotoPreview photoType="closeup" onRetake={() => setStep("ar-closeup")} onUse={() => setStep("video-capture")} />}
+      {step === "ar-overview" && <PhotoSource role="overview" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "photo-overview" && <PhotoPreview key={photos.overview?.id} photoType="overview" photo={photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => setStep("ar-overview")} onUse={() => setStep(replacing ? "report-chat" : "ar-closeup")} />}
+      {step === "ar-closeup" && <PhotoSource role="closeup" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => setStep("ar-closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-capture")} />}
       {step === "video-capture" && <ARVideoScreen onCapture={() => setStep("video-preview")} onClose={() => setStep("report-chat")} />}
       {step === "video-preview" && <VideoPreview onRetake={() => setStep("video-capture")} onUse={() => { setPostCapture(true); setStep("report-chat"); }} />}
     </>
