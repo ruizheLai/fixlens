@@ -2,7 +2,103 @@
 
 Phase 2A established the backend foundation without changing renter data sources.
 The Phase 2A/2B sections below are historical verification records. Current write
-capabilities and limitations are recorded in Phase 2C-A and the RLS section.
+capabilities and limitations are recorded in Phase 2C-B below. Earlier phase
+sections are historical records, including statements about deferred evidence.
+
+## Phase 2C-B — Real photo evidence
+
+Migration `20260927060959_case_photo_evidence.sql` is applied to the current
+project as `case_photo_evidence`, remote version `20260927062138`. Do not reapply
+it there. For a fresh project, apply it after the schema, seed and Phase 2C-A
+migration. No new environment variables or manual backend configuration remain.
+
+The private `case-evidence` bucket accepts JPEGs up to 6 MB. Paths are
+`<demo-session>/<case-id>/<evidence-id>.jpg`, with a UUID generated once per
+selected photo. The existing evidence table stores `overview` / `close_up`,
+`storage_path`, renter `created_by`, and `annotation_data`. No columns were added.
+Unique indexes prevent repeated original capture roles per case and repeated
+Storage paths. Requested evidence and video are outside this write path.
+
+Files stay local until final submission. Native rear-camera selection is requested
+with `accept="image/*" capture="environment"`; the gallery button has no capture
+attribute for file/library selection. Browser image decoding handles orientation;
+photos are conservatively resized to a maximum 2048px longest side, JPEG quality
+0.9. Inputs over 20 MB or unsupported formats are rejected before case creation.
+JPEG export drops EXIF/GPS and keeps annotation graphics out of the pixels.
+
+Submission order is case confirmation, first photo upload/row confirmation,
+second photo upload/row confirmation, then success. The Phase 2C-A case key and
+report snapshot remain stable across Retry. Replacement is locked after the first
+submission attempt; local files and annotations remain in memory. Retry skips
+confirmed evidence IDs. Uploads never use upsert. If an upload reply is lost, the
+service downloads the immutable object and compares size and SHA-256 bytes before
+linking it. Lost row-insert replies are recovered by SELECT. Database uniqueness
+also prevents duplicate original roles. No browser case UPDATE/DELETE or activity
+INSERT permission was added; the existing submission trigger remains unchanged.
+
+Evidence INSERT requires a case belonging to the current header session, the
+correct ID-based path, an existing object, an original-photo role, the demo renter,
+and bounded annotation JSON. Existing evidence SELECT follows the RLS-visible
+parent case. Storage SELECT/INSERT require matching session and parent case;
+there is no UPDATE/overwrite policy. DELETE permits only unlinked objects under
+the same session's case. Linked photos and other sessions' objects cannot be
+deleted. The bucket is not public. These policies reuse the existing
+`x-fixlens-demo-session` pattern, which is caller-controlled exhibition isolation,
+not production authentication or protection against a leaked session identifier.
+
+Images are read through the shared client's private `download()` operation with
+the session header and rendered using local blob URLs. No public or signed URLs
+are stored. Reload performs new authorized reads; object URLs are revoked on
+replacement/unmount, including download completion after cancellation. Failed
+image reads expose Retry. SDK uploads lack a per-call abort signal; shared fetch
+has a 90-second timeout, and the workflow stops subsequent work after unmount.
+
+Annotation JSON is versioned: `{version:1,width,height,annotations:[...]}`. Circle,
+Arrow and Draw use normalized 0–1 points; Text stores a position and up to 80
+characters. SVG overlays use the photo's aspect ratio for consistent preview and
+read-only report rendering. Undo/Redo is local pre-submission editing. Marks are
+bounded to keep JSON small. The original unannotated, resized JPEG is separate.
+
+Submitted Report reads only this case's saved evidence. Every seeded report with
+no stored evidence shows the calm empty state; no bedroom fixture fallback remains.
+The report fields and evidence blocks cannot flex-shrink when images expand.
+Case Detail layouts, existing prototype counts, kitchen request simulation, Home,
+Profile and scripted support remain unchanged. Video is explicitly labelled a
+local demo, has no stored file/row and does not appear as persisted evidence.
+
+Storage/DB writes are non-atomic. A failed/abandoned attempt can leave a case with
+partial evidence or an unlinked file. Draft recovery after reload/exit remains
+out of scope. Do not delete an object after an ambiguous row response. For an
+administrative reset, record exact test IDs/paths, remove their evidence rows,
+delete the objects through the Storage API, then remove their case/activity.
+Never delete `storage.objects` metadata directly; never reset seeded cases.
+
+Verification (27 September 2026): TypeScript and production build passed. Live
+service tests covered a second-photo upload failure, repeated Retry, committed
+upload/row replies deliberately hidden, and second-session isolation. Each test
+case ended with two stored photo rows/files and one initial submitted event.
+Negative tests rejected duplicate capture roles, seed-case uploads, other-session
+mutations, overwrite/deletion of linked files, evidence UPDATE/DELETE and direct
+activity INSERT. No additional test framework or dependency was installed.
+
+Browser checks at 375×667, 390×844 and desktop 1280×900 covered native-picker
+invocation, dismissal without a selected image, portrait preview, Retake, Final
+Review and replacement cancellation, real submission, direct route/refresh,
+both saved images and Circle/Arrow/Text/Draw overlays. Undo/Redo stays in preview;
+Submitted Report has no editing controls. The mobile flex-shrink defect was fixed.
+Normal console, seeded empty states and production-preview navigation passed.
+Real iPhone/Android camera UI, HEIC decoding and software-keyboard behaviour need
+physical-device checks after the owner deploys this branch; viewport testing does
+not establish native Safari behaviour. No automatic deployment was performed.
+
+Cleanup confirmed: all three disposable visitor cases, their six evidence rows,
+three submitted events and six Storage objects were removed. The three seeded
+cases, six seeded updates and one evidence request remain. The private bucket is
+retained and empty. Temporary scripts/images and CLI cache were removed; diff and
+secret checks passed, and `.env.local` is ignored and unstaged.
+
+The security advisor still reports only the pre-existing `public.rls_auto_enable`
+execution-grant warnings described below; this phase did not alter that function.
 
 ## Phase 2B-A — Cases list read integration
 
@@ -338,8 +434,9 @@ This scoped closeout is not a full security audit.
 
 ## Deferred infrastructure
 
-The intended future bucket is `case-evidence`; creation and access policies are
-deferred to Phase 2C-B alongside uploads. No demo/Unsplash URLs are migrated.
+The private `case-evidence` bucket and policies are now applied in Phase 2C-B.
+No demo/Unsplash URLs were migrated. Video, requested-evidence writes and real
+adaptive camera guidance remain deferred.
 
 `getDemoSessionId()` in `src/utils/demoSession.ts` lazily creates and persists a UUID
 under localStorage key `fixlens_demo_session_id`. The shared client sends it as the

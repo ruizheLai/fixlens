@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { IcoX, IcoHelp, IcoUndo, IcoGallery, IcoFlash, IcoRedo, IcoPencil } from "../../components/common/icons";
-import type { AnnotationTool, PhotoType } from "../../types/evidence";
+import type { AnnotationTool, PhotoType, LocalPhoto, PhotoAnnotation } from "../../types/evidence";
+import AnnotatedPhoto from "./AnnotatedPhoto";
 import { IMG_BEDROOM_WIDE, IMG_BEDROOM_LIGHT, IMG_DAMAGED_WALL } from "../../data/demo/evidence";
 
 // ─── AR + Photo screens ───────────────────────────────────────────────────────
@@ -21,11 +22,12 @@ function StepDots({ current }: { current: number }) {
 const SHUTTER_H = 110;
 
 function ARShell({
-  bgSrc, dimOpacity, step, label, tipText, onClose, children, shutterSlot, belowProgress,
+  bgSrc, dimOpacity, step, label, tipText, onClose, children, shutterSlot, belowProgress, onGallery,
 }: {
   bgSrc: string; dimOpacity: number; step: number; label: string; tipText: string;
   onClose: () => void; children?: React.ReactNode; shutterSlot: React.ReactNode;
   belowProgress?: React.ReactNode;
+  onGallery?: () => void;
 }) {
   const [tipVisible, setTipVisible] = useState(true);
   useEffect(() => {
@@ -71,7 +73,7 @@ function ARShell({
 
       {/* Shutter strip — icon-only library / shutter / flash */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: SHUTTER_H, zIndex: 10, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 44px" }}>
-        <button style={{ color: "rgba(255,255,255,0.8)", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button aria-label="Choose from photos" onClick={onGallery} style={{ color: "rgba(255,255,255,0.8)", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <IcoGallery />
         </button>
         {shutterSlot}
@@ -87,6 +89,7 @@ function ShutterCircle({ onCapture }: { onCapture: () => void }) {
   return (
     <button
       onClick={onCapture}
+      aria-label="Capture photo"
       style={{ width: 72, height: 72, borderRadius: "50%", background: "#fff", border: "4px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
       className="active:scale-95 transition-transform"
     >
@@ -95,7 +98,7 @@ function ShutterCircle({ onCapture }: { onCapture: () => void }) {
   );
 }
 
-export function AROverviewScreen({ onCapture, onClose }: { onCapture: () => void; onClose: () => void }) {
+export function AROverviewScreen({ onCapture, onClose, onGallery, realPhoto }: { onCapture: () => void; onClose: () => void; onGallery?: () => void; realPhoto?: boolean }) {
   const [ready, setReady] = useState(false);
   useEffect(() => { const t = setTimeout(() => setReady(true), 2200); return () => clearTimeout(t); }, []);
   return (
@@ -106,6 +109,8 @@ export function AROverviewScreen({ onCapture, onClose }: { onCapture: () => void
       label="Overview"
       tipText="Capture an overview of the issue. Try to include the whole window, surrounding wall, and nearby affected area."
       onClose={onClose}
+      onGallery={onGallery}
+      belowProgress={realPhoto && <span style={{ color: "#fff", fontSize: 12, background: "rgba(0,0,0,0.6)", padding: "4px 10px", borderRadius: 8 }}>Example framing · Tap capture to take a photo</span>}
       shutterSlot={<ShutterCircle onCapture={onCapture} />}
     >
       {/* AR framing guides */}
@@ -138,7 +143,7 @@ export function AROverviewScreen({ onCapture, onClose }: { onCapture: () => void
   );
 }
 
-export function ARCloseupScreen({ onCapture, onClose }: { onCapture: () => void; onClose: () => void }) {
+export function ARCloseupScreen({ onCapture, onClose, onGallery, realPhoto }: { onCapture: () => void; onClose: () => void; onGallery?: () => void; realPhoto?: boolean }) {
   const [ready, setReady] = useState(false);
   useEffect(() => { const t = setTimeout(() => setReady(true), 2000); return () => clearTimeout(t); }, []);
   return (
@@ -149,6 +154,8 @@ export function ARCloseupScreen({ onCapture, onClose }: { onCapture: () => void;
       label="Close-up"
       tipText="Move closer and clearly show the affected area."
       onClose={onClose}
+      onGallery={onGallery}
+      belowProgress={realPhoto && <span style={{ color: "#fff", fontSize: 12, background: "rgba(0,0,0,0.6)", padding: "4px 10px", borderRadius: 8 }}>Example framing · Tap capture to take a photo</span>}
       shutterSlot={<ShutterCircle onCapture={onCapture} />}
     >
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 390 620" preserveAspectRatio="xMidYMid meet">
@@ -208,7 +215,7 @@ export function ARVideoScreen({ onCapture, onClose }: { onCapture: () => void; o
       dimOpacity={0.22}
       step={3}
       label="Video"
-      tipText="Record a short video showing the issue and surrounding context."
+      tipText="Demo video step only. Video is not recorded or uploaded."
       onClose={onClose}
       shutterSlot={videoShutter}
       belowProgress={timerSlot}
@@ -236,8 +243,11 @@ const ANNO_TOOLS = [
   { id: "draw" as const, label: "Draw", icon: <IcoPencil /> },
 ];
 
-export function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoType; onRetake: () => void; onUse: () => void }) {
+export function PhotoPreview({ photoType, onRetake, onUse, photo, onAnnotations }: { photoType: PhotoType; onRetake: () => void; onUse: () => void; photo?: LocalPhoto; onAnnotations?: (annotations: PhotoAnnotation[]) => void }) {
   const [activeTool, setActiveTool] = useState<AnnotationTool | null>(null);
+  const [redo, setRedo] = useState<PhotoAnnotation[]>([]);
+  const [annotationText, setAnnotationText] = useState("Note");
+  const [annotationError, setAnnotationError] = useState("");
   const [tipVisible, setTipVisible] = useState(photoType === "overview");
   const src = photoType === "overview" ? IMG_BEDROOM_WIDE : IMG_DAMAGED_WALL;
   const title = photoType === "overview" ? "Overview — 1 of 3" : "Close-up — 2 of 3";
@@ -252,10 +262,21 @@ export function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoT
   return (
     <div style={{ position: "absolute", inset: 0, background: "#000", overflow: "hidden" }}>
       {/* Full-bleed image */}
-      <img src={src} alt={photoType} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      {photo ? <div style={{ position: "absolute", top: 80, bottom: PREVIEW_BOTTOM_H, left: 0, right: 0 }}>
+        <AnnotatedPhoto src={photo.previewUrl} metadata={photo} label={`${photoType} photo annotation canvas`} tool={activeTool} text={annotationText}
+          onAdd={annotation => {
+            const next = [...photo.annotations, annotation];
+            if (new TextEncoder().encode(JSON.stringify({ ...photo, file: undefined, previewUrl: undefined, annotations: next })).length > 48000) {
+              setAnnotationError("This photo has enough marks. Undo a mark before adding more."); return;
+            }
+            setAnnotationError(""); onAnnotations?.(next); setRedo([]);
+          }} />
+      </div> : <img src={src} alt={photoType} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+      {photo && activeTool === "text" && <input aria-label="Annotation text" value={annotationText} maxLength={80} onChange={e => setAnnotationText(e.target.value)} placeholder="Text, then tap photo" style={{ position: "absolute", top: 65, left: 20, right: 20, zIndex: 25, padding: 8, background: "#fff", borderRadius: 8, fontSize: 16 }} />}
+      {annotationError && <p role="alert" style={{ position: "absolute", bottom: PREVIEW_BOTTOM_H + 8, left: 16, right: 16, color: "#fff", background: "#222", padding: 8, fontSize: 12 }}>{annotationError}</p>}
 
       {/* Annotation overlay */}
-      {photoType === "overview" && (
+      {!photo && photoType === "overview" && (
         <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 390 844" preserveAspectRatio="none">
           <ellipse cx="195" cy="280" rx="60" ry="54" fill="none" stroke="#F59E0B" strokeWidth="2.5"/>
           <line x1="255" y1="258" x2="295" y2="228" stroke="#F59E0B" strokeWidth="1.8"/>
@@ -263,7 +284,7 @@ export function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoT
           <text x="319" y="228" textAnchor="middle" fill="#F59E0B" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Leak point</text>
         </svg>
       )}
-      {photoType === "closeup" && (
+      {!photo && photoType === "closeup" && (
         <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 390 844" preserveAspectRatio="none">
           <ellipse cx="195" cy="430" rx="80" ry="90" fill="rgba(251,191,36,0.08)" stroke="#F59E0B" strokeWidth="2" strokeDasharray="6,3"/>
         </svg>
@@ -276,11 +297,11 @@ export function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoT
           <p style={{ color: "#fff", fontSize: 17, fontWeight: 700, fontFamily: "var(--font-display)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>{title}</p>
           <div style={{ display: "flex", gap: 8 }}>
             {/* Undo — left arrow */}
-            <button style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            <button aria-label="Undo annotation" onClick={() => { if (photo?.annotations.length) { setRedo([...redo, photo.annotations[photo.annotations.length - 1]]); onAnnotations?.(photo.annotations.slice(0, -1)); } }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
               <IcoUndo />
             </button>
             {/* Redo — right arrow */}
-            <button style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            <button aria-label="Redo annotation" onClick={() => { if (photo && redo.length) { onAnnotations?.([...photo.annotations, redo[redo.length - 1]]); setRedo(redo.slice(0, -1)); } }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
               <IcoRedo />
             </button>
           </div>
@@ -303,7 +324,7 @@ export function PhotoPreview({ photoType, onRetake, onUse }: { photoType: PhotoT
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: PREVIEW_BOTTOM_H, zIndex: 10, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", padding: "0 20px", gap: 8 }}>
         {/* Annotation tools — individual lightweight icons, no grouped container */}
         {ANNO_TOOLS.map(({ id, label, icon }) => (
-          <button key={id} onClick={() => setActiveTool(activeTool === id ? null : id)}
+          <button key={id} onClick={() => { setActiveTool(activeTool === id ? null : id); setTipVisible(false); }}
             style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: activeTool === id ? "#F59E0B" : "rgba(255,255,255,0.65)" }}>
             {icon}
             <span style={{ fontSize: 9, fontWeight: 500 }}>{label}</span>
@@ -329,7 +350,7 @@ export function VideoPreview({ onRetake, onUse }: { onRetake: () => void; onUse:
         <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
-        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>Tap to preview</p>
+        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>Demo only · Video is not uploaded</p>
       </div>
       {/* Duration badge */}
       <div style={{ position: "absolute", top: 80, right: 20, padding: "4px 10px", borderRadius: 99, background: "rgba(0,0,0,0.6)" }}>

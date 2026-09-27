@@ -122,9 +122,10 @@ Planned:
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
 Inbox, and Submitted Report structured fields now read live data. Report submission
 creates real visitor cases and initial activity, with browser demo-session isolation
-and idempotent Retry. This is not production authentication. Evidence persistence
-is deferred; Home, Profile, scripted support, capture and requested-evidence
-acknowledgements remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
+and idempotent Retry. Overview and Close-up photos now persist in a private
+Storage bucket with separate annotations. This is not production authentication.
+Home, Profile, scripted support, video and requested-evidence acknowledgements
+remain fixture/local. See [Backend setup](docs/BACKEND_SETUP.md).
 
 Install dependencies:
 
@@ -146,7 +147,7 @@ npm run build
 
 ---
 
-## Vercel deployment (manual step pending)
+## Vercel deployment
 
 Import `ruizheLai/fixlens` with Framework Preset **Vite**, Root Directory **./**,
 the default build command (**npm run build**) and output directory (**dist**).
@@ -170,9 +171,9 @@ different demo identities. This is exhibition isolation, not secure authenticati
 
 The minimal vercel.json rewrite serves index.html for React Router deep links,
 following [Vercel's Vite guidance](https://vercel.com/docs/frameworks/frontend/vite).
-No server, middleware or functions are required. Click Create Project / Deploy
-after entering the variables and confirming the branch. Share the resulting HTTPS
-URL for verification; no public deployment or QR-ready URL is verified yet.
+No server, middleware or functions are required. Phase 2C-Deploy was deployed and
+verified on real mobile by the project owner. Phase 2C-B changes are local pending
+review; this batch does not deploy or change Vercel settings.
 
 Phone viewports below 768px use full width and 100dvh without a fake status bar,
 rounded device frame or shadow. Larger viewports retain the centered 390×844
@@ -191,8 +192,34 @@ Check keyboard visibility, scrolling and bottom navigation without camera access
 Keep the existing backend security-review item documented in
 [Backend setup](docs/BACKEND_SETUP.md) before public showcase use.
 
-Evidence/capture remains local. Phase 2C-B camera/evidence persistence, PWA,
-service workers, AI, realtime and PM writes have not started.
+## Phase 2C-B — Photo evidence
+
+Overview and Close-up use native image/file selection: the shutter requests the
+rear camera where supported, and the gallery button selects a file. Photos stay
+local until Submit. Preview, Retake and Final Review replacement use the selected
+image. Circle, Arrow, Text and Draw store normalized coordinates separately from
+the image; Undo/Redo edit the local marks. Submitted Report is read-only.
+
+Submit confirms the case first, then uploads both JPEGs and confirms both evidence
+rows before showing success. Retry reuses the case key and photo IDs and skips
+confirmed rows. The private `case-evidence` bucket uses
+`<demo-session>/<case-id>/<evidence-id>.jpg`. The shared client downloads private
+images with the session header into revocable local blob URLs; no public image
+URLs or signed-link expiry are involved. Refresh fetches the saved photos again.
+Seeded reports without stored photos show an empty state, without fixture images.
+
+Photos are resized to at most 2048px on the longest side and exported as JPEG
+quality 0.9, without burned-in annotations or EXIF/GPS. Input limit: 20 MB; upload
+limit: 6 MB. Unsupported image formats show a recoverable message. Video remains
+a clearly labelled local simulation and creates no evidence rows.
+
+The bucket/policy migration is applied; no extra environment variable or manual
+backend setup is required for this project. Draft files survive only while the
+report page remains open. Storage and database writes are not one transaction:
+abandoning a failed upload can leave a partial case or unlinked file for
+administrative cleanup. Session IDs are caller-controlled demo isolation, not
+production authentication. See Backend setup for policies and verification.
+PM, AI, Realtime, PWA and Phase 2C-C remain deferred.
 
 ## Project Structure
 
