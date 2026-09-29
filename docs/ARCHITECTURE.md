@@ -2,6 +2,28 @@
 
 ## 1. Purpose
 
+### Implemented Phase 2D-A surface
+
+The renter route tree remains inside PhoneShell. A lazy `/pm/*` branch mounts a
+desktop portal with `/pm/login`, `/pm`, and `/pm/cases/:caseKey`. PM Auth/profile
+verification gates screen mounting; Supabase RLS enforces permissions. The PM
+client has separate persisted Auth storage, while the existing renter client
+continues anonymous demo-session requests on the same project.
+
+`services/pm.ts` maps real case/property/renter/handler relationships and live
+requests into PM views. Dashboard fetches paged records, then searches/filters
+locally. Detail reads the case, chronological activity and persisted photos.
+Evidence services accept an optional client; the existing download, validation,
+normalized annotation renderer and object-URL cleanup are shared without changing
+renter defaults. PM CSS is scoped to its desktop surface.
+
+The only new write is `review_case`: authorized PM, row lock, Submitted → Under
+review plus one activity in a transaction, safe on Retry. Renter refresh observes
+it through unchanged read paths. No Realtime, AI decisions, email, landlord or
+contractor actions, evidence-request writes, PDF or PM Inbox are implemented.
+The remaining sections describe the broader target architecture, not a claim
+that those later capabilities already exist.
+
 This document defines the technical architecture for the FixLens exhibition build.
 
 It translates the product and UX specifications into an implementation plan.

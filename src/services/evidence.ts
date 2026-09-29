@@ -72,8 +72,8 @@ export async function persistReportPhotos(caseKey: string, session: string, phot
   }
 }
 
-export async function getReportPhotos(caseKey: string, signal: AbortSignal): Promise<StoredPhoto[]> {
-  const { supabase } = await import("./supabase");
+export async function getReportPhotos(caseKey: string, signal: AbortSignal, client?: import("@supabase/supabase-js").SupabaseClient): Promise<StoredPhoto[]> {
+  const supabase = client ?? (await import("./supabase")).supabase;
   const { data, error } = await supabase.from("evidence")
     .select("id,evidence_type,storage_path,annotation_data,cases!inner(case_key)")
     .eq("cases.case_key", caseKey).is("evidence_request_id", null).in("evidence_type", ["overview", "close_up"])
@@ -87,9 +87,11 @@ export async function getReportPhotos(caseKey: string, signal: AbortSignal): Pro
 // Download through the shared session-aware client, never a public URL. Blob
 // URLs are local to this document, have no signed-URL expiry, and are revoked by
 // the image component. Reloads recheck Storage RLS with the current session.
-export async function downloadReportPhoto(path: string, signal: AbortSignal): Promise<Blob> {
-  const { supabase } = await import("./supabase");
+export async function downloadReportPhoto(path: string, signal: AbortSignal, client?: import("@supabase/supabase-js").SupabaseClient): Promise<Blob> {
+  const supabase = client ?? (await import("./supabase")).supabase;
   const { data, error } = await supabase.storage.from(BUCKET).download(path, {}, {
+    // Recheck private access when renter or PM identity changes in this browser.
+    cache: "no-store",
     signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]),
   });
   if (error || !data) throw new Error("Photo download failed");

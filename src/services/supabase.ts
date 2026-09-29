@@ -23,3 +23,16 @@ export const supabase = createClient(url, publishableKey, {
     },
   },
 });
+
+// Separate Auth storage keeps renter reads anonymous even on a PM's browser.
+// PM does not send the renter demo-session header. Both use the same project/key.
+export const pmSupabase = createClient(url, publishableKey, {
+  auth: { storageKey: "fixlens_pm_auth", persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  global: {
+    fetch: (input, init) => {
+      const signal = init?.signal ?? (input instanceof Request ? input.signal : null);
+      const timeout = AbortSignal.timeout(30000);
+      return fetch(input, { ...init, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+    },
+  },
+});

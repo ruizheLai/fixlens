@@ -1,5 +1,86 @@
 # Supabase backend setup
 
+## Phase 2D-A — PM Portal
+
+Migration `20260928070924_pm_portal_foundation.sql` is applied live as
+`20260928071101_pm_portal_foundation`. The CLI and administrative tool assigned
+different timestamps to the same migration; do not reapply it. Older migrations
+and seeds were not changed. The existing confirmed Auth user is linked to the
+canonical Sarah Chen/Apex Rentals profile through unique nullable `auth_user_id`.
+Sarah's profile ID and all existing foreign keys are preserved. No password,
+token, account email or generated Auth ID is stored in the migration/frontend.
+
+For a **different** project only: apply migrations in order, create the intended
+exhibition PM account administratively, then set Sarah's existing profile's
+`auth_user_id` to that confirmed Auth user's UUID in SQL Editor. Do not replace
+the profile or expose a browser profile-update permission. The current project
+already has this association; no manual linking step is pending.
+
+`pmSupabase` uses ordinary email/password Auth, local session persistence and
+automatic token refresh. Its distinct storage key prevents it from changing the
+anonymous renter client's requests. PM sends no demo-session header. The router
+checks both session and the matching property_manager profile before mounting
+case screens. RLS is the actual authorization boundary, independent of that UI.
+
+Authorized PM can SELECT cases/profiles/properties. Existing child SELECT
+policies follow visible cases, covering evidence, requests and updates. A new
+Storage SELECT policy permits linked evidence objects in private `case-evidence`.
+Downloads reuse the existing evidence service and revocable blob URLs; no public
+URLs or bucket exposure. Existing anonymous seeded/session rules are unchanged.
+No broad PM UPDATE, DELETE, upload or evidence-request write policy was added.
+Unlinked authenticated accounts retain only the existing public/demo access.
+
+`review_case(case_key)` is an authenticated-only SECURITY INVOKER RPC delegating
+to a narrowly scoped private SECURITY DEFINER function with empty search_path.
+It checks the live Auth/profile association, locks the case row, permits only
+Submitted → Under review, and inserts `review_started` in the same transaction.
+The existing timestamp trigger updates updated_at. Under review returns the
+current row without another event; other states are rejected. Concurrent/retried
+calls serialize on the row lock. Browser roles retain no direct case UPDATE or
+activity INSERT privilege. The private helper cannot be reached through REST.
+
+The single PM account is for the exhibition, not a multi-agency system. Renter
+demo-session IDs remain caller-controlled and are not production authentication.
+Evidence requests are read-only. No email is sent, no AI PM decision engine exists,
+and landlord/contractor actions, PDF, PM Inbox and Realtime remain deferred.
+
+Repeatable policy/RPC assertions are in `supabase/tests/pm_portal.sql`; run with
+administrative SQL access. Test cases and transitions roll back. This validates
+database roles/claims and complements browser Auth and private-download checks.
+The Auth advisor also reports leaked-password protection disabled; configure it
+in Auth settings if supported for this project. Existing `rls_auto_enable`
+warnings remain documented below; this phase does not modify that function.
+
+### Phase 2D-A verification — 29 September 2026
+
+- PM sign-in, persisted session, direct dashboard/detail refresh, logout and
+  signed-out route protection passed. Unlinked authenticated claims were denied
+  by the SQL tests; a controlled missing-profile response verified the denied UI.
+- Dashboard includes seeded and visitor cases without a fixed case count. Search,
+  attention filtering, real relationships/timeline, safe empty evidence, preview
+  and all four persisted annotation types passed. The 1280×800 and 1440×900 layouts
+  had no horizontal overflow; Next action remained sticky.
+- A disposable renter report with two photos was submitted, reviewed by PM and
+  refreshed by its renter. Its report/photos/annotations remained intact. Repeated
+  concurrent Review RPCs left exactly one `review_started` event and two photos.
+- Fresh independent Node clients (no browser storage or PM Auth, HTTP cache
+  bypassed) proved that another demo session cannot SELECT the case/evidence,
+  download its private object or create a signed URL. Its owner could download it.
+  A fresh uncached PM browser download also passed; the unrelated browser client
+  had no Auth session and its uncached download/signing attempts were denied.
+  The earlier same-browser photo result was cached/local access, not a fresh
+  unauthorized Storage read. Private photo downloads now use `cache: "no-store"`
+  to recheck authorization instead of reusing an HTTP cache entry. Previously
+  downloaded bytes/blob URLs are local copies, not proof of current server access.
+- Anonymous Review, unlinked-user Review and direct UPDATE/DELETE were denied.
+  The rollback SQL suite, TypeScript and production build passed. Normal PM and
+  renter browser consoles had no warnings/errors; negative-test HTTP errors were
+  confined to the temporary verification page.
+- Only the disposable report, its two evidence rows, two Storage objects and two
+  activity events were removed. Three seeded cases, the earlier visitor case,
+  its two photos, seven existing updates, the seeded request, Sarah's profile and
+  Auth link were preserved. No migration was reapplied during closeout.
+
 Phase 2A established the backend foundation without changing renter data sources.
 The Phase 2A/2B sections below are historical verification records. Current write
 capabilities and limitations are recorded in Phase 2C-B below. Earlier phase
@@ -295,9 +376,10 @@ already configured `.env.local`. Real environment files remain ignored by Git.
 Never put secret/service-role keys or database passwords in frontend variables.
 See Supabase's [API key guidance](https://supabase.com/docs/guides/api/api-keys).
 
-`src/services/supabase.ts` exports one client and fails clearly if configuration is
-missing. Auth persistence/refresh and URL session detection are disabled for this
-phase. Current screens do not import the client.
+`src/services/supabase.ts` exports separate renter and PM clients and fails clearly
+if configuration is missing. Renter Auth persistence/refresh and URL session
+detection stay disabled; its demo-session header controls visitor reads. The PM
+client persists and refreshes its own Auth session without the renter header.
 
 ## Apply schema and seed
 

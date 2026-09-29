@@ -119,6 +119,22 @@ Planned:
 
 ## Local Development
 
+### Phase 2D-A — PM Portal
+
+Open `/pm/login` and sign in with the existing exhibition PM Auth account.
+`/pm` shows real cases across demo sessions; `/pm/cases/:caseKey` shows the
+stored report, private photos with read-only annotations, requests and activity.
+Only **Submitted → Review case → Under review** is writable. The database records
+one review event atomically and repeated requests are safe. Refresh the renter
+Cases/Detail/Inbox to see it; Realtime is deferred.
+
+PM Auth is linked administratively to Sarah Chen's existing profile. The PM client
+persists its own Auth session; renter requests stay anonymous with the existing
+demo-session header, even in the same browser. No new environment variables or
+dependencies are needed. See [PM backend setup](docs/BACKEND_SETUP.md#phase-2d-a--pm-portal).
+No email, AI decision engine, landlord/contractor actions or evidence-request
+writes are implemented. Renter demo sessions are not production authentication.
+
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
 Inbox, and Submitted Report structured fields now read live data. Report submission
 creates real visitor cases and initial activity, with browser demo-session isolation
