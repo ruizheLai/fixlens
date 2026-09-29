@@ -3,7 +3,7 @@ import type { StoredPhoto } from "../../types/evidence";
 import { downloadReportPhoto } from "../../services/evidence";
 import AnnotatedPhoto from "./AnnotatedPhoto";
 
-export default function StoredPhotoView({ photo, label, thumbnail = false }: { photo: StoredPhoto; label: string; thumbnail?: boolean }) {
+export default function StoredPhotoView({ photo, label, thumbnail = false, client }: { photo: StoredPhoto; label: string; thumbnail?: boolean; client?: import("@supabase/supabase-js").SupabaseClient }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -11,12 +11,12 @@ export default function StoredPhotoView({ photo, label, thumbnail = false }: { p
     const controller = new AbortController();
     let objectUrl = "";
     setUrl(""); setError(false);
-    downloadReportPhoto(photo.storagePath, controller.signal).then(blob => {
+    downloadReportPhoto(photo.storagePath, controller.signal, client).then(blob => {
       if (controller.signal.aborted) return;
       objectUrl = URL.createObjectURL(blob); setUrl(objectUrl);
     }).catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [photo.storagePath, attempt]);
+  }, [photo.storagePath, attempt, client]);
   if (error && thumbnail) return <span style={{ color: "#fff", fontSize: 10 }}>Unavailable</span>;
   if (error) return <button onClick={() => setAttempt(value => value + 1)} style={{ color: "var(--color-blue)", fontSize: 12, padding: 8 }}>Photo unavailable · Retry</button>;
   if (!url) return <span role="status" style={{ color: "var(--color-muted)", fontSize: 11 }}>Loading photo…</span>;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
@@ -21,6 +21,7 @@ import ScreenHeader from "./components/common/ScreenHeader";
 import NavBar from "./components/navigation/NavBar";
 
 const NAV_PATHS: Record<NavItemId, string> = { home: "/", cases: "/cases", inbox: "/inbox", profile: "/profile" };
+const PMPortal = lazy(() => import("./features/pm/PMPortal"));
 
 function RenterPage({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -92,6 +93,10 @@ function SubmittedReportRoute() {
 }
 
 export default function App() {
+  return <Routes><Route path="/pm/*" element={<Suspense fallback={<p role="status">Loading PM Portal…</p>}><PMPortal /></Suspense>} /><Route path="*" element={<RenterApp />} /></Routes>;
+}
+
+function RenterApp() {
   // Local photo acknowledgements survive navigation, reset on refresh, and never change live requests.
   const [localEvidenceAdded, setLocalEvidenceAdded] = useState<string[]>([]);
   const navigate = useNavigate();

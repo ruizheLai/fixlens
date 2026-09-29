@@ -2,6 +2,14 @@
 
 ## 1. Objective
 
+Current Phase 2D-A PM slice: one existing exhibition Auth account is linked to
+Sarah Chen. Protected desktop routes read all live cases and private original
+photos/annotations. Review case moves Submitted to Under review with one atomic
+activity entry, visible on renter refresh. Existing evidence requests are read-only.
+Renter demo sessions remain anonymous exhibition isolation. No email, AI PM
+decisions, landlord/contractor actions, PDF, PM Inbox or Realtime are part of this
+slice. The sections below describe the broader exhibition goal.
+
 Build a convincing, functional end-to-end vertical slice of FixLens for exhibition.
 
 The demo should demonstrate that the product concept can exist as a functioning system.
