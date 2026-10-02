@@ -76,3 +76,21 @@ export async function reviewPMCase(caseKey: string, signal: AbortSignal): Promis
     .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(15000)]));
   if (error) throw new Error("Review could not be confirmed");
 }
+
+export type PMWorkflowAction = "request_approval" | "record_approval" | "schedule_repair" | "complete_repair";
+export interface PMWriteResult { outcome: "applied" | "already_applied" | "existing_request" }
+export class PMStateConflict extends Error {}
+
+async function writePMAction(rpc: "advance_case" | "request_case_evidence", args: Record<string, string>, signal: AbortSignal): Promise<PMWriteResult> {
+  const { data, error } = await pmSupabase.rpc(rpc, args)
+    .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(15000)]));
+  if (error?.code === "22023" || error?.code === "P0002") throw new PMStateConflict("Case state changed");
+  if (error || !data || !["applied", "already_applied", "existing_request"].includes(data.outcome)) throw new Error("Action could not be confirmed");
+  return data as PMWriteResult;
+}
+export function advancePMCase(caseKey: string, action: PMWorkflowAction, signal: AbortSignal) {
+  return writePMAction("advance_case", { p_case_key: caseKey, p_action: action }, signal);
+}
+export function requestPMEvidence(caseKey: string, requestId: string, instruction: string, signal: AbortSignal) {
+  return writePMAction("request_case_evidence", { p_case_key: caseKey, p_request_id: requestId, p_instruction: instruction }, signal);
+}

@@ -58,4 +58,13 @@
 .pm-request { margin-top: 10px; padding: 12px; border: 1px solid #FDE68A; background: #FFFBEB; border-radius: 8px; }.pm-request p { margin: 5px 0; }.pm-request small { color: #6B7280; }
 .pm-photo-dialog { margin: auto; width: min(900px, 90vw); max-height: 92dvh; padding: 20px; border: 1px solid #E2E6ED; border-radius: 14px; background: white; }.pm-photo-dialog::backdrop { background: rgb(0 0 0 / .65); }.pm-photo-full { height: 65dvh; display: flex; align-items: center; justify-content: center; background: #F0F2F5; }.pm-photo-dialog > p { margin-top: 12px; color: #6B7280; }
 .pm-auth { justify-content: center; align-items: center; padding: 24px; }.pm-auth-card { width: 380px; max-width: 100%; }.pm-auth-card .pm-brand { margin-bottom: 28px; }.pm-auth-card p { margin: 8px 0 20px; color: #6B7280; }.pm-auth-card label { display: block; margin: 16px 0; font-weight: 500; }.pm-auth-card input { display: block; width: 100%; margin-top: 6px; }.pm-auth-card [role=alert] { color: #991B1B; }
+.pm-secondary-action { width: 100%; margin-top: 10px; }
+.pm-action-dialog { margin: auto; width: min(460px, 90vw); max-height: 90dvh; overflow: auto; padding: 24px; border: 1px solid #E2E6ED; border-radius: 14px; background: white; color: #1A1E2E; }
+.pm-action-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.pm-action-dialog p { margin: 10px 0; line-height: 1.6; }
+.pm-action-dialog label { display: block; margin-top: 16px; font-weight: 500; }
+.pm-action-dialog textarea { display: block; width: 100%; resize: vertical; background: #F8F9FB; border: 1px solid #E2E6ED; border-radius: 8px; padding: 10px; margin-top: 6px; }
+.pm-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }.pm-dialog-actions .pm-primary { width: auto; }
+.pm-action-dialog [role=alert], .pm-next [role=alert] { color: #991B1B; margin-top: 12px; }
+.pm-toast { margin-top: 12px; padding: 10px 12px; border: 1px solid #BBF7D0; border-radius: 8px; background: #F0FDF4; color: #14532D; }
 @media (max-width: 850px) { .pm-detail-grid { grid-template-columns: 1fr; }.pm-next { position: static; }.pm-dashboard { padding: 20px; }.pm-table-card { overflow-x: auto; }.pm-table { min-width: 900px; } }

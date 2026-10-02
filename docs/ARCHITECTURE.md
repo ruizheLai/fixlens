@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-### Implemented Phase 2D-A surface
+### Implemented Phase 2D-B surface
 
 The renter route tree remains inside PhoneShell. A lazy `/pm/*` branch mounts a
 desktop portal with `/pm/login`, `/pm`, and `/pm/cases/:caseKey`. PM Auth/profile
@@ -17,10 +17,19 @@ Evidence services accept an optional client; the existing download, validation,
 normalized annotation renderer and object-URL cleanup are shared without changing
 renter defaults. PM CSS is scoped to its desktop surface.
 
-The only new write is `review_case`: authorized PM, row lock, Submitted → Under
-review plus one activity in a transaction, safe on Retry. Renter refresh observes
-it through unchanged read paths. No Realtime, AI decisions, email, landlord or
-contractor actions, evidence-request writes, PDF or PM Inbox are implemented.
+`review_case` preserves Submitted → Under review. `advance_case` accepts four
+fixed actions for the remaining canonical progression, validating the source state
+under a case row lock. Each transition and its activity commit together. Recorded
+event types make Retry safe even after subsequent stages; no reopening is supported.
+`request_case_evidence` shares the same lock, keeps the canonical status unchanged,
+and creates a request plus activity atomically. A stable request UUID recovers lost
+responses; a partial unique index permits one requested item while preserving history.
+Pending requested evidence blocks approval progression in both UI and backend.
+`PMWorkflowActions` owns confirmation/pending/Retry and reloads authoritative detail
+after writes. Next Action is deterministic, without AI or optimistic status mutation.
+Renter refresh observes changes through existing read paths and activity labels.
+No Realtime, AI decisions, external email, landlord/contractor integrations,
+requested-evidence response/resolution, PDF or PM Inbox are implemented.
 The remaining sections describe the broader target architecture, not a claim
 that those later capabilities already exist.
 
