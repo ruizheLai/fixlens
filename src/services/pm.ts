@@ -1,6 +1,7 @@
 import { pmSupabase } from "./supabase";
 import { mapCaseRow, type CaseListRow } from "./cases";
 import { getReportPhotos } from "./evidence";
+import { getRequestedPhotos } from "./requestedEvidence";
 import type { CaseListItem, CaseUpdate } from "../types/case";
 import type { EvidenceRequestStatus, StoredPhoto } from "../types/evidence";
 
@@ -15,7 +16,7 @@ export interface PMCase extends CaseListItem {
   renter: { name: string; email: string | null; phone: string | null } | null;
   handler: { name: string; agency_name: string | null } | null;
 }
-export interface PMDetail { case: PMCase; updates: CaseUpdate[]; photos: StoredPhoto[] }
+export interface PMDetail { case: PMCase; updates: CaseUpdate[]; photos: StoredPhoto[]; requestedPhotos: import("../types/evidence").RequestedPhoto[] }
 interface PMRow extends CaseListRow {
   id: string; description: string; condition: string | null; safety_response: string | null; created_at: string;
   property: { address: string } | null;
@@ -62,14 +63,15 @@ export async function getPMDetail(caseKey: string, signal: AbortSignal): Promise
     .abortSignal(requestSignal).maybeSingle<PMRow>();
   if (error) throw new Error("PM case detail unavailable");
   if (!data) return null;
-  const [activity, photos] = await Promise.all([
+  const [activity, photos, requestedPhotos] = await Promise.all([
     pmSupabase.from("case_updates").select("id,update_type,message,created_at").eq("case_id", data.id)
       .order("created_at").order("id").abortSignal(requestSignal)
       .returns<{ id: string; update_type: string; message: string | null; created_at: string }[]>(),
     getReportPhotos(caseKey, requestSignal, pmSupabase),
+    getRequestedPhotos(caseKey, requestSignal, pmSupabase),
   ]);
   if (activity.error) throw new Error("PM activity unavailable");
-  return { case: mapPMCase(data), photos, updates: (activity.data ?? []).map(u => ({ id: u.id, updateType: u.update_type, message: u.message, createdAt: u.created_at })) };
+  return { case: mapPMCase(data), photos, requestedPhotos, updates: (activity.data ?? []).map(u => ({ id: u.id, updateType: u.update_type, message: u.message, createdAt: u.created_at })) };
 }
 export async function reviewPMCase(caseKey: string, signal: AbortSignal): Promise<void> {
   const { error } = await pmSupabase.rpc("review_case", { p_case_key: caseKey })

@@ -1,5 +1,65 @@
 # Supabase backend setup
 
+## Phase 2C-C — Renter evidence response
+
+Local `20261002050548_renter_evidence_response.sql` was applied once as live
+`20261002051314_renter_evidence_response`. These are the same migration; do not
+reapply. Existing Phase 2D-A/B migrations, PM Auth linkage, RLS and Storage policies
+are retained. Existing `evidence_request_id`, `requested_photo` and
+`evidence_submitted` schema values are reused.
+
+`submit_requested_evidence(request_id, evidence_id, metadata)` is a public SECURITY
+INVOKER wrapper around a private SECURITY DEFINER function with empty search_path.
+Anon/authenticated may execute, but the function requires the same visitor session
+header and case ownership as renter RLS. Seeded cases are not writable. Schema USAGE
+for anon does not grant execution of PM functions; their existing authenticated-only
+grants and PM-profile checks remain. Generic evidence-request UPDATE and direct
+requested-photo INSERT remain denied.
+
+The function locks case then request (matching PM write lock order), verifies the
+uploaded object and annotation bounds, and atomically inserts one linked photo,
+marks the request submitted with submitted_at, records one activity and touches
+case recency. Case status and resolved_at are unchanged. A partial unique index
+permits one evidence row per request. Exact ID/path/metadata retries return
+already_submitted; a competing different photo is rejected.
+
+The private path remains `<demo-session>/<case-id>/<evidence-id>.jpg`. Upload is
+non-upserting. Retry checks the existing bytes by SHA-256 before finalizing; after
+a committed response is lost it checks request state and recovers via the same RPC
+without another upload. The UI freezes the photo/ID/annotations on first attempt.
+Storage upload and database finalization are separate operations: leaving an
+ambiguous failed attempt may leave an unlinked object for administrative cleanup.
+Do not delete a possibly committed object merely because its response was lost.
+
+Repeatable rollback suite: `supabase/tests/requested_evidence.sql`. It checks owner
+validation, wrong-session/unauthorized denial, metadata/object validation, unchanged
+case status, one row/event, exact retry and generic-update denial. No manual backend
+step, new environment variable or dependency is required on this project.
+
+### Phase 2C-C verification — closed 3 October 2026
+
+- Real browser report → PM review/request → renter annotated photo → submission →
+  PM read passed. One row/object/activity per request; canonical status remained
+  Under review. Original Overview/Close-up remained separate and unchanged.
+- Upload failure, post-upload finalization failure and committed/lost-response
+  recovery passed. The same local identity/annotations survived Retry; four
+  concurrent retries returned already_submitted without duplicates.
+- A fresh unrelated anonymous session could not read case/request/evidence, download
+  or sign private photos, upload into the case, or finalize/update the request.
+  Owner fresh download and authenticated PM photo/annotation reads passed.
+- Back/cancel, replacement, annotations and refresh passed. Exact 375×667 and
+  390×844 iframe viewports had no horizontal overflow, reachable controls and correct
+  portrait rendering. This is browser layout verification, not physical-device
+  camera testing. Home/Cases/Inbox/Profile/Submitted Report/Support and case back
+  navigation passed; Support reset on exit. PM Dashboard/Detail and Completed
+  treatment passed. Normal renter/PM consoles were clean.
+- Post-cleanup TypeScript, production build and requested-evidence SQL tests passed.
+  SQL fixtures rolled back. Removed the single disposable case, four evidence rows
+  and Storage objects, two requests and six activities, plus local diagnostic files.
+  No disposable rows or orphan Storage objects remain. Retained data: four cases,
+  two evidence rows/objects, one seeded requested item and eleven existing activities;
+  PM Auth/profile linkage and intentional migrations/policies remain intact.
+
 ## Phase 2D-B — PM workflow writes
 
 `20260929014629_pm_workflow_writes.sql` is applied live as

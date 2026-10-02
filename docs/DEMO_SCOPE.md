@@ -2,13 +2,23 @@
 
 ## 1. Objective
 
-Current Phase 2D-B PM slice: one existing exhibition Auth account is linked to
+Current Phase 2C-C slice adds a real one-photo response to a PM evidence request on
+a visitor-owned case. The renter sees the real instruction, selects/captures a photo,
+optionally annotates, reviews and submits. Private storage, request linkage and one
+activity persist; the case status stays unchanged. Renter sees Evidence submitted /
+Awaiting review, while PM sees the associated photo and annotations read-only.
+Original report evidence remains separate. Retry safely recovers partial and lost
+responses. Native picker is used; no adaptive/live camera or video persistence.
+Draft recovery after reload, PM resolution and Realtime remain deferred. Seeded
+cases remain read-only for renter writes; demonstrate the loop with a new visitor case.
+
+Retained Phase 2D-B PM slice: one existing exhibition Auth account is linked to
 Sarah Chen. Protected desktop routes read all live cases and private original
 photos/annotations. PM can record each canonical lifecycle step through Completed,
 with atomic activity, visible on renter refresh. Under review allows an evidence
 request without changing case status; pending evidence pauses approval progression.
-Approval/scheduling are manual exhibition records. Request response and resolution
-remain deferred. Renter demo sessions remain anonymous exhibition isolation.
+Approval/scheduling are manual exhibition records. Request resolution remains
+deferred. Renter demo sessions remain anonymous exhibition isolation.
 No external email, AI PM decisions, landlord/contractor integrations, PDF, PM Inbox or Realtime are part of this
 slice. The sections below describe the broader exhibition goal.
 
