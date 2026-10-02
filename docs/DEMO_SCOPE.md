@@ -2,12 +2,14 @@
 
 ## 1. Objective
 
-Current Phase 2D-A PM slice: one existing exhibition Auth account is linked to
+Current Phase 2D-B PM slice: one existing exhibition Auth account is linked to
 Sarah Chen. Protected desktop routes read all live cases and private original
-photos/annotations. Review case moves Submitted to Under review with one atomic
-activity entry, visible on renter refresh. Existing evidence requests are read-only.
-Renter demo sessions remain anonymous exhibition isolation. No email, AI PM
-decisions, landlord/contractor actions, PDF, PM Inbox or Realtime are part of this
+photos/annotations. PM can record each canonical lifecycle step through Completed,
+with atomic activity, visible on renter refresh. Under review allows an evidence
+request without changing case status; pending evidence pauses approval progression.
+Approval/scheduling are manual exhibition records. Request response and resolution
+remain deferred. Renter demo sessions remain anonymous exhibition isolation.
+No external email, AI PM decisions, landlord/contractor integrations, PDF, PM Inbox or Realtime are part of this
 slice. The sections below describe the broader exhibition goal.
 
 Build a convincing, functional end-to-end vertical slice of FixLens for exhibition.

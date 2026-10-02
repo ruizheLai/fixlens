@@ -1,5 +1,75 @@
 # Supabase backend setup
 
+## Phase 2D-B — PM workflow writes
+
+`20260929014629_pm_workflow_writes.sql` is applied live as
+`20260929015506_pm_workflow_writes`. These are the same migration; do not reapply.
+No Phase 2D-A migration, Auth link, RLS policy or Storage policy is replaced.
+
+Canonical progression remains Submitted → Under review → Awaiting approval →
+Arranging repair → Repair scheduled → Completed. Existing `review_case` handles
+the first step. `advance_case(case_key, action)` accepts only `request_approval`,
+`record_approval`, `schedule_repair`, `complete_repair`; callers cannot supply an
+arbitrary target status. Each action verifies the live PM profile and source state,
+locks the case and writes its status/activity in one transaction. Retry finds its
+recorded event and returns `already_applied` without regressing later stages.
+New allowed update types are `approval_requested` and `approval_recorded`; existing
+`repair_scheduled` and `completed` types are reused. No external email is sent.
+
+`request_case_evidence(case_key, request_id, instruction)` requires Under review
+and trimmed instruction length 1–1000. It atomically inserts the request and an
+`evidence_requested` activity, touches case recency but does not change its status.
+The UI freezes a UUID/instruction per attempt for safe Retry. Reusing an ID with
+different input is rejected. If a requested item already exists, it is returned
+without another insert. A partial unique index on case_id WHERE status='requested'
+prevents duplicates while retaining submitted/resolved history. Both RPCs take the
+same case lock, so a competing request/approval action cannot bypass the pending
+evidence gate. Historical exact-ID retries recover without creating a new request.
+
+Public RPCs are SECURITY INVOKER wrappers around narrowly authorized private
+functions with empty search_path. Only authenticated may execute, and the live
+Sarah/property_manager association is checked inside. Browser table-write grants
+remain unchanged: no direct case UPDATE/DELETE, request INSERT or activity INSERT.
+
+Next Action is deterministic. Confirmation dialogs disable pending submissions,
+retain ambiguous attempts for Retry and reload backend detail after confirmed writes.
+Stale-state rejection refreshes the case. Existing renter reads derive Action Required
+from requested evidence independently of canonical status. Request response/upload,
+resolution, external email, AI, Realtime, PM Inbox and PDF remain out of scope.
+
+Repeatable rollback tests: `supabase/tests/pm_workflow.sql` plus the retained
+`supabase/tests/pm_portal.sql`. These test role/claim authorization and database
+invariants; browser/concurrent HTTP verification complements the SQL suite.
+
+### Phase 2D-B verification — 1 October 2026
+
+- Completed the disposable case through all six canonical statuses. The final
+  completion response was deliberately hidden; Retry recovered the committed state.
+  Exactly one activity existed per transition. PM showed Case complete with no CTA;
+  renter refresh showed Completed. Description/photo/annotation hashes were unchanged.
+- On the separate existing disposable case, review and evidence request left status
+  Under review, with one requested row and one request activity. Double click and
+  lost-response Retry retained the same request. PM showed Waiting for requested
+  evidence; renter Detail/Cases/Inbox showed the actual instruction and Action required.
+- Concurrent HTTP retries and duplicate active requests created no duplicates.
+  Invalid jumps, anonymous writes and approval while evidence was pending were denied.
+  A deliberately stale component view recovered by loading the authoritative waiting
+  state. The rollback SQL suite passed, including unauthorized authenticated denial,
+  wrong source states, exact-ID retries, history and direct-write privilege checks.
+- TypeScript (`npx tsc --noEmit`) and production build passed. Fresh normal PM/renter
+  browser tabs had no warnings/errors. Expected errors were confined to diagnostic
+  rejection tests and older tabs opened while the local server was stopped.
+- Renter Home/Cases/Inbox/Profile, Submitted Report/back navigation, Support reply
+  and reset-on-exit, and reporting through confirmation/description/summary/safety
+  to Overview capture passed. Existing renter fixture inconsistencies were preserved.
+- Removed both disposable cases, four evidence rows, five Storage objects (including
+  the unlinked upload), their nine activity rows and one request. Removed local test
+  harnesses, test manifest and CLI cache. Preserved three seeded cases, the intentional
+  visitor case, canonical request, two original stored photos and Sarah's Auth link.
+- Migration was inspected, not reapplied. RPC grants and RLS remain restricted;
+  no direct browser workflow table-write grants were added. No dependencies, secrets,
+  staged environment files, production diagnostics, commit or deployment were added.
+
 ## Phase 2D-A — PM Portal
 
 Migration `20260928070924_pm_portal_foundation.sql` is applied live as
