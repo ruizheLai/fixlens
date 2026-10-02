@@ -243,14 +243,14 @@ const ANNO_TOOLS = [
   { id: "draw" as const, label: "Draw", icon: <IcoPencil /> },
 ];
 
-export function PhotoPreview({ photoType, onRetake, onUse, photo, onAnnotations }: { photoType: PhotoType; onRetake: () => void; onUse: () => void; photo?: LocalPhoto; onAnnotations?: (annotations: PhotoAnnotation[]) => void }) {
+export function PhotoPreview({ photoType, onRetake, onUse, photo, onAnnotations, title: customTitle }: { photoType: PhotoType; onRetake: () => void; onUse: () => void; photo?: LocalPhoto; onAnnotations?: (annotations: PhotoAnnotation[]) => void; title?: string }) {
   const [activeTool, setActiveTool] = useState<AnnotationTool | null>(null);
   const [redo, setRedo] = useState<PhotoAnnotation[]>([]);
   const [annotationText, setAnnotationText] = useState("Note");
   const [annotationError, setAnnotationError] = useState("");
   const [tipVisible, setTipVisible] = useState(photoType === "overview");
   const src = photoType === "overview" ? IMG_BEDROOM_WIDE : IMG_DAMAGED_WALL;
-  const title = photoType === "overview" ? "Overview — 1 of 3" : "Close-up — 2 of 3";
+  const title = customTitle ?? (photoType === "overview" ? "Overview — 1 of 3" : "Close-up — 2 of 3");
 
   useEffect(() => {
     if (photoType !== "overview") return;

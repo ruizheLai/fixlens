@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
-import { ARCloseupScreen, PhotoPreview } from "./components/capture/PrototypeCapture";
+import RequestedEvidenceWorkflow from "./features/evidence/RequestedEvidenceWorkflow";
 import HomeScreen from "./screens/renter/HomeScreen";
 import CasesScreen from "./screens/renter/CasesScreen";
 import InboxScreen from "./screens/renter/InboxScreen";
@@ -28,15 +28,15 @@ function RenterPage({ children }: { children: React.ReactNode }) {
   return <>{children}<FloatingChatBtn onClick={() => navigate("/support")} /></>;
 }
 
-function CaseRoute({ evidenceAdded, onEvidenceAdded, onNav }: {
-  evidenceAdded: string[]; onEvidenceAdded: (requestId: string) => void; onNav: (id: NavItemId) => void;
+function CaseRoute({ onNav }: {
+  onNav: (id: NavItemId) => void;
 }) {
   const { caseId } = useParams();
-  return <LoadedCaseRoute key={caseId} caseKey={caseId ?? ""} evidenceAdded={evidenceAdded} onEvidenceAdded={onEvidenceAdded} onNav={onNav} />;
+  return <LoadedCaseRoute key={caseId} caseKey={caseId ?? ""} onNav={onNav} />;
 }
 
-function LoadedCaseRoute({ caseKey, evidenceAdded, onEvidenceAdded, onNav }: {
-  caseKey: string; evidenceAdded: string[]; onEvidenceAdded: (requestId: string) => void; onNav: (id: NavItemId) => void;
+function LoadedCaseRoute({ caseKey, onNav }: {
+  caseKey: string; onNav: (id: NavItemId) => void;
 }) {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<CaseDetail | null>(null);
@@ -70,20 +70,18 @@ function LoadedCaseRoute({ caseKey, evidenceAdded, onEvidenceAdded, onNav }: {
   </div></RenterPage>;
   const common = { detail, onBack: () => navigate("/cases"), onViewReport: () => navigate(`/cases/${encodeURIComponent(caseKey)}/report`), onNav };
   if (detail.status === "completed") return <RenterPage><HotWaterCaseDetailScreen {...common} /></RenterPage>;
-  // Requests determine this presentation; capture remains a local simulation.
-  if (detail.evidenceRequests.length > 0) return <RequestedEvidenceCaseRoute detail={detail} evidenceAdded={evidenceAdded} onEvidenceAdded={onEvidenceAdded} onNav={onNav} />;
+  if (detail.evidenceRequests.length > 0) return <RequestedEvidenceCaseRoute detail={detail} onRefresh={() => setAttempt(a => a + 1)} onNav={onNav} />;
   return <RenterPage><BedroomCaseDetailScreen {...common} /></RenterPage>;
 }
 
-function RequestedEvidenceCaseRoute({ detail, evidenceAdded, onEvidenceAdded, onNav }: {
-  detail: CaseDetail; evidenceAdded: string[]; onEvidenceAdded: (requestId: string) => void; onNav: (id: NavItemId) => void;
+function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
+  detail: CaseDetail; onRefresh: () => void; onNav: (id: NavItemId) => void;
 }) {
   const [requestId, setRequestId] = useState<string | null>(null);
-  const [step, setStep] = useState<"case" | "capture" | "preview">("case");
   const navigate = useNavigate();
-  if (step === "capture") return <ARCloseupScreen onCapture={() => setStep("preview")} onClose={() => setStep("case")} />;
-  if (step === "preview") return <PhotoPreview photoType="closeup" onRetake={() => setStep("capture")} onUse={() => { if (requestId) onEvidenceAdded(requestId); setStep("case"); }} />;
-  return <RenterPage><KitchenCaseDetailScreen detail={detail} evidenceAdded={evidenceAdded} onAddEvidence={(id) => { setRequestId(id); setStep("capture"); }} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
+  const request = detail.evidenceRequests.find(r => r.id === requestId && r.status === "requested");
+  if (request) return <RequestedEvidenceWorkflow request={request} onExit={() => { setRequestId(null); onRefresh(); }} onSubmitted={() => { setRequestId(null); onRefresh(); }} />;
+  return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={setRequestId} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
 
 function SubmittedReportRoute() {
@@ -97,8 +95,6 @@ export default function App() {
 }
 
 function RenterApp() {
-  // Local photo acknowledgements survive navigation, reset on refresh, and never change live requests.
-  const [localEvidenceAdded, setLocalEvidenceAdded] = useState<string[]>([]);
   const navigate = useNavigate();
   const onNav = (id: NavItemId) => navigate(NAV_PATHS[id]);
   const bedroom = () => navigate(casePath("bedroom-window-leak"));
@@ -111,7 +107,7 @@ function RenterApp() {
         <Route path="/inbox" element={<RenterPage><InboxScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
         <Route path="/profile" element={<RenterPage><ProfileScreen onNav={onNav} /></RenterPage>} />
         <Route path="/support" element={<SupportChatScreen onBack={() => navigate("/")} />} />
-        <Route path="/cases/:caseId" element={<CaseRoute evidenceAdded={localEvidenceAdded} onEvidenceAdded={(id) => setLocalEvidenceAdded((ids) => ids.includes(id) ? ids : [...ids, id])} onNav={onNav} />} />
+        <Route path="/cases/:caseId" element={<CaseRoute onNav={onNav} />} />
         <Route path="/cases/:caseId/report" element={<SubmittedReportRoute />} />
         <Route path="/report" element={<ReportWorkflow />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -2,7 +2,28 @@
 
 ## 1. Purpose
 
-### Implemented Phase 2D-B surface
+### Implemented Phase 2C-C surface
+
+`RequestedEvidenceWorkflow` is a local subflow of Case Detail, not a restart of
+`/report`. It owns one local photo, optional normalized annotations and a frozen
+submission attempt. `services/requestedEvidence.ts` uploads an immutable JPEG using
+the existing session/case/photo path and calls `submit_requested_evidence`.
+The transaction locks the case then request, validates visitor ownership and stored
+object existence, inserts one `requested_photo` linked by `evidence_request_id`,
+sets the request to submitted and inserts one `evidence_submitted` activity. It does
+not change the canonical case status. A unique request-photo index and exact-ID /
+metadata recovery make repeated and concurrent retries safe.
+
+Original report queries continue filtering `evidence_request_id IS NULL`.
+`RequestedEvidenceGallery` shows additional photos/instructions on renter Detail;
+PM Detail reads the same data with its separate authenticated client and existing
+private-photo/annotation renderer. Under-review PM Next Action becomes a read-only
+Additional evidence submitted state. No Resolve action or new PM write is added.
+Refresh reloads authoritative data; no Realtime is used. Files/annotations stay
+local until Submit and are discarded on unmount. An abandoned failed upload may
+leave an unlinked object; durable drafts and automatic orphan cleanup are deferred.
+
+### Retained Phase 2D-B surface
 
 The renter route tree remains inside PhoneShell. A lazy `/pm/*` branch mounts a
 desktop portal with `/pm/login`, `/pm`, and `/pm/cases/:caseKey`. PM Auth/profile
@@ -29,7 +50,7 @@ Pending requested evidence blocks approval progression in both UI and backend.
 after writes. Next Action is deterministic, without AI or optimistic status mutation.
 Renter refresh observes changes through existing read paths and activity labels.
 No Realtime, AI decisions, external email, landlord/contractor integrations,
-requested-evidence response/resolution, PDF or PM Inbox are implemented.
+evidence-request resolution, PDF or PM Inbox are implemented.
 The remaining sections describe the broader target architecture, not a claim
 that those later capabilities already exist.
 

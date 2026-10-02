@@ -1,6 +1,7 @@
 import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE } from "../../../data/evidenceRequestPresentation";
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
+import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
 import { CASE_STATUS_COPY, caseHandlerPresentation, caseStatusMessage } from "../../../data/casePresentation";
 import { demoCaseReference } from "../../../data/demo/cases";
 import NavBar from "../../../components/navigation/NavBar";
@@ -11,15 +12,14 @@ import StatusPill from "../../../components/case/StatusPill";
 import { IcoAlert, IcoCheckCircle, IcoUser } from "../../../components/common/icons";
 import type { NavItemId } from "../../../types/navigation";
 
-// Request state is live. Captured photos and acknowledgements remain local.
-export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evidenceAdded, onViewReport, onNav }: {
-  detail: CaseDetail; onBack: () => void; onViewReport: () => void; onAddEvidence: (requestId: string) => void; evidenceAdded: string[]; onNav: (id: NavItemId) => void;
+// Request state and submitted evidence are read from the backend.
+export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onViewReport, onNav }: {
+  detail: CaseDetail; onBack: () => void; onViewReport: () => void; onAddEvidence: (requestId: string) => void; onNav: (id: NavItemId) => void;
 }) {
   const handler = caseHandlerPresentation(detail);
   const request = currentEvidenceRequest(detail.evidenceRequests);
   const requestState = request ? EVIDENCE_REQUEST_STATE[request.status] : null;
   const actionRequired = requestState?.actionRequired ?? false;
-  const locallyCaptured = actionRequired && request ? evidenceAdded.includes(request.id) : false;
   return (
     <div className="flex flex-col h-full">
       <ScreenHeader title={detail.title} subtitle={demoCaseReference(detail.caseKey)} onBack={onBack} />
@@ -42,13 +42,10 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evide
             <div style={{ color: "#16A34A" }}><IcoCheckCircle /></div>
             <div>
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#16A34A" }}>{requestState?.label ?? "No action required"}</p>
-              <p style={{ fontSize: 13, color: "#166534" }}>{request?.instruction}</p>
+              <p style={{ fontSize: 13, color: "#166534" }}>{request?.status === "submitted" ? "Your additional evidence has been sent for review." : request?.instruction}</p>
             </div>
           </div>
         )}
-
-        {locallyCaptured && <p role="status" style={{ fontSize: 13, color: "var(--color-success)" }}>Photo captured for this demo only. Your request is still awaiting evidence submission.</p>}
-
         {/* Current status card */}
         <div className="shrink-0 rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
           <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border-subtle)", background: detail.status === "awaiting_approval" ? "var(--color-amber-light)" : "var(--color-blue-light)" }}>
@@ -79,25 +76,16 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, evide
           <div className="px-5 py-4">
             <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>What happens next</p>
             <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.55 }}>
-              {actionRequired ? "Once the requested evidence is submitted, the property manager can continue reviewing the case." : CASE_STATUS_COPY[detail.status].next}
+              {actionRequired ? "Once the requested evidence is submitted, the property manager can continue reviewing the case." : request?.status === "submitted" ? "Your property manager will review the additional evidence." : CASE_STATUS_COPY[detail.status].next}
             </p>
           </div>
         </div>
 
+        {detail.evidenceRequests.some(r => r.status !== "requested") && <RequestedEvidenceGallery caseKey={detail.caseKey} requests={detail.evidenceRequests} />}
         {/* Latest activity */}
         <div>
           <SectionLabel>Latest activity</SectionLabel>
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
-            {/* Local prototype acknowledgement only; never a persisted case update. */}
-            {locallyCaptured && <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <div className="flex items-start gap-3">
-                <span style={{ fontSize: 12, color: "var(--color-muted)", minWidth: 52, marginTop: 1 }}>Just now</span>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>Photo captured (demo)</p>
-                  <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 2 }}>Saved for this demo only. The evidence request has not been submitted.</p>
-                </div>
-              </div>
-            </div>}
             <CaseActivity updates={detail.updates} />
           </div>
         </div>

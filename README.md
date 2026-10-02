@@ -119,6 +119,23 @@ Planned:
 
 ## Local Development
 
+### Phase 2C-C — Renter evidence response
+
+On a visitor-owned case, **Add requested evidence** opens a focused one-photo flow
+with the real PM instruction. Native photo selection, Preview, Retake and optional
+annotations are reused. Submit uploads a private JPEG, then atomically registers
+request-linked evidence, changes the request to submitted and records one activity.
+The canonical case status stays unchanged. Renter refresh shows **Evidence submitted
+— awaiting review**; PM sees the photo/annotations alongside its request, separately
+from original report evidence. PM resolution remains deferred to Phase 2D-C.
+
+Retry retains the same photo ID and metadata, checks an existing upload, and recovers
+committed success without duplicate objects, rows or activities. Cancelling before
+submission writes nothing. Draft recovery after reload is not implemented; abandoning
+an ambiguous failed attempt may leave an unlinked object for administrative cleanup.
+The applied migration and verification are recorded in [Backend setup](docs/BACKEND_SETUP.md).
+No new dependency or environment variable is required.
+
 ### Phase 2D-B — PM workflow
 
 Open `/pm/login` and sign in with the existing exhibition PM Auth account.
@@ -136,8 +153,8 @@ persists its own Auth session; renter requests stay anonymous with the existing
 demo-session header, even in the same browser. No new environment variables or
 dependencies are needed. See [PM backend setup](docs/BACKEND_SETUP.md#phase-2d-b--pm-workflow-writes).
 Approval and scheduling are manual PM records, with no external email, landlord
-account or contractor integration. No AI recommendations, requested-evidence
-response/resolution, PM Inbox or PDF are implemented. Renter demo sessions are not
+account or contractor integration. No AI recommendations, evidence-request
+resolution, PM Inbox or PDF are implemented. Renter demo sessions are not
 production authentication.
 
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
@@ -240,7 +257,8 @@ report page remains open. Storage and database writes are not one transaction:
 abandoning a failed upload can leave a partial case or unlinked file for
 administrative cleanup. Session IDs are caller-controlled demo isolation, not
 production authentication. See Backend setup for policies and verification.
-PM, AI, Realtime, PWA and Phase 2C-C remain deferred.
+PM and requested-photo responses are now implemented as described above.
+AI, Realtime, PWA and PM request resolution remain deferred.
 
 ## Project Structure
 

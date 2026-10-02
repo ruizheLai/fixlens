@@ -10,7 +10,7 @@ interface EvidenceRow {
   annotation_data: PhotoMetadata;
 }
 
-function checkedMetadata(value: PhotoMetadata): PhotoMetadata {
+export function checkedMetadata(value: PhotoMetadata): PhotoMetadata {
   if (!value || value.version !== 1 || !Number.isFinite(value.width) || !Number.isFinite(value.height)
     || value.width <= 0 || value.height <= 0 || value.width > 2048 || value.height > 2048
     || !Array.isArray(value.annotations) || value.annotations.length > 50

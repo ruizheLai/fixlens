@@ -34,8 +34,9 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
     return () => window.clearTimeout(timer);
   }, [notice]);
   const requested = c.evidenceRequests.find(r => r.status === "requested");
+  const submitted = c.status === "under_review" && c.evidenceRequests.some(r => r.status === "submitted");
   const waiting = c.status === "under_review" && Boolean(requested);
-  const next = waiting ? { title: "Waiting for requested evidence", body: "Additional evidence has been requested from the renter.", action: undefined } : guidance[c.status];
+  const next = waiting ? { title: "Waiting for requested evidence", body: "Additional evidence has been requested from the renter.", action: undefined } : submitted ? { title: "Additional evidence submitted", body: "The renter has provided the requested evidence. Review it before continuing the case.", action: undefined } : guidance[c.status];
   function open(action: ModalAction) {
     setError(""); setNotice(""); setInstruction(""); requestAttempt.current = null; setModal(action);
   }
@@ -70,7 +71,7 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
     <div className={`pm-guidance ${c.status === "completed" ? "pm-guidance-complete" : ""}`}><h3>{next.title}</h3><p>{next.body}</p></div>
     {c.status === "submitted" && <button className="pm-button pm-primary" disabled={pending} onClick={() => run("review")}>{pending ? "Starting review…" : error ? "Retry review" : "Review case"}</button>}
     {next.action && <button className="pm-button pm-primary" disabled={pending} onClick={() => open(next.action!)}>{actions[next.action].title}</button>}
-    {c.status === "under_review" && !waiting && <button className="pm-button pm-secondary-action" disabled={pending} onClick={() => open("evidence")}>Request more evidence</button>}
+    {c.status === "under_review" && !waiting && !submitted && <button className="pm-button pm-secondary-action" disabled={pending} onClick={() => open("evidence")}>Request more evidence</button>}
     {requested && <p className="pm-attention">{requested.instruction}</p>}
     {error && !modal && <p role="alert">{error}</p>}
     {notice && <div className="pm-toast" role="status">{notice}</div>}
@@ -85,7 +86,6 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
     </ActionDialog>}
   </section>;
 }
-
 function ActionDialog({ title, pending, onClose, children }: { title: string; pending: boolean; onClose: () => void; children: React.ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { dialog.current?.showModal(); }, []);

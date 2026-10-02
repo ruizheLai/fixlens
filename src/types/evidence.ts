@@ -26,6 +26,8 @@ export interface StoredPhoto {
   metadata: PhotoMetadata;
 }
 
+export interface RequestedPhoto extends StoredPhoto { requestId: string }
+
 export type EvidenceRequestStatus = "requested" | "submitted" | "resolved";
 export interface EvidenceRequest {
   id: string;
