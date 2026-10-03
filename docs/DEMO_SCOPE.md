@@ -2,6 +2,13 @@
 
 ## 1. Objective
 
+Phase 2D-C completes the request loop: requested → renter submitted → PM resolved.
+PM explicitly confirms Mark evidence reviewed; the case remains Under review and
+one review activity is recorded. All requested/submitted requests block approval.
+Once cleared, normal workflow actions return; landlord approval is a separate
+manual action. Both sides retain reviewed request/photo/annotation history.
+Retry is idempotent. Cross-device refresh stays manual, with no AI or Realtime.
+
 Current Phase 2C-C slice adds a real one-photo response to a PM evidence request on
 a visitor-owned case. The renter sees the real instruction, selects/captures a photo,
 optionally annotates, reviews and submits. Private storage, request linkage and one
@@ -9,7 +16,7 @@ activity persist; the case status stays unchanged. Renter sees Evidence submitte
 Awaiting review, while PM sees the associated photo and annotations read-only.
 Original report evidence remains separate. Retry safely recovers partial and lost
 responses. Native picker is used; no adaptive/live camera or video persistence.
-Draft recovery after reload, PM resolution and Realtime remain deferred. Seeded
+Draft recovery after reload and Realtime remain deferred. Seeded
 cases remain read-only for renter writes; demonstrate the loop with a new visitor case.
 
 Retained Phase 2D-B PM slice: one existing exhibition Auth account is linked to
@@ -17,8 +24,8 @@ Sarah Chen. Protected desktop routes read all live cases and private original
 photos/annotations. PM can record each canonical lifecycle step through Completed,
 with atomic activity, visible on renter refresh. Under review allows an evidence
 request without changing case status; pending evidence pauses approval progression.
-Approval/scheduling are manual exhibition records. Request resolution remains
-deferred. Renter demo sessions remain anonymous exhibition isolation.
+Approval/scheduling are manual exhibition records. Request resolution is now
+implemented in Phase 2D-C. Renter demo sessions remain anonymous exhibition isolation.
 No external email, AI PM decisions, landlord/contractor integrations, PDF, PM Inbox or Realtime are part of this
 slice. The sections below describe the broader exhibition goal.
 

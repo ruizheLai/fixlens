@@ -3,7 +3,7 @@ import type { EvidenceRequest, EvidenceRequestStatus } from "../types/evidence";
 export const EVIDENCE_REQUEST_STATE: Record<EvidenceRequestStatus, { actionRequired: boolean; label: string }> = {
   requested: { actionRequired: true, label: "Action required" },
   submitted: { actionRequired: false, label: "Evidence submitted — awaiting review" },
-  resolved: { actionRequired: false, label: "No action required" },
+  resolved: { actionRequired: false, label: "Evidence reviewed" },
 };
 
 export function hasRequestedEvidence(requests: EvidenceRequest[]) {

@@ -2,6 +2,30 @@
 
 ## 1. Purpose
 
+### Implemented Phase 2D-C surface
+
+`resolve_evidence_request(case_key, request_id)` is an authenticated public
+SECURITY INVOKER wrapper over a private, PM-authorized transaction. It locks the
+case then the matching request, requires Under review plus a submitted request
+with linked requested-photo evidence, and writes resolved/resolved_at and one
+`message` activity (`Requested evidence reviewed.`) atomically. It touches case
+recency but never changes canonical status. Already-resolved retries return
+`already_applied`, including after later case progression, without another event.
+
+Approval and new-request RPCs share the case lock and check every requested or
+submitted request. Resolving one of several unresolved requests cannot unlock
+approval. Generic request UPDATE remains denied; no new RLS or Storage policy is
+introduced. `services/pm.ts` calls the controlled RPC. `PMWorkflowActions` freezes
+the target request ID across Retry and reloads authoritative data after writes.
+
+Next Action prioritizes Completed, unexpected unresolved non-review states,
+requested evidence, submitted evidence, then ordinary lifecycle actions. Submitted
+items are reviewed in stable creation/ID order. Only after all are resolved do
+Request landlord approval and Request more evidence return. The dashboard attention
+filter includes requested/submitted, not resolved. PM and renter keep reviewed
+request/photo/annotation history; original report evidence stays separate. Refresh
+is manual, with no Realtime, AI decision or automatic approval.
+
 ### Implemented Phase 2C-C surface
 
 `RequestedEvidenceWorkflow` is a local subflow of Case Detail, not a restart of
@@ -17,8 +41,8 @@ metadata recovery make repeated and concurrent retries safe.
 Original report queries continue filtering `evidence_request_id IS NULL`.
 `RequestedEvidenceGallery` shows additional photos/instructions on renter Detail;
 PM Detail reads the same data with its separate authenticated client and existing
-private-photo/annotation renderer. Under-review PM Next Action becomes a read-only
-Additional evidence submitted state. No Resolve action or new PM write is added.
+private-photo/annotation renderer. Under-review PM Next Action shows
+Additional evidence submitted, with explicit PM resolution added in Phase 2D-C.
 Refresh reloads authoritative data; no Realtime is used. Files/annotations stay
 local until Submit and are discarded on unmount. An abandoned failed upload may
 leave an unlinked object; durable drafts and automatic orphan cleanup are deferred.
@@ -45,12 +69,12 @@ event types make Retry safe even after subsequent stages; no reopening is suppor
 `request_case_evidence` shares the same lock, keeps the canonical status unchanged,
 and creates a request plus activity atomically. A stable request UUID recovers lost
 responses; a partial unique index permits one requested item while preserving history.
-Pending requested evidence blocks approval progression in both UI and backend.
+Requested and submitted evidence block approval progression in both UI and backend.
 `PMWorkflowActions` owns confirmation/pending/Retry and reloads authoritative detail
 after writes. Next Action is deterministic, without AI or optimistic status mutation.
 Renter refresh observes changes through existing read paths and activity labels.
 No Realtime, AI decisions, external email, landlord/contractor integrations,
-evidence-request resolution, PDF or PM Inbox are implemented.
+PDF or PM Inbox are implemented.
 The remaining sections describe the broader target architecture, not a claim
 that those later capabilities already exist.
 

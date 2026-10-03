@@ -119,6 +119,18 @@ Planned:
 
 ## Local Development
 
+### Phase 2D-C — PM evidence review
+
+Evidence requests now complete **requested → submitted → resolved**. After the
+renter submits, PM explicitly confirms **Mark evidence reviewed**. The PM-only
+transaction resolves the request and records one review activity without changing
+the canonical case status. Both requested and submitted requests block approval;
+normal under-review actions return only when all unresolved requests are cleared.
+Photos, annotations and request history remain visible as **Evidence reviewed**.
+Retry recovers committed responses without duplicate activity. Approval remains a
+separate confirmed action. Cross-device updates require manual refresh; no AI
+decision or Realtime is involved. See [Backend setup](docs/BACKEND_SETUP.md).
+
 ### Phase 2C-C — Renter evidence response
 
 On a visitor-owned case, **Add requested evidence** opens a focused one-photo flow
@@ -127,7 +139,7 @@ annotations are reused. Submit uploads a private JPEG, then atomically registers
 request-linked evidence, changes the request to submitted and records one activity.
 The canonical case status stays unchanged. Renter refresh shows **Evidence submitted
 — awaiting review**; PM sees the photo/annotations alongside its request, separately
-from original report evidence. PM resolution remains deferred to Phase 2D-C.
+from original report evidence. Phase 2D-C adds the explicit PM review described above.
 
 Retry retains the same photo ID and metadata, checks an existing upload, and recovers
 committed success without duplicate objects, rows or activities. Cancelling before
@@ -153,8 +165,8 @@ persists its own Auth session; renter requests stay anonymous with the existing
 demo-session header, even in the same browser. No new environment variables or
 dependencies are needed. See [PM backend setup](docs/BACKEND_SETUP.md#phase-2d-b--pm-workflow-writes).
 Approval and scheduling are manual PM records, with no external email, landlord
-account or contractor integration. No AI recommendations, evidence-request
-resolution, PM Inbox or PDF are implemented. Renter demo sessions are not
+account or contractor integration. No AI recommendations,
+PM Inbox or PDF are implemented. Renter demo sessions are not
 production authentication.
 
 Supabase schema and seed are applied; Cases, Case Detail, current evidence requests,
@@ -258,7 +270,7 @@ abandoning a failed upload can leave a partial case or unlinked file for
 administrative cleanup. Session IDs are caller-controlled demo isolation, not
 production authentication. See Backend setup for policies and verification.
 PM and requested-photo responses are now implemented as described above.
-AI, Realtime, PWA and PM request resolution remain deferred.
+AI, Realtime and PWA remain deferred.
 
 ## Project Structure
 
