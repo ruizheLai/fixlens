@@ -30,6 +30,7 @@ export function formatActivityTime(timestamp: string): string {
 }
 
 export function caseUpdateTitle(update: CaseUpdate): string {
+  if (update.updateType === "message" && update.message === "Requested evidence reviewed.") return "Evidence reviewed";
   const labels: Record<string, string> = {
     submitted: "Report submitted", status_changed: "Status updated", completed: "Repair completed",
     evidence_requested: "More information requested", evidence_submitted: "Evidence submitted",

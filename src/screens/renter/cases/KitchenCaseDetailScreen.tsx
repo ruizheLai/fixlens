@@ -42,7 +42,7 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
             <div style={{ color: "#16A34A" }}><IcoCheckCircle /></div>
             <div>
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#16A34A" }}>{requestState?.label ?? "No action required"}</p>
-              <p style={{ fontSize: 13, color: "#166534" }}>{request?.status === "submitted" ? "Your additional evidence has been sent for review." : request?.instruction}</p>
+              <p style={{ fontSize: 13, color: "#166534" }}>{request?.status === "submitted" ? "Your additional evidence has been sent for review." : request?.status === "resolved" ? "Your property manager has reviewed this evidence. No further response is needed for this request." : request?.instruction}</p>
             </div>
           </div>
         )}

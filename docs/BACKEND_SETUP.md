@@ -1,5 +1,63 @@
 # Supabase backend setup
 
+## Phase 2D-C — PM evidence resolution
+
+Local `20261002154900_pm_evidence_resolution.sql` is applied live as
+`20261002155319_pm_evidence_resolution`. These identify the same migration; do not
+reapply. No table/status, environment variable, dependency, RLS or Storage policy
+was added. Existing PM Auth/profile linkage is retained.
+
+`resolve_evidence_request(case_key, request_id)` uses an authenticated-only public
+SECURITY INVOKER wrapper and a private SECURITY DEFINER function with empty
+search_path and live PM-profile authorization. Anon/renter and unlinked Auth users
+cannot resolve; generic request UPDATE remains denied. The case/request row locks
+match existing write order. Only a submitted request with linked requested-photo
+evidence on an Under review case can resolve. The transaction sets resolved_at,
+records one `message` activity (`Requested evidence reviewed.`), and touches case
+recency without changing case status. Resolved retries safely return already_applied
+even after subsequent lifecycle progression.
+
+`advance_case` now blocks approval for every requested or submitted request.
+`request_case_evidence` likewise returns an existing unresolved request rather than
+creating another. Multiple legacy unresolved requests cannot bypass the gate.
+Once all resolve, normal workflow returns; approval requires its own explicit action.
+Request history and all photos/annotations are retained. No AI or Realtime is used;
+PM/renter refresh reads authoritative data.
+
+Repeatable rollback suite: `supabase/tests/pm_evidence_resolution.sql` covers
+authorization, invalid states, linked evidence, retry, unchanged case status,
+exactly-one activity, multiple-request gating and workflow unlock.
+
+### Phase 2D-C verification — 3 October 2026
+
+- Browser acceptance passed on one disposable visitor case: original report/two
+  photos → PM request → renter requested photo/circle annotation → PM review.
+  Preview and confirmation Cancel did not resolve. Resolution kept Under review,
+  retained all three photos and recorded exactly one review activity. Renter refresh
+  showed Evidence reviewed without Action Required or Awaiting review.
+- Controlled failure showed disabled Saving and recoverable Retry without false
+  success. Four concurrent resolution calls returned one applied and three
+  already_applied. Deliberately dropping their success response, then Retry, loaded
+  authoritative resolved state. Double click and a stale second PM tab remained safe.
+- Normal actions returned after resolution. A separate confirmed approval action
+  produced Awaiting approval and exactly one approval activity. Request history,
+  original description/evidence and requested-photo annotation remained unchanged.
+- Lightweight Home/Cases/Inbox/Profile/Case Detail/Submitted Report/Support/back
+  navigation passed, including Support reset. PM Dashboard/Detail and an existing
+  Completed case passed. Normal renter/PM consoles had no warnings/errors. Existing
+  fixture inconsistencies remain unchanged; cross-device refresh is manual.
+- Final TypeScript, production build and resolution SQL suite passed. The sandbox
+  blocked the first build's native dependency; the unrestricted build passed.
+  SQL fixtures rolled back. Live grants deny anonymous PM RPC execution and generic
+  request UPDATE; the SQL suite also rejects renter/unlinked Auth access. All six
+  domain tables retain RLS and the four existing private Storage policies are unchanged.
+- Removed only the disposable case, three evidence rows/Storage objects, one request
+  and six activities. Retained baseline: six cases, seven evidence rows/objects,
+  four requests and nineteen activities, with zero orphan Storage objects. Sarah's
+  PM Auth/profile link and all intentional migrations remain. Temporary test pages,
+  photo, cleanup script and CLI verification directory were removed. No new secrets,
+  environment configuration, dependencies or debug logging are included.
+
 ## Phase 2C-C — Renter evidence response
 
 Local `20261002050548_renter_evidence_response.sql` was applied once as live
@@ -94,8 +152,9 @@ remain unchanged: no direct case UPDATE/DELETE, request INSERT or activity INSER
 Next Action is deterministic. Confirmation dialogs disable pending submissions,
 retain ambiguous attempts for Retry and reload backend detail after confirmed writes.
 Stale-state rejection refreshes the case. Existing renter reads derive Action Required
-from requested evidence independently of canonical status. Request response/upload,
-resolution, external email, AI, Realtime, PM Inbox and PDF remain out of scope.
+from requested evidence independently of canonical status. Request response/upload
+and resolution were added in Phase 2C-C/2D-C. External email, AI, Realtime, PM Inbox
+and PDF remain out of scope.
 
 Repeatable rollback tests: `supabase/tests/pm_workflow.sql` plus the retained
 `supabase/tests/pm_portal.sql`. These test role/claim authorization and database
@@ -647,8 +706,8 @@ This scoped closeout is not a full security audit.
 ## Deferred infrastructure
 
 The private `case-evidence` bucket and policies are now applied in Phase 2C-B.
-No demo/Unsplash URLs were migrated. Video, requested-evidence writes and real
-adaptive camera guidance remain deferred.
+No demo/Unsplash URLs were migrated. Requested-evidence writes now use the controlled
+Phase 2C-C/2D-C RPCs. Video and real adaptive camera guidance remain deferred.
 
 `getDemoSessionId()` in `src/utils/demoSession.ts` lazily creates and persists a UUID
 under localStorage key `fixlens_demo_session_id`. The shared client sends it as the

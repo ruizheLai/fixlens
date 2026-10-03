@@ -19,7 +19,7 @@ export default function RequestedEvidenceGallery({ caseKey, requests }: { caseKe
     {photos.map(p => <div key={p.id} className="rounded-2xl p-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
       <p style={{ fontSize: 13, marginBottom: 12 }}>{requests.find(r => r.id === p.requestId)?.instruction}</p>
       <div style={{ height: 240 }}><StoredPhotoView photo={p} label="Requested evidence photo" /></div>
-      <p style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 8 }}>Submitted by you · {requests.find(r => r.id === p.requestId)?.status === "resolved" ? "Request resolved" : "Awaiting review"}</p>
+      <p style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 8 }}>Submitted by you · {requests.find(r => r.id === p.requestId)?.status === "resolved" ? "Evidence reviewed" : "Awaiting review"}</p>
     </div>)}
     {!photos.length && <p style={{ fontSize: 13 }}>No stored additional photo is available.</p>}
   </section>;

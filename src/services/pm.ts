@@ -83,7 +83,7 @@ export type PMWorkflowAction = "request_approval" | "record_approval" | "schedul
 export interface PMWriteResult { outcome: "applied" | "already_applied" | "existing_request" }
 export class PMStateConflict extends Error {}
 
-async function writePMAction(rpc: "advance_case" | "request_case_evidence", args: Record<string, string>, signal: AbortSignal): Promise<PMWriteResult> {
+async function writePMAction(rpc: "advance_case" | "request_case_evidence" | "resolve_evidence_request", args: Record<string, string>, signal: AbortSignal): Promise<PMWriteResult> {
   const { data, error } = await pmSupabase.rpc(rpc, args)
     .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(15000)]));
   if (error?.code === "22023" || error?.code === "P0002") throw new PMStateConflict("Case state changed");
@@ -95,4 +95,7 @@ export function advancePMCase(caseKey: string, action: PMWorkflowAction, signal:
 }
 export function requestPMEvidence(caseKey: string, requestId: string, instruction: string, signal: AbortSignal) {
   return writePMAction("request_case_evidence", { p_case_key: caseKey, p_request_id: requestId, p_instruction: instruction }, signal);
+}
+export function resolvePMEvidence(caseKey: string, requestId: string, signal: AbortSignal) {
+  return writePMAction("resolve_evidence_request", { p_case_key: caseKey, p_request_id: requestId }, signal);
 }
