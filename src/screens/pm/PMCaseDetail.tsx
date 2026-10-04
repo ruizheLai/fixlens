@@ -22,7 +22,7 @@ function LoadedPMDetail({ caseKey }: { caseKey: string }) {
   if (detail === undefined) return <main className="pm-dashboard"><Link to="/pm">← Back to Dashboard</Link><PMReadState error={error} retry={refresh} /></main>;
   if (detail === null) return <main className="pm-dashboard"><h1>Case not found</h1><p>This case is unavailable.</p><Link to="/pm">Back to Dashboard</Link></main>;
   const c = detail.case;
-  const fields = [["Issue type", c.issueType], ["Location", c.location], ["Occurs", c.condition], ["Safety", c.safetyResponse]];
+  const fields = [["Issue type", c.issueType], ["Location", c.location], ["Observed details", c.condition], ["Safety", c.safetyResponse]];
   return <main className="pm-detail">
     <div className="pm-case-header"><Link className="pm-back" to="/pm">← Back to Dashboard</Link><div className="pm-title-row"><h1>{c.title}</h1><PMStatus status={c.status} /></div>
       <div className="pm-meta"><span className="pm-case-key">{c.caseKey}</span><span>{c.propertyAddress ?? "Property not provided"}</span><span>Tenant: {c.renter?.name ?? "Not provided"}</span><span>Submitted {pmDate(c.createdAt)}</span><span>Updated {pmDate(c.updatedAt)}</span></div>

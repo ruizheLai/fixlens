@@ -4,6 +4,7 @@ export type ReportStep =
   | "photo-overview"
   | "ar-closeup"
   | "photo-closeup"
+  | "video-option"
   | "video-capture"
   | "video-preview"
   | "success";

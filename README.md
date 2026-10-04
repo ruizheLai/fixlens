@@ -1,5 +1,20 @@
 # FixLens
 
+## Phase 3A — AI issue understanding
+
+Reporting now uses OpenAI through the `analyze-maintenance-issue` Supabase Edge
+Function. It extracts factual issue/location/observed details, asks only essential
+clarifications (maximum two), and requires renter confirmation. Edit description
+reruns understanding; failure offers Retry or Continue with my description.
+Original renter wording and clarification answers are retained separately from
+derived fields. Safety remains deterministic. Overview and Close-up are required;
+video is optional, skippable and still a local simulation with no persistence.
+
+AI does not diagnose, prioritize, recommend repairs, assess evidence, choose
+capture requirements, change workflow or answer Other Questions. No provider key
+belongs in Vite or `.env.local`. Setup, limits and verification are recorded in
+[Backend setup](docs/BACKEND_SETUP.md#phase-3a--server-side-issue-understanding).
+
 ## Phase 2E — implemented hybrid automatic updates
 
 Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP

@@ -1,5 +1,47 @@
 # FixLens Technical Architecture
 
+## Phase 3A — implemented issue understanding
+
+`ReportWorkflow` calls `services/issueUnderstanding.ts` only on description send,
+clarification send or explicit Retry. The service sends description plus at most
+two question/answer pairs to `analyze-maintenance-issue`. It deliberately bypasses
+the data client: no demo-session header or PM Auth token is needed. The function
+validates input, calls one server-only OpenAI adapter and validates its strict JSON
+result. No database client, tools or writes exist in this function.
+
+Shared contract: `status` (sufficient / needs_follow_up / multiple_issues /
+not_maintenance), nullable issue/location/observedCondition/summary, and bounded
+followUpQuestions. One question is shown at a time, at most two per interpretation;
+unknowns stay null. At the limit the app offers editing or raw-description fallback.
+Clear issue + location proceeds directly. Multiple issues require selecting one;
+off-topic input receives fixed application copy. Safety is a separate fixed step.
+
+`useIssueUnderstanding` guards in-flight requests, aborts on exit/edit, retains input
+on failure and exposes Retry. The renter explicitly confirms the result. Editing
+starts a new interpretation; unconfirmed output never creates a case. The existing
+submission service freezes its retry-safe snapshot and persists:
+
+| Existing field | Phase 3A value |
+| --- | --- |
+| description | Original wording, plus verbatim clarification question/answer pairs |
+| issue_type / location | Renter-confirmed derived values |
+| condition | Confirmed summary plus observed condition, without exact duplicates |
+| safety_response | Existing explicit safety answer |
+
+No migration or AI transcript table is required. PM/Submitted Report read these
+stored fields and never call AI again. Fallback uses the neutral category
+“Maintenance issue”, null location/condition and the retained raw text.
+
+Capture remains fixed: Overview + Close-up required, optional simulated video.
+Video can be skipped before Final Review; no video row/upload is created. Existing
+photo storage, annotations, PM workflow and Phase 2E invalidation remain unchanged.
+No AI diagnosis, priority, repair advice, evidence assessment, capture selection,
+workflow mutation or Other Questions integration is implemented.
+
+See [backend setup](BACKEND_SETUP.md#phase-3a--server-side-issue-understanding) for
+deployment, request limits, security scope and verification. Older target-architecture
+examples below are superseded by this implemented Phase 3A contract.
+
 ## Phase 2E — implemented hybrid automatic updates
 
 Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP

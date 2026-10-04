@@ -1,5 +1,129 @@
 # Supabase backend setup
 
+## Phase 3A — server-side issue understanding
+
+`analyze-maintenance-issue` is deployed on the existing project, version 2. No
+migration, schema/policy change, dependency or new renter Auth was introduced.
+OpenAI uses the pinned `gpt-4.1-mini-2025-04-14` snapshot through the Responses API
+with strict JSON schema, `store: false`, 1,100 output-token limit, no streaming,
+tools, web search, images or model-selected actions. The provider adapter is
+server-only; frontend types/results remain FixLens-specific.
+
+`OPENAI_API_KEY` is configured only in Supabase → Edge Functions → Secrets. Never
+put it in `.env.local`, a `VITE_*` variable, source, browser storage or a client
+bundle. Successful live evaluations confirm the configured key/account works;
+the key value was not read or copied. No service-role key was added.
+
+The function has `verify_jwt = false` because exhibition renters have no Auth JWT.
+Its handler explicitly matches `apikey` against the project's server-provided
+publishable/legacy-anon keys and rejects unapproved browser origins. This is a
+public exhibition endpoint, not renter authentication or access to private data.
+`FIXLENS_APP_ORIGINS` optionally configures comma-separated exact origins; defaults
+are `http://127.0.0.1:5173,http://localhost:5173`. A later hosted origin must be
+explicitly configured before deployment testing. CORS is not an abuse-proof
+authorization mechanism. The per-isolate limit (4 active calls, 30/minute) is a
+small cost guard, not distributed production rate limiting. Keep provider-side
+project spend limits appropriate for exhibition use.
+
+Input is only `{ description, clarifications: [{ question, answer }] }`:
+description ≤4,000 characters, answer ≤1,000, question ≤240, maximum two pairs,
+HTTP body ≤32 KB. Unknown input properties are rejected. No renter/profile,
+property address, email, phone, PM identity, demo-session ID, evidence or case
+history is automatically attached. Text that a renter themselves includes in
+their description still goes to the provider. Production code never logs this
+text, provider errors or credentials.
+
+Output requires exactly status/issue/location/observedCondition/summary/
+followUpQuestions. Status is sufficient, needs_follow_up, multiple_issues or
+not_maintenance. Nullable text, nonblank/bounded values, status consistency and
+question counts are checked server-side and again in the frontend. Only one
+question can be returned at a time; application logic suppresses further questions
+after two answers. Invalid/refused/incomplete results, timeout or HTTP failure
+produce a generic recoverable error. Server timeout is 20 seconds; client is 25.
+There is no automatic retry that silently spends more provider requests.
+
+The prompt treats renter text as untrusted data, permits factual language cleanup,
+and excludes diagnosis, priority, repairs, cost/time, legal advice, workflow,
+capture selection, evidence assessment and Other Questions. Human confirmation
+precedes safety/capture. Edit description starts a fresh interpretation; the app
+retains text during failure and offers Retry or Continue with my description.
+Fallback shows a neutral Maintenance issue category, unknown location/condition
+and raw wording, never a fake window-leak interpretation.
+
+Persistence uses the unchanged case service: original description plus verbatim
+clarification pairs in `description`, confirmed issue/location in their existing
+columns, and confirmed summary/observed details in `condition`. The AI function
+has no database reads/writes or arbitrary mutation path. PM/Submitted Report read
+the saved snapshot and never reanalyze it. Safety remains explicit/deterministic.
+Overview + Close-up are required; video is optional/skippable and never persisted.
+
+Repeatable local tests (Node 24):
+
+```sh
+node --experimental-strip-types --test supabase/functions/tests/issueUnderstanding.test.ts
+node --env-file=.env.local --experimental-strip-types supabase/functions/tests/issueUnderstanding.eval.ts
+npx tsc --noEmit
+npm run build
+```
+
+The live evaluation uses only the browser-safe Supabase configuration and synthetic
+examples. It does not load an OpenAI key locally and does incur provider requests.
+Eight server/validation tests cover bounds, types, unknown fields, max follow-ups,
+refusal/malformed/failure handling, data minimization, origin/key checks and
+concurrent-call limits. The Edge Function source/tests also passed a separate
+strict TypeScript check against the Deno entrypoint API surface.
+
+### Phase 3A verification — 5 October 2026
+
+- Real provider: initial 19/20 exposed an unnecessary question for typo-heavy input.
+  One narrow prompt correction plus everyday-terminology/missing-item cases yielded
+  **22/22**. Clear/missing/vague inputs, multi-issue choice and its answer, off-topic,
+  safety observations, rambling/poor wording, no-fabrication and prompt injection
+  passed. The unchanged prompt was not rerun unnecessarily; browser sanity checks
+  also passed. “Kitchen tap is leaking” goes straight to summary. “Something is
+  leaking” → “Under the kitchen sink” needs one clarification and then summary.
+- Browser: correction reruns understanding; multiple issues select only one;
+  off-topic receives fixed redirection. Controlled failure retained wording,
+  repeated Enter made one request, Retry recovered, and fallback reached safety,
+  two-photo capture and Final Review. Danger/back and normal safety both passed.
+- One disposable real submission used the requested bedroom/rain/wet-carpet text,
+  two uploaded JPEG test fixtures and Skip video. SQL verified unchanged raw text,
+  confirmed fields, two evidence rows, no video row and one review-start activity.
+  The PM Dashboard received it without manual refresh; PM showed both private
+  photos and the saved fields. Review moved it to Under review, visible to renter
+  Case Detail/Cases/Inbox. Submitted Report retained its snapshot after refresh
+  and PM review. No AI call exists in those read paths.
+- 375×667 and 390×844 iframe viewports passed readable input/loading/summary,
+  reachable edit/confirm/safety/capture/skip/review controls and zero horizontal
+  body overflow. Keyboard Enter and file-picker uploads were exercised. These are
+  desktop-browser viewport checks, not physical-phone/soft-keyboard certification.
+  An automation inspection error occurred only in the temporary iframe harness;
+  normal renter/PM app consoles were clean.
+- Home/Cases/Inbox/Profile/Support (including reset-on-exit), Submitted Report,
+  requested-evidence entry/back, PM Dashboard/Detail/private preview, request dialog
+  and evidence-review confirmation/cancel passed. Existing data was not progressed
+  by those latter checks. Four rollback SQL suites passed: PM workflow, renter
+  requested evidence, PM evidence resolution and private Realtime authorization.
+- Known prototype limitations retained: fixture renter/profile data, fixture Home
+  recent case, inert legacy Final Review edit controls, scripted Other Questions,
+  window-specific example capture overlays and simulated video. Renter Case Detail's
+  fixture-based evidence count may say “No saved evidence” for a visitor report;
+  real Submitted Report/PM photos are intact. This pre-existing issue was verified
+  against HEAD and left outside Phase 3A.
+- Existing security advisor findings are unchanged: `public.rls_auto_enable()`
+  execution grants and disabled leaked-password protection. See prior phase notes.
+- Final closeout: TypeScript, production build and all eight server/validation
+  tests passed. All four rollback SQL suites passed again after cleanup. The single
+  disposable case, its two evidence rows/Storage objects and activities were removed;
+  counts returned to 8 cases, 13 evidence rows, 6 requests, 37 updates and 13 Storage
+  objects, with zero orphans. Seeded data, PM linkage and deployed function remain.
+  Temporary browser/CLI helpers were removed. `.env.local` remains ignored, nothing
+  is staged, and no OpenAI credentials or provider call code enter the client bundle.
+
+References: [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[model snapshot](https://developers.openai.com/api/docs/models/gpt-4.1-mini), and
+[Edge Function authorization headers](https://supabase.com/docs/guides/functions/auth-headers).
+
 ## Phase 2E — private PM Broadcast and renter polling
 
 Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP

@@ -250,7 +250,7 @@ export function PhotoPreview({ photoType, onRetake, onUse, photo, onAnnotations,
   const [annotationError, setAnnotationError] = useState("");
   const [tipVisible, setTipVisible] = useState(photoType === "overview");
   const src = photoType === "overview" ? IMG_BEDROOM_WIDE : IMG_DAMAGED_WALL;
-  const title = customTitle ?? (photoType === "overview" ? "Overview — 1 of 3" : "Close-up — 2 of 3");
+  const title = customTitle ?? (photoType === "overview" ? "Overview — 1 of 2" : "Close-up — 2 of 2");
 
   useEffect(() => {
     if (photoType !== "overview") return;
@@ -360,7 +360,7 @@ export function VideoPreview({ onRetake, onUse }: { onRetake: () => void; onUse:
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, padding: "14px 20px 10px", background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={onRetake} style={{ color: "#fff", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-display)", background: "rgba(0,0,0,0.4)", padding: "6px 14px", borderRadius: 99, border: "none", cursor: "pointer" }}>Retake</button>
-          <p style={{ color: "#fff", fontSize: 17, fontWeight: 700, fontFamily: "var(--font-display)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>Video — 3 of 3</p>
+          <p style={{ color: "#fff", fontSize: 17, fontWeight: 700, fontFamily: "var(--font-display)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>Video — Optional</p>
           <div style={{ width: 80 }} />
         </div>
       </div>
