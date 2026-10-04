@@ -1,7 +1,9 @@
-import { Fragment, useEffect, useState } from "react";
+import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
+import { useAutomaticInvalidation } from "../../hooks/useAutomaticInvalidation";
+import { Fragment } from "react";
 import { getInboxItems } from "../../services/inbox";
 import { formatActivityTime } from "../../data/casePresentation";
-import type { InboxItem } from "../../types/inbox";
+
 import NavBar from "../../components/navigation/NavBar";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import { IcoAlert } from "../../components/common/icons";
@@ -10,22 +12,10 @@ import type { NavItemId } from "../../types/navigation";
 export default function InboxScreen({ onCase, onNav }: {
   onCase: (caseKey: string) => void; onNav: (id: NavItemId) => void;
 }) {
-  const [items, setItems] = useState<InboxItem[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    setState("loading");
-    getInboxItems(controller.signal).then((data) => {
-      if (controller.signal.aborted) return;
-      setItems(data); setState("ready");
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted) return;
-      console.error("Inbox could not be loaded", error instanceof Error ? error.message : "Unknown read failure");
-      setState("error");
-    });
-    return () => controller.abort();
-  }, [attempt]);
+  const { data, error, refresh } = useAuthoritativeRead(getInboxItems);
+  useAutomaticInvalidation("renter", "items", refresh, 15000);
+  const items = data ?? [];
+  const state = data !== undefined ? "ready" : error ? "error" : "loading";
   return (
     <div className="flex flex-col h-full">
       <ScreenHeader title="Inbox" topLevel />
@@ -34,7 +24,7 @@ export default function InboxScreen({ onCase, onNav }: {
         {state === "loading" && <p role="status" className="px-5 py-5" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading your updates…</p>}
         {state === "error" && <div role="alert" className="px-5 py-5" style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
           <p>We couldn't load your updates. Please try again.</p>
-          <button onClick={() => setAttempt((value) => value + 1)} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
+          <button onClick={refresh} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
         </div>}
         {state === "ready" && items.length === 0 && <p className="px-5 py-5" style={{ fontSize: 13, color: "var(--color-muted)" }}>No updates yet.</p>}
         {state === "ready" && items.map((item, index) => {

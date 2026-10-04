@@ -7,12 +7,13 @@ export default function RequestedEvidenceGallery({ caseKey, requests }: { caseKe
   const [photos, setPhotos] = useState<RequestedPhoto[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
+  const requestRevision = requests.filter(r => r.status !== "requested").map(r => r.id).join("|");
   useEffect(() => {
-    const controller = new AbortController(); setState("loading");
+    const controller = new AbortController();
     getRequestedPhotos(caseKey, controller.signal).then(items => { if (!controller.signal.aborted) { setPhotos(items); setState("ready"); } })
       .catch(() => { if (!controller.signal.aborted) setState("error"); });
     return () => controller.abort();
-  }, [caseKey, attempt]);
+  }, [caseKey, attempt, requestRevision]);
   if (state === "loading") return <p role="status">Loading additional evidence…</p>;
   if (state === "error") return <button onClick={() => setAttempt(a => a + 1)}>Additional evidence unavailable · Retry</button>;
   return <section className="flex flex-col gap-3"><p style={{ fontWeight: 600, fontSize: 14 }}>Additional evidence</p>

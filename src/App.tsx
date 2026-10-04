@@ -1,4 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
+import { useAuthoritativeRead } from "./hooks/useAuthoritativeRead";
+import { useAutomaticInvalidation } from "./hooks/useAutomaticInvalidation";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
@@ -39,23 +41,10 @@ function LoadedCaseRoute({ caseKey, onNav }: {
   caseKey: string; onNav: (id: NavItemId) => void;
 }) {
   const navigate = useNavigate();
-  const [detail, setDetail] = useState<CaseDetail | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    setState("loading");
-    getCaseByKey(caseKey, controller.signal).then((item) => {
-      if (controller.signal.aborted) return;
-      setDetail(item);
-      setState("ready");
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted) return;
-      console.error("Case detail could not be loaded", error instanceof Error ? error.message : "Unknown read failure");
-      setState("error");
-    });
-    return () => controller.abort();
-  }, [caseKey, attempt]);
+  const load = useCallback((signal: AbortSignal) => getCaseByKey(caseKey, signal), [caseKey]);
+  const { data: detail, error, refresh } = useAuthoritativeRead(load);
+  useAutomaticInvalidation("renter", caseKey, refresh);
+  const state = detail !== undefined ? "ready" : error ? "error" : "loading";
   if (state === "ready" && !detail) return <Navigate to="/cases" replace />;
   if (state !== "ready" || !detail) return <RenterPage><div className="flex flex-col h-full">
     <ScreenHeader title="Case details" onBack={() => navigate("/cases")} />
@@ -63,14 +52,14 @@ function LoadedCaseRoute({ caseKey, onNav }: {
       {state === "loading" ? <p role="status" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading case details…</p> :
         <div role="alert" style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
           <p>We couldn't load this case. Please try again.</p>
-          <button onClick={() => setAttempt((value) => value + 1)} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
+          <button onClick={refresh} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
         </div>}
     </div>
     <NavBar active="cases" onNav={onNav} />
   </div></RenterPage>;
   const common = { detail, onBack: () => navigate("/cases"), onViewReport: () => navigate(`/cases/${encodeURIComponent(caseKey)}/report`), onNav };
   if (detail.status === "completed") return <RenterPage><HotWaterCaseDetailScreen {...common} /></RenterPage>;
-  if (detail.evidenceRequests.length > 0) return <RequestedEvidenceCaseRoute detail={detail} onRefresh={() => setAttempt(a => a + 1)} onNav={onNav} />;
+  if (detail.evidenceRequests.length > 0) return <RequestedEvidenceCaseRoute detail={detail} onRefresh={refresh} onNav={onNav} />;
   return <RenterPage><BedroomCaseDetailScreen {...common} /></RenterPage>;
 }
 

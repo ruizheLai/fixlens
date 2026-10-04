@@ -1,8 +1,10 @@
+import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
+import { useAutomaticInvalidation } from "../../hooks/useAutomaticInvalidation";
 import { hasRequestedEvidence } from "../../data/evidenceRequestPresentation";
-import { useEffect, useState } from "react";
+
 import { getCases } from "../../services/cases";
 import { formatCaseDate } from "../../data/casePresentation";
-import type { CaseListItem } from "../../types/case";
+
 import NavBar from "../../components/navigation/NavBar";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import SectionLabel from "../../components/common/SectionLabel";
@@ -13,23 +15,10 @@ import type { NavItemId } from "../../types/navigation";
 export default function MyCasesScreen({ onCase, onNav }: {
   onCase: (caseKey: string) => void; onNav: (id: NavItemId) => void;
 }) {
-  const [cases, setCases] = useState<CaseListItem[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    setState("loading");
-    getCases(controller.signal).then((items) => {
-      if (controller.signal.aborted) return;
-      setCases(items);
-      setState("ready");
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted) return;
-      console.error("Cases could not be loaded", error instanceof Error ? error.message : "Unknown read failure");
-      setState("error");
-    });
-    return () => controller.abort();
-  }, [attempt]);
+  const { data, error, refresh } = useAuthoritativeRead(getCases);
+  useAutomaticInvalidation("renter", "cases", refresh, 15000);
+  const cases = data ?? [];
+  const state = data !== undefined ? "ready" : error ? "error" : "loading";
   const active = cases.filter((item) => item.status !== "completed");
   const history = cases.filter((item) => item.status === "completed");
   return (
@@ -40,7 +29,7 @@ export default function MyCasesScreen({ onCase, onNav }: {
         {state === "loading" && <p role="status" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading your cases…</p>}
         {state === "error" && <div role="alert" style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
           <p>We couldn't load your cases. Please try again.</p>
-          <button onClick={() => setAttempt((value) => value + 1)} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
+          <button onClick={refresh} className="mt-2 font-semibold" style={{ color: "var(--color-blue)" }}>Retry</button>
         </div>}
         {/* Active */}
         <div>
