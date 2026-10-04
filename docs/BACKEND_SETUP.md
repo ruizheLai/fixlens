@@ -1,5 +1,86 @@
 # Supabase backend setup
 
+## Phase 2E — private PM Broadcast and renter polling
+
+Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP
+polling for renters. Signals only invalidate reads; existing services remain
+authoritative. Case Detail polls every 3 seconds while visible; Cases and Inbox
+use 15 seconds. Hidden documents skip polls; focus, visibility return and online
+events trigger a 150 ms debounced refetch without reloading the page. Home's
+existing fixture summary is unchanged.
+
+PM Dashboard subscribes to `fixlens:pm:cases`; Case Detail subscribes to its
+`fixlens:pm:case:<caseKey>` channel. Both are private and require the existing
+linked PM Auth profile. Triggers on cases, evidence_requests, evidence and
+case_updates send empty invalidations (Supabase adds a generated event ID).
+No private rows, session IDs, photo URLs, bytes or annotations enter Broadcast.
+Domain tables remain outside the Postgres Changes publication.
+
+The renter's `x-fixlens-demo-session` HTTP header is not WebSocket identity.
+Existing HTTP RLS and private Storage authorization are unchanged. This identity
+remains exhibition-only; production renter Auth could enable private authenticated
+renter Realtime later. No renter identity bridge is implemented.
+
+`useAuthoritativeRead` serializes reads, queues at most one follow-up, aborts
+obsolete work and retains rendered data on background failure. Equal serialized
+read models skip React data updates. PM RPC results replace authoritative state
+and cancel stale reads. `useAutomaticInvalidation` coalesces signals, refetches
+on subscription/reconnect, and removes channels/listeners/timers on unmount.
+Manual navigation/refresh and focus recovery remain available.
+
+Unchanged photos keep their mounted private Storage/blob views. Newly submitted
+request IDs refresh gallery metadata; resolved status alone does not redownload
+photos. Existing blob cleanup runs when a photo view unmounts or its path changes.
+No new dependency, user-facing connection badge, or workflow redesign is added.
+
+Local migration `20261003101822_pm_realtime_invalidation.sql` is already applied
+live as `20261003101933_pm_realtime_invalidation`. These are the same migration;
+do not reapply either. It adds one SELECT-only policy on realtime.messages,
+a private trigger function with client EXECUTE revoked, and four table triggers.
+It changes no domain/Storage policies, grants, PM linkage or business RPCs.
+Notifications are best effort and cannot roll back business writes.
+
+`supabase/tests/pm_realtime.sql` runs in a rollback transaction: linked PM can
+read the intended private signal, anonymous/unlinked Auth cannot, topic mismatch
+is denied, payload contains only the generated ID, and public domain publication
+and client trigger-function execution remain absent. Case INSERT also creates
+the existing initial activity, so the detail topic receives two signals.
+
+Verification checkpoint (4 October 2026): new report appeared on the PM Dashboard
+with one signal/one refetch; requested evidence produced four signals/one refetch.
+Saved circle annotation appeared in PM without refresh. Resolution and approval
+updated renter views automatically. Unchanged polling produced zero Storage reads
+or blob churn; a delayed read remained serialized. Hidden renter and disconnected
+PM recovered a missed disposable activity on visibility return/reconnect.
+Final navigation checks covered renter Home/Cases/Inbox/Profile/Case Detail/
+Submitted Report/Support/back and PM Dashboard/Detail/Completed presentation.
+Both browser consoles were clean. A controlled failed poll retained the screen
+and later polls recovered. PM navigation repeatedly left one current joined
+channel; an aborted delayed Case A result never overwrote Case B. Reconnect left
+one channel. Unmounting photo views revoked their blob URLs.
+
+Tests used separate app clients in browser tabs, with temporary visibility controls
+to model two visible devices and an SDK disconnect/reconnect for transport loss.
+This is not physical cross-device/mobile-network certification. No test controls
+are part of production source. PM channel authorization also passed rollback SQL
+tests for linked PM, unlinked Auth and anonymous roles. A fresh unrelated anonymous
+client could not read the visitor case/evidence, download a private photo, create a
+signed URL or join the PM private channel.
+
+Cleanup restored the intentional baseline: 7 cases, 10 evidence rows, 10 Storage
+objects, 5 requests and 28 activities; zero orphan objects and no disposable case
+remain. Sarah Chen's Auth link is unchanged. The Phase 2E, workflow, evidence
+resolution and renter evidence SQL suites passed with fixtures rolled back.
+Existing advisor findings remain: public.rls_auto_enable execution grants and
+disabled leaked-password protection; neither was introduced or changed here.
+Final `npx tsc --noEmit`, `npm run build`, and the post-cleanup Phase 2E SQL
+authorization suite passed. Temporary pages/scripts and CLI cache were removed;
+the diff contains no diagnostic logging or secret literals, and `.env.local`
+remains ignored and unstaged. No commit, merge or deployment was performed.
+
+References: [Realtime authorization](https://supabase.com/docs/guides/realtime/authorization)
+and [Broadcast](https://supabase.com/docs/guides/realtime/broadcast).
+
 ## Phase 2D-C — PM evidence resolution
 
 Local `20261002154900_pm_evidence_resolution.sql` is applied live as

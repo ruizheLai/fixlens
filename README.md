@@ -1,5 +1,40 @@
 # FixLens
 
+## Phase 2E — implemented hybrid automatic updates
+
+Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP
+polling for renters. Signals only invalidate reads; existing services remain
+authoritative. Case Detail polls every 3 seconds while visible; Cases and Inbox
+use 15 seconds. Hidden documents skip polls; focus, visibility return and online
+events trigger a 150 ms debounced refetch without reloading the page. Home's
+existing fixture summary is unchanged.
+
+PM Dashboard subscribes to `fixlens:pm:cases`; Case Detail subscribes to its
+`fixlens:pm:case:<caseKey>` channel. Both are private and require the existing
+linked PM Auth profile. Triggers on cases, evidence_requests, evidence and
+case_updates send empty invalidations (Supabase adds a generated event ID).
+No private rows, session IDs, photo URLs, bytes or annotations enter Broadcast.
+Domain tables remain outside the Postgres Changes publication.
+
+The renter's `x-fixlens-demo-session` HTTP header is not WebSocket identity.
+Existing HTTP RLS and private Storage authorization are unchanged. This identity
+remains exhibition-only; production renter Auth could enable private authenticated
+renter Realtime later. No renter identity bridge is implemented.
+
+`useAuthoritativeRead` serializes reads, queues at most one follow-up, aborts
+obsolete work and retains rendered data on background failure. Equal serialized
+read models skip React data updates. PM RPC results replace authoritative state
+and cancel stale reads. `useAutomaticInvalidation` coalesces signals, refetches
+on subscription/reconnect, and removes channels/listeners/timers on unmount.
+Manual navigation/refresh and focus recovery remain available.
+
+Unchanged photos keep their mounted private Storage/blob views. Newly submitted
+request IDs refresh gallery metadata; resolved status alone does not redownload
+photos. Existing blob cleanup runs when a photo view unmounts or its path changes.
+No new dependency, user-facing connection badge, or workflow redesign is added.
+
+The earlier phase notes below describe their original checkpoints; Phase 2E supersedes their manual-refresh/Realtime-deferred statements.
+
 FixLens is an AI-assisted rental maintenance reporting companion designed to help renters provide decision-relevant evidence and understand what happens after a maintenance report is submitted.
 
 This repository contains the functional exhibition prototype developed from the FixLens high-fidelity UX prototype.
