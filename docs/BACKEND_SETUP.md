@@ -2,7 +2,7 @@
 
 ## Phase 3A — server-side issue understanding
 
-`analyze-maintenance-issue` is deployed on the existing project, version 2. No
+`analyze-maintenance-issue` is deployed on the existing project, version 3. No
 migration, schema/policy change, dependency or new renter Auth was introduced.
 OpenAI uses the pinned `gpt-4.1-mini-2025-04-14` snapshot through the Responses API
 with strict JSON schema, `store: false`, 1,100 output-token limit, no streaming,
@@ -18,12 +18,38 @@ The function has `verify_jwt = false` because exhibition renters have no Auth JW
 Its handler explicitly matches `apikey` against the project's server-provided
 publishable/legacy-anon keys and rejects unapproved browser origins. This is a
 public exhibition endpoint, not renter authentication or access to private data.
-`FIXLENS_APP_ORIGINS` optionally configures comma-separated exact origins; defaults
-are `http://127.0.0.1:5173,http://localhost:5173`. A later hosted origin must be
-explicitly configured before deployment testing. CORS is not an abuse-proof
-authorization mechanism. The per-isolate limit (4 active calls, 30/minute) is a
+The reviewed origin policy lives in `analyze-maintenance-issue/cors.ts`; the former
+`FIXLENS_APP_ORIGINS` override is no longer used. Exact trusted origins are
+`http://localhost:5173`, `http://127.0.0.1:5173` and `https://fix-lens.app`.
+Preview origins must be HTTPS with no non-default port and match
+`^fixlens-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-brad-s-team2\.vercel\.app$`.
+The hostname label is capped at 63 characters. Other projects/teams, URL paths,
+credentials, suffix lookalikes and arbitrary `*.vercel.app` are rejected.
+Validated OPTIONS returns 204 before key/body/provider processing; valid POST
+responses (including errors) echo the Origin and use `Vary: Origin`. Allowed
+methods are POST/OPTIONS; allowed headers are authorization, x-client-info,
+apikey and content-type. Rejected origins receive 403 without an allow-origin
+header or provider call. Existing non-browser API-key clients remain supported.
+Production AI browser verification is deferred until Phase 3A merges to main;
+the production origin is already trusted and needs no further CORS change.
+CORS is not production-grade abuse prevention: production use still requires
+proper authentication/rate limiting. The per-isolate limit (4 active calls, 30/minute) is a
 small cost guard, not distributed production rate limiting. Keep provider-side
 project spend limits appropriate for exhibition use.
+
+CORS follow-up verified on 5 October 2026: version 2's exact local-only default
+allowlist rejected Preview OPTIONS before POST; version 3 uses the policy above.
+The user inspected the actual browser preflight header names: `apikey,content-type`.
+The four-header allowlist covers these plus the requested Supabase SDK headers.
+Live preflights passed for both local origins, production and both supplied Preview
+URLs. `random-project-attacker.vercel.app` returned 403 without allow-origin.
+On `https://fixlens-nrgfbv8js-brad-s-team2.vercel.app`, the kitchen-tap description
+returned a real summary without fallback; “Something is leaking.” returned
+“Where is the leak located?”. Localhost (127.0.0.1) also returned a real summary.
+Live version-3 logs confirmed OPTIONS 204 followed by POST 200; the deliberate
+untrusted-origin test remained OPTIONS 403. Ten server/CORS tests and TypeScript
+passed. Provider/prompt/schema, frontend, database and workflow code were unchanged;
+the 22-case provider evaluation was not rerun. No Vercel deployment was performed.
 
 Input is only `{ description, clarifications: [{ question, answer }] }`:
 description ≤4,000 characters, answer ≤1,000, question ≤240, maximum two pairs,

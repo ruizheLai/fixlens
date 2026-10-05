@@ -1,5 +1,6 @@
 import { validateInput } from "../_shared/issueUnderstanding.ts";
 import { analyzeWithOpenAI } from "./openai.ts";
+import { corsHeaders, isTrustedOrigin } from "./cors.ts";
 
 interface Config { apiKey?: string; clientKeys: string[]; origins: string[] }
 // Per-isolate exhibition cost guard, not a production/distributed rate limiter.
@@ -9,10 +10,12 @@ export function createHandler(config: Config, provider = analyzeWithOpenAI) {
   let windowStart = Date.now();
   return async (req: Request): Promise<Response> => {
     const origin = req.headers.get("origin");
-    const headers = { "Content-Type": "application/json", "Cache-Control": "no-store", "Vary": "Origin", "Access-Control-Allow-Origin": origin && config.origins.includes(origin) ? origin : "", "Access-Control-Allow-Headers": "apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+    const trusted = origin !== null && isTrustedOrigin(origin, config.origins);
+    const headers = corsHeaders(origin, trusted);
     const reply = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers });
-    if (origin && !config.origins.includes(origin)) return reply(403, { error: "Origin denied" });
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
+    if (req.method === "OPTIONS") return trusted ? new Response(null, { status: 204, headers }) : reply(403, { error: "Origin denied" });
+    // Preserve non-browser API-key clients; a supplied Origin must be trusted.
+    if (origin !== null && !trusted) return reply(403, { error: "Origin denied" });
     if (req.method !== "POST") return reply(405, { error: "Method denied" });
     // Renter has no Auth JWT. Validate the project publishable API key explicitly;
     // this is a public exhibition endpoint, never a grant to private case data.
