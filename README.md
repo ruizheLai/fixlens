@@ -1,5 +1,24 @@
 # FixLens
 
+## Phase 3B-1 — in-app guided camera
+
+Overview and Close-up now share an inline browser camera through `PhotoSource`.
+Open camera requests video only, preferring the rear camera. Shutter creates a
+local JPEG for the existing Preview/Retake/annotation/upload pipeline. Gallery
+and the native camera/file picker remain available without camera permission.
+Two photos remain required; video is optional and simulated, with no persistence.
+
+Brightness and motion hints use small browser-local samples, never AI or uploads.
+Blur is deferred because low texture and device differences make a simple metric
+unreliable. Camera tracks stop on capture, Gallery, exit and backgrounding; return
+from background offers an explicit restart. HTTPS (or localhost) is required.
+
+Run `node --experimental-strip-types --test tests/camera.test.ts` for focused
+mock-media tests. Hardware certification is separate; see the
+[camera verification notes](docs/CAMERA_VERIFICATION.md) for current results and
+the physical iPhone Safari checklist. Do not treat mocked streams as real-device
+verification. Android hardware testing and a new HTTPS Preview remain pending.
+
 ## Phase 3A — AI issue understanding
 
 Reporting now uses OpenAI through the `analyze-maintenance-issue` Supabase Edge

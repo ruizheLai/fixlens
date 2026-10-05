@@ -2,6 +2,15 @@
 
 This document records major UX decisions that should remain stable unless intentionally revisited.
 
+Phase 3B-1: Open camera is the primary photo acquisition action, with Gallery and
+native picker always available. Permission is contextual and never retried in a
+loop. The live feed stays inline and unmirrored, with the entire captured frame
+visible. Overview says “Show the issue and the surrounding area.” Close-up says
+“Move closer and show the affected area clearly.” Only one local advisory warning
+appears at a time; dark/motion hints never disable the shutter. “Ready to capture”
+does not claim evidence sufficiency. Returning from background requires an explicit
+camera restart. Existing post-capture annotation and optional simulated video remain.
+
 Phase 3A checkpoint: clear issue + location goes directly to a renter-confirmed
 summary; only essential missing information earns a follow-up, one at a time and
 at most two per interpretation. Edit description reruns understanding. Off-topic

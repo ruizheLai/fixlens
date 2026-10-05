@@ -1,5 +1,34 @@
 # FixLens Technical Architecture
 
+## Phase 3B-1 — local camera acquisition
+
+`PhotoSource` is shared by reporting and requested evidence. It renders a muted,
+autoplay, playsInline video with contain fitting (the full unmirrored frame).
+Initial camera permission follows an explicit Open camera action. A successful
+camera choice is retained only in the current workflow, so Retake and Close-up
+can open fresh streams; choosing Gallery/native picker clears that preference.
+
+`CameraSession` serializes acquisition, including unresolved permission promises,
+across mounts. Generation checks stop late streams; the current owner is stopped
+before another acquisition. All tracks/listeners are released on capture, exit,
+Gallery, unmount, pagehide or hidden visibility. Background return requires an
+explicit restart. Video startup has a 15-second watchdog; an ignored permission
+prompt may remain pending, while the picker and Gallery stay usable.
+
+Shutter draws intrinsic video dimensions, proportionally bounded to 2048px, with
+no mirror/crop transform; it stops the stream before asynchronous JPEG encoding.
+The File passes through unchanged `preparePhoto`, preserving the existing local
+photo contract, normalized annotation geometry and private Storage submission.
+No upload occurs on shutter. Retake revokes/discards the old local photo.
+
+`QualityGuidance` samples a downscaled frame every 500ms while live/visible.
+Luminance and mean frame difference produce one advisory state: dark before motion,
+then ready; fixed role guidance remains visible. Two matching samples, threshold
+hysteresis and a 1.5-second minimum hold reduce flicker. No subject/framing detection,
+blur verdict, percentage, automatic shutter, frame logging or network call exists.
+Error states supersede advisory hints and retain picker/gallery access. No backend,
+AI, Auth, RLS, Realtime, evidence contract or dependency change is required.
+
 ## Phase 3A — implemented issue understanding
 
 `ReportWorkflow` calls `services/issueUnderstanding.ts` only on description send,
