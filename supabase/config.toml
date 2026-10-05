@@ -1,0 +1,4 @@
+[functions.analyze-maintenance-issue]
+# Anonymous exhibition renters use a publishable key, not an Auth JWT.
+# The handler validates apikey and restricts browser origins before provider use.
+verify_jwt = false

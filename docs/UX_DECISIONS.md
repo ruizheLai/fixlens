@@ -2,6 +2,16 @@
 
 This document records major UX decisions that should remain stable unless intentionally revisited.
 
+Phase 3A checkpoint: clear issue + location goes directly to a renter-confirmed
+summary; only essential missing information earns a follow-up, one at a time and
+at most two per interpretation. Edit description reruns understanding. Off-topic
+input redirects; multiple issues require choosing one. Provider failure retains
+wording and offers Retry or Continue with my description. The explicit safety
+question is unchanged. Overview + Close-up are required; video is optional with
+Add video / Skip for now and remains a non-persisted simulation. Other Questions
+retains its existing scripted behavior. No AI diagnosis, priority, repair advice,
+evidence assessment or workflow control is introduced.
+
 ---
 
 ## 1. Product Focus

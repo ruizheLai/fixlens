@@ -1,5 +1,27 @@
 # FixLens Exhibition Demo Scope
 
+## Phase 3A — real issue understanding
+
+Real OpenAI extraction now turns renter wording into a factual issue, location and
+observed-details summary. Clear input needs no clarification; essential missing
+information gets one question at a time, maximum two. Multiple issues require a
+choice; off-topic input is redirected. The renter can edit/rephrase and must confirm
+before the unchanged deterministic safety step. Failure retains text and permits
+Retry or raw-description fallback.
+
+Overview and Close-up photos are required. Short video is optional and skippable;
+the retained video experience is simulated and never uploaded. Raw wording and
+confirmed derived details persist through the existing case submission flow, appear
+in Submitted Report and PM, and are not regenerated on later reads/status changes.
+
+The provider runs only in a Supabase Edge Function with its key in Supabase Secrets.
+Only description/clarification text is sent, not profile/property records, session
+identity, evidence or case history. AI does not diagnose, prioritize, recommend
+repairs, choose capture requirements, assess evidence, change workflow, or answer
+Other Questions. Existing support remains scripted. Broader AI/vision goals below
+remain future scope. Verification: 22/22 real-provider examples passed; see backend
+setup for browser acceptance and exhibition limitations.
+
 ## Phase 2E — implemented hybrid automatic updates
 
 Phase 2E uses authenticated private Broadcast for PM and scoped secure HTTP

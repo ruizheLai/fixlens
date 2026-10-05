@@ -16,6 +16,9 @@ import type { DemoEvidence, LocalPhoto, PhotoType, PhotoAnnotation } from "../..
 import type { ReportFieldRow } from "../../types/presentation";
 import PhotoSource from "../../components/capture/PhotoSource";
 import { persistReportPhotos } from "../../services/evidence";
+import { useIssueUnderstanding, reportFromUnderstanding } from "./useIssueUnderstanding";
+import type { IssueUnderstanding } from "../../types/issueUnderstanding";
+import { MAX_DESCRIPTION, MAX_ANSWER, MAX_FOLLOW_UPS } from "../../../supabase/functions/_shared/issueUnderstanding.ts";
 
 // ─── Pre-capture chat cards ───────────────────────────────────────────────────
 
@@ -44,11 +47,11 @@ function PropertyCard({ confirmed, onConfirm }: { confirmed: boolean; onConfirm:
   );
 }
 
-function IssueSummaryCard({ description, confirmed, onContinue }: { description: string; confirmed: boolean; onContinue: () => void }) {
+function IssueSummaryCard({ description, result, confirmed, onContinue, onEdit }: { description: string; result: IssueUnderstanding | null; confirmed: boolean; onContinue: () => void; onEdit: () => void }) {
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ label: "Issue type", value: "Water leak" }, { label: "Location", value: "Bedroom window" }, { label: "Occurs", value: "When it rains" }, { label: "Description", value: description }].map((row, i, arr) => (
+        {[{ label: "Issue type", value: result?.issue ?? "Maintenance issue" }, { label: "Location", value: result?.location ?? "Not provided" }, { label: "Observed condition", value: result?.observedCondition ?? "Not provided" }, { label: result ? "Summary" : "Your description", value: result?.summary ?? description }].map((row, i, arr) => (
           <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
             <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
@@ -61,7 +64,7 @@ function IssueSummaryCard({ description, confirmed, onContinue }: { description:
         </div>
       ) : (
         <div className="flex gap-2.5 mt-3">
-          <div className="flex-1"><Btn variant="secondary">Edit</Btn></div>
+          <div className="flex-1"><Btn variant="secondary" onClick={onEdit}>Edit description</Btn></div>
           <div className="flex-1"><Btn onClick={onContinue}>Looks right</Btn></div>
         </div>
       )}
@@ -108,7 +111,7 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ n: "1", I: IcoImg, label: "Overview photo", desc: "Show the whole area" }, { n: "2", I: IcoImg, label: "Close-up photo", desc: "Show the affected area" }, { n: "3", I: IcoVideo, label: "Short video", desc: "Issue and surrounding context" }].map((item, i, arr) => (
+        {[{ n: "1", I: IcoImg, label: "Overview photo · Required", desc: "Show the whole area" }, { n: "2", I: IcoImg, label: "Close-up photo · Required", desc: "Show the affected area" }, { n: "3", I: IcoVideo, label: "Short video · Optional", desc: "You can skip this step" }].map((item, i, arr) => (
           <div key={item.n} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <div className="shrink-0 flex items-center justify-center rounded-full" style={{ width: 30, height: 30, background: "var(--color-blue-light)", color: "var(--color-blue)" }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>{item.n}</span>
@@ -127,7 +130,7 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
 
 // ─── Post-capture view ────────────────────────────────────────────────────────
 
-function PostCaptureView({ report, photos, submitting, error, uploading, locked, onSubmit, onReplace }: { report: MaintenanceReportInput; photos: Partial<Record<PhotoType, LocalPhoto>>; submitting: boolean; error: string; uploading: boolean; locked: boolean; onSubmit: () => void; onReplace: (role: PhotoType) => void }) {
+function PostCaptureView({ report, photos, videoIncluded, submitting, error, uploading, locked, onSubmit, onReplace }: { report: MaintenanceReportInput; photos: Partial<Record<PhotoType, LocalPhoto>>; videoIncluded: boolean; submitting: boolean; error: string; uploading: boolean; locked: boolean; onSubmit: () => void; onReplace: (role: PhotoType) => void }) {
   const [showReview, setShowReview] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -140,7 +143,7 @@ function PostCaptureView({ report, photos, submitting, error, uploading, locked,
   const reportRows: ReportFieldRow[] = [
     { label: "Issue type", value: report.issueType },
     { label: "Location", value: report.location || "Not provided" },
-    { label: "Occurs", value: report.condition || "Not provided" },
+    { label: "Observed details", value: report.condition || "Not provided" },
     { label: "Description", value: report.description },
     { label: "Safety", value: report.safetyResponse || "Not provided", green: true },
   ];
@@ -148,7 +151,7 @@ function PostCaptureView({ report, photos, submitting, error, uploading, locked,
   const mediaItems: DemoEvidence[] = [
     { label: "Overview photo", note: photos.overview?.annotations.length ? "Annotated" : "Captured", src: photos.overview?.previewUrl ?? null, type: "photo" },
     { label: "Close-up photo", note: photos.closeup?.annotations.length ? "Annotated" : "Captured", src: photos.closeup?.previewUrl ?? null, type: "photo" },
-    { label: "Short video", note: "Demo only · Not uploaded", src: null, type: "video" },
+    ...(videoIncluded ? [{ label: "Short video", note: "Demo only · Not uploaded", src: null, type: "video" as const }] : []),
   ];
 
   return (
@@ -165,14 +168,14 @@ function PostCaptureView({ report, photos, submitting, error, uploading, locked,
       {/* Continuity cue */}
       <div className="shrink-0 flex items-center gap-2 px-5 py-2.5" style={{ background: "var(--color-blue-light)", borderBottom: "1px solid var(--color-blue-mid)" }}>
         <div style={{ color: "var(--color-blue)" }}><IcoCheckCircle /></div>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-blue)" }}>Bedroom window leak · Draft</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-blue)" }}>{report.issueType} · Draft</p>
       </div>
 
       {/* Scrollable conversation */}
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
 
         {/* Evidence captured */}
-        <AssistantBubble>Your photos are ready to review. Video is a local demo only.</AssistantBubble>
+        <AssistantBubble>Your photos are ready to review. {videoIncluded ? "Video is a local demo only." : "Optional video skipped."}</AssistantBubble>
 
         {/* Evidence completion card */}
         <div className="ml-9">
@@ -180,7 +183,7 @@ function PostCaptureView({ report, photos, submitting, error, uploading, locked,
             {[
               { label: "Overview photo", thumb: photos.overview?.previewUrl, type: "photo" },
               { label: "Close-up photo", thumb: photos.closeup?.previewUrl, type: "photo" },
-              { label: "Short video", thumb: null, type: "video" },
+              ...(videoIncluded ? [{ label: "Short video · Demo only", thumb: null, type: "video" }] : []),
             ].map((item, i, arr) => (
               <div key={item.label} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
                 <div className="rounded-lg overflow-hidden shrink-0" style={{ width: 40, height: 32, background: "#1a1a2a" }}>
@@ -284,19 +287,23 @@ type ChatStage =
   | "safety-danger"
   | "capture-expectation";
 
-function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture }: { onDescription: (value: string) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
+function PreCaptureChat({ onReport, onSafeResponse, onBack, onStartCapture }: { onReport: (value: MaintenanceReportInput) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
   const [stage, setStage] = useState<ChatStage>("confirming-details");
   const [propConfirmed, setPropConfirmed] = useState(false);
   const [issueText, setIssueText] = useState("");
   const [summaryConfirmed, setSummaryConfirmed] = useState(false);
   const [safetyAnswered, setSafetyAnswered] = useState(false);
   const [inputVal, setInputVal] = useState("");
+  const understanding = useIssueUnderstanding();
+  const [fallback, setFallback] = useState(false);
+  const result = fallback ? null : understanding.result;
+  const question = !fallback && understanding.input.clarifications.length < MAX_FOLLOW_UPS ? result?.followUpQuestions[0] : undefined;
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     return () => clearTimeout(timer);
-  }, [stage, propConfirmed, issueText, summaryConfirmed, safetyAnswered]);
+  }, [stage, propConfirmed, issueText, summaryConfirmed, safetyAnswered, understanding.pending, understanding.result, understanding.failed, fallback]);
 
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -309,13 +316,21 @@ function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture 
 
   const handleConfirm = () => { setPropConfirmed(true); advance("describing-issue"); };
   const handleIssueSend = () => {
-    if (!inputVal.trim()) return;
-    setIssueText(inputVal.trim());
-    onDescription(inputVal.trim());
+    if (!inputActive || !inputVal.trim() || understanding.pending) return;
+    const next = question
+      ? { ...understanding.input, clarifications: [...understanding.input.clarifications, { question, answer: inputVal }] }
+      : { description: inputVal, clarifications: [] };
+    setIssueText(next.description);
+    setFallback(false);
     setInputVal("");
-    advance("reviewing-summary");
+    setStage("describing-issue");
+    void understanding.analyze(next);
   };
-  const handleSummaryConfirm = () => { setSummaryConfirmed(true); advance("safety-check"); };
+  const handleSummaryConfirm = () => { onReport(reportFromUnderstanding(understanding.input, result)); setSummaryConfirmed(true); advance("safety-check"); };
+  const editDescription = () => {
+    understanding.reset(); setFallback(false); setSummaryConfirmed(false); setSafetyAnswered(false);
+    setInputVal(understanding.input.description); setStage("describing-issue");
+  };
   const handleSafe = () => { onSafeResponse(); setSafetyAnswered(true); advance("capture-expectation"); };
   const handleDanger = () => setStage("safety-danger");
   const handleDangerBack = () => setStage("safety-check");
@@ -323,7 +338,8 @@ function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture 
   const afterSummary: ChatStage[] = ["safety-check", "safety-danger", "capture-expectation"];
   const afterSafety: ChatStage[] = ["capture-expectation"];
 
-  const inputActive = stage === "describing-issue";
+  const summaryReady = fallback || result?.status === "sufficient";
+  const inputActive = stage === "describing-issue" && !understanding.pending && !summaryReady && !understanding.failed && (!result || !!question || result.status === "not_maintenance");
 
   return (
     <div className="flex flex-col h-full">
@@ -348,12 +364,24 @@ function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture 
           <AssistantBubble>Now describe the issue in your own words — what's happening, where it is, and when it occurs.</AssistantBubble>
         )}
         {issueText && <UserBubble>{issueText}</UserBubble>}
+        {understanding.input.clarifications.map((item, index) => <div key={index} className="flex flex-col gap-4"><AssistantBubble>{item.question}</AssistantBubble><UserBubble>{item.answer}</UserBubble></div>)}
+        {understanding.pending && <AssistantBubble><span role="status">Understanding your report…</span></AssistantBubble>}
+        {question && stage === "describing-issue" && <AssistantBubble>{question}</AssistantBubble>}
+        {result?.status === "not_maintenance" && <AssistantBubble>This report is for maintenance issues. Tell me what needs repair or attention at the property.</AssistantBubble>}
+        {(understanding.failed && !fallback || result && !summaryReady && !question && result.status !== "not_maintenance") && stage === "describing-issue" && <>
+          <AssistantBubble>{understanding.failed ? "I couldn't structure that description right now. Your words are still here." : "Let's keep the details you've provided. You can edit your description or continue without an automatic summary."}</AssistantBubble>
+          <div className="ml-9 flex flex-col gap-2">
+            {understanding.failed && <Btn onClick={() => void understanding.analyze(understanding.input)}>Retry</Btn>}
+            <Btn variant="secondary" onClick={() => { setFallback(true); setStage("reviewing-summary"); }}>Continue with my description</Btn>
+            <Btn variant="secondary" onClick={editDescription}>Edit description</Btn>
+          </div>
+        </>}
 
         {/* Issue summary */}
-        {(["reviewing-summary", ...afterSummary] as ChatStage[]).includes(stage) && issueText && (
+        {summaryReady && issueText && (
           <>
-            <AssistantBubble>Thanks! Here's what I got — does this look right?</AssistantBubble>
-            <IssueSummaryCard description={issueText} confirmed={summaryConfirmed} onContinue={handleSummaryConfirm} />
+            <AssistantBubble>{fallback ? "Review your description before continuing." : "Here's what I understood — does this look right?"}</AssistantBubble>
+            <IssueSummaryCard description={reportFromUnderstanding(understanding.input, null).description} result={result} confirmed={summaryConfirmed} onContinue={handleSummaryConfirm} onEdit={editDescription} />
           </>
         )}
 
@@ -383,17 +411,19 @@ function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture 
       <div className="shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{ background: inputActive ? "#fff" : "var(--color-bg)", border: `1px solid ${inputActive ? "var(--color-blue-mid)" : "var(--color-border)"}`, transition: "border-color 0.2s" }}>
           <input
+            aria-label={question ? "Your answer" : "Describe the issue"}
+            maxLength={question ? MAX_ANSWER : MAX_DESCRIPTION}
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleIssueSend(); }}
             placeholder={inputActive ? "Describe the issue…" : "Message…"}
             disabled={!inputActive}
-            className="flex-1 bg-transparent outline-none text-sm"
+            className="flex-1 min-w-0 w-full bg-transparent outline-none text-sm"
             style={{ color: "var(--color-text)", opacity: inputActive ? 1 : 0.4 }}
           />
         </div>
         <button className="p-2.5 rounded-full" style={{ color: "var(--color-muted)" }}><IcoMic /></button>
-        <button onClick={handleIssueSend} disabled={!inputActive} className="p-2.5 rounded-full" style={{ background: inputActive ? "var(--color-blue)" : "var(--color-border)", color: "#fff", opacity: inputActive ? 1 : 0.5 }}>
+        <button aria-label="Send description" onClick={handleIssueSend} disabled={!inputActive || !inputVal.trim()} className="p-2.5 rounded-full" style={{ background: inputActive ? "var(--color-blue)" : "var(--color-border)", color: "#fff", opacity: inputActive ? 1 : 0.5 }}>
           <IcoSend />
         </button>
       </div>
@@ -404,8 +434,8 @@ function PreCaptureChat({ onDescription, onSafeResponse, onBack, onStartCapture 
 export default function ReportWorkflow() {
   const [step, setStep] = useState<ReportStep>("report-chat");
   const [postCapture, setPostCapture] = useState(false);
-  // Type/location/condition remain the existing deterministic prototype summary.
-  const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Water leak", location: "Bedroom window", condition: "When it rains", description: "", safetyResponse: null });
+  const [videoIncluded, setVideoIncluded] = useState(false);
+  const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Maintenance issue", location: null, condition: null, description: "", safetyResponse: null });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -464,16 +494,22 @@ export default function ReportWorkflow() {
       {step !== "success" && (
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {postCapture
-            ? <PostCaptureView report={report} photos={photos} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
-            : <PreCaptureChat onDescription={(description) => setReport((current) => ({ ...current, description }))} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
+            ? <PostCaptureView report={report} photos={photos} videoIncluded={videoIncluded} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
+            : <PreCaptureChat onReport={setReport} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
       {step === "ar-overview" && <PhotoSource role="overview" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
       {step === "photo-overview" && <PhotoPreview key={photos.overview?.id} photoType="overview" photo={photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => setStep("ar-overview")} onUse={() => setStep(replacing ? "report-chat" : "ar-closeup")} />}
       {step === "ar-closeup" && <PhotoSource role="closeup" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
-      {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => setStep("ar-closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-capture")} />}
-      {step === "video-capture" && <ARVideoScreen onCapture={() => setStep("video-preview")} onClose={() => setStep("report-chat")} />}
-      {step === "video-preview" && <VideoPreview onRetake={() => setStep("video-capture")} onUse={() => { setPostCapture(true); setStep("report-chat"); }} />}
+      {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => setStep("ar-closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-option")} />}
+      {step === "video-option" && <div className="absolute inset-0 flex flex-col gap-4 px-5 py-5" style={{ background: "var(--color-surface)" }}>
+        <button aria-label="Back to close-up" className="self-start" onClick={() => setStep("photo-closeup")}><IcoChevLeft /></button>
+        <AssistantBubble>Your two photos are ready. You can add a short video if movement or sound helps show the issue, or skip for now.</AssistantBubble>
+        <p className="ml-9" style={{ fontSize: 12, color: "var(--color-muted)" }}>Video is a demo simulation and is not uploaded.</p>
+        <div className="ml-9 flex flex-col gap-3"><Btn onClick={() => setStep("video-capture")}>Add video</Btn><Btn variant="secondary" onClick={() => { setVideoIncluded(false); setPostCapture(true); setStep("report-chat"); }}>Skip for now</Btn></div>
+      </div>}
+      {step === "video-capture" && <ARVideoScreen onCapture={() => setStep("video-preview")} onClose={() => setStep("video-option")} />}
+      {step === "video-preview" && <VideoPreview onRetake={() => setStep("video-capture")} onUse={() => { setVideoIncluded(true); setPostCapture(true); setStep("report-chat"); }} />}
     </>
   );
 }

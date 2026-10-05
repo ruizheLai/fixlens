@@ -235,7 +235,9 @@ If the initial description already contains sufficient information, continue dir
 
 If important information is missing, use a small number of short follow-up questions.
 
-Aim for approximately 0–3 follow-up questions where possible.
+Phase 3A uses zero follow-ups when the issue and location are clear. Ask one
+essential question at a time and never more than two per interpretation. Optional
+detail such as duration or severity must not block the report.
 
 ---
 
