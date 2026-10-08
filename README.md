@@ -1,5 +1,26 @@
 # FixLens
 
+## Phase 3B-1.1 — camera layout
+
+Start guided capture enters the shared camera directly, preferring the rear camera
+and requesting video only. The live feed fills the app's dynamic viewport with
+`object-fit: cover`; overlay controls respect safe areas. JPEG capture still keeps
+the full intrinsic frame (bounded to 2048px), so Preview can show more at the edges.
+
+A temporary instruction card fades/collapses after five seconds of live playback
+or manual dismissal. Persistent local brightness/motion status moves down smoothly.
+Gallery is icon-only. Native camera/file picker wording appears only in recovery
+states. Torch is exposed only when the existing track reports support; rejected
+or unverifiable toggles hide it without interrupting capture. Stopping the camera
+also requests torch off. No new stream is opened for torch.
+
+Preview, annotations, two required photos, optional simulated video and private
+submission remain unchanged. No vision AI or pre-capture upload is added; blur
+remains deferred. Phase 3B-1 functionality passed the owner's physical iPhone Safari
+check; the revised layout and physical torch behavior need a fresh Preview check.
+See [camera verification](docs/CAMERA_VERIFICATION.md). Run
+`node --experimental-strip-types --test tests/camera.test.ts tests/cameraTorch.test.ts`.
+
 ## Phase 3A — AI issue understanding
 
 Reporting now uses OpenAI through the `analyze-maintenance-issue` Supabase Edge

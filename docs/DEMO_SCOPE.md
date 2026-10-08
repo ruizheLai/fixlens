@@ -1,5 +1,19 @@
 # FixLens Exhibition Demo Scope
 
+## Phase 3B-1.1 — camera scope
+
+Implemented: in-app getUserMedia photo acquisition, rear-camera preference,
+direct initialization, Cover overlays, dismissible instructions, persistent quality
+status, icon-only Gallery, optional capability-gated torch, user-controlled shutter,
+existing Preview/Retake/annotation reuse, recovery-only native picker
+and Gallery fallback, local brightness/motion guidance and stream cleanup.
+Overview + Close-up remain required; video remains optional/simulated.
+No image/vision AI, dynamic capture requirements, diagnosis, AR/SLAM, automatic
+shutter, evidence scoring or video persistence is included. Blur is deferred;
+simple sharpness scores cannot reliably distinguish blur from a low-texture wall.
+HTTPS/localhost is required. Browser logic tests are not physical camera tests;
+see [verification status and device checklist](CAMERA_VERIFICATION.md).
+
 ## Phase 3A — real issue understanding
 
 Real OpenAI extraction now turns renter wording into a factual issue, location and
