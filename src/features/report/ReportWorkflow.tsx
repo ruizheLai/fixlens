@@ -441,7 +441,6 @@ export default function ReportWorkflow() {
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<Partial<Record<PhotoType, LocalPhoto>>>({});
   const photoRef = useRef(photos);
-  const liveCameraChosen = useRef(false);
   const retake = (role: PhotoType) => {
     const old = photoRef.current[role];
     if (old) URL.revokeObjectURL(old.previewUrl);
@@ -506,9 +505,9 @@ export default function ReportWorkflow() {
             : <PreCaptureChat onReport={setReport} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
-      {step === "ar-overview" && <PhotoSource role="overview" autoStart={liveCameraChosen.current} onCameraOpened={() => { liveCameraChosen.current = true; }} onPickerChosen={() => { liveCameraChosen.current = false; }} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "ar-overview" && <PhotoSource role="overview" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
       {step === "photo-overview" && <PhotoPreview key={photos.overview?.id} photoType="overview" photo={photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => retake("overview")} onUse={() => setStep(replacing ? "report-chat" : "ar-closeup")} />}
-      {step === "ar-closeup" && <PhotoSource role="closeup" autoStart={liveCameraChosen.current} onCameraOpened={() => { liveCameraChosen.current = true; }} onPickerChosen={() => { liveCameraChosen.current = false; }} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "ar-closeup" && <PhotoSource role="closeup" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
       {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => retake("closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-option")} />}
       {step === "video-option" && <div className="absolute inset-0 flex flex-col gap-4 px-5 py-5" style={{ background: "var(--color-surface)" }}>
         <button aria-label="Back to close-up" className="self-start" onClick={() => setStep("photo-closeup")}><IcoChevLeft /></button>

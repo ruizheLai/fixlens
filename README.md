@@ -1,23 +1,25 @@
 # FixLens
 
-## Phase 3B-1 — in-app guided camera
+## Phase 3B-1.1 — camera layout
 
-Overview and Close-up now share an inline browser camera through `PhotoSource`.
-Open camera requests video only, preferring the rear camera. Shutter creates a
-local JPEG for the existing Preview/Retake/annotation/upload pipeline. Gallery
-and the native camera/file picker remain available without camera permission.
-Two photos remain required; video is optional and simulated, with no persistence.
+Start guided capture enters the shared camera directly, preferring the rear camera
+and requesting video only. The live feed fills the app's dynamic viewport with
+`object-fit: cover`; overlay controls respect safe areas. JPEG capture still keeps
+the full intrinsic frame (bounded to 2048px), so Preview can show more at the edges.
 
-Brightness and motion hints use small browser-local samples, never AI or uploads.
-Blur is deferred because low texture and device differences make a simple metric
-unreliable. Camera tracks stop on capture, Gallery, exit and backgrounding; return
-from background offers an explicit restart. HTTPS (or localhost) is required.
+A temporary instruction card fades/collapses after five seconds of live playback
+or manual dismissal. Persistent local brightness/motion status moves down smoothly.
+Gallery is icon-only. Native camera/file picker wording appears only in recovery
+states. Torch is exposed only when the existing track reports support; rejected
+or unverifiable toggles hide it without interrupting capture. Stopping the camera
+also requests torch off. No new stream is opened for torch.
 
-Run `node --experimental-strip-types --test tests/camera.test.ts` for focused
-mock-media tests. Hardware certification is separate; see the
-[camera verification notes](docs/CAMERA_VERIFICATION.md) for current results and
-the physical iPhone Safari checklist. Do not treat mocked streams as real-device
-verification. Android hardware testing and a new HTTPS Preview remain pending.
+Preview, annotations, two required photos, optional simulated video and private
+submission remain unchanged. No vision AI or pre-capture upload is added; blur
+remains deferred. Phase 3B-1 functionality passed the owner's physical iPhone Safari
+check; the revised layout and physical torch behavior need a fresh Preview check.
+See [camera verification](docs/CAMERA_VERIFICATION.md). Run
+`node --experimental-strip-types --test tests/camera.test.ts tests/cameraTorch.test.ts`.
 
 ## Phase 3A — AI issue understanding
 

@@ -3,27 +3,34 @@
 ## Phase 3B-1 — local camera acquisition
 
 `PhotoSource` is shared by reporting and requested evidence. It renders a muted,
-autoplay, playsInline video with contain fitting (the full unmirrored frame).
-Initial camera permission follows an explicit Open camera action. A successful
-camera choice is retained only in the current workflow, so Retake and Close-up
-can open fresh streams; choosing Gallery/native picker clears that preference.
+autoplay, playsInline video with cover fitting and no mirroring.
+Entry after Start guided capture initializes the camera directly. Retake and
+Close-up open fresh streams. Gallery/native picker still stop the current stream.
 
 `CameraSession` serializes acquisition, including unresolved permission promises,
 across mounts. Generation checks stop late streams; the current owner is stopped
 before another acquisition. All tracks/listeners are released on capture, exit,
 Gallery, unmount, pagehide or hidden visibility. Background return requires an
 explicit restart. Video startup has a 15-second watchdog; an ignored permission
-prompt may remain pending, while the picker and Gallery stay usable.
+prompt may remain pending, while Gallery stays usable. The native picker is shown
+in recovery states rather than on the normal live/initializing surface.
 
 Shutter draws intrinsic video dimensions, proportionally bounded to 2048px, with
 no mirror/crop transform; it stops the stream before asynchronous JPEG encoding.
 The File passes through unchanged `preparePhoto`, preserving the existing local
 photo contract, normalized annotation geometry and private Storage submission.
 No upload occurs on shutter. Retake revokes/discards the old local photo.
+Cover crops only the live display; Preview and the saved JPEG retain the full frame.
+The existing 100dvh phone shell bounds the overlay surface; safe-area insets keep
+controls reachable. CameraTorch checks the existing track capability and applies
+torch constraints without replacing camera constraints. Stop requests torch off
+before releasing tracks, including a toggle resolving after disposal. Failed or
+unverified toggles hide the optional control. No fake flash is used.
 
 `QualityGuidance` samples a downscaled frame every 500ms while live/visible.
 Luminance and mean frame difference produce one advisory state: dark before motion,
-then ready; fixed role guidance remains visible. Two matching samples, threshold
+then ready. A role instruction overlay fades/collapses after five live seconds or
+manual dismissal; the status moves into its space and remains dynamic. Two matching samples, threshold
 hysteresis and a 1.5-second minimum hold reduce flicker. No subject/framing detection,
 blur verdict, percentage, automatic shutter, frame logging or network call exists.
 Error states supersede advisory hints and retain picker/gallery access. No backend,

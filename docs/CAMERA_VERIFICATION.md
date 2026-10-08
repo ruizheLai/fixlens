@@ -1,7 +1,32 @@
-# Phase 3B-1 camera verification
+# Camera verification
 
 This page separates mocked browser logic from physical-device compatibility.
-No Phase 3B-1 Vercel deployment or physical iPhone test has been performed yet.
+The owner reported Phase 3B-1 functional checks passing on physical iPhone Safari
+on 8 October 2026: camera permission/live feed, brightness/motion, capture, Retake,
+Preview/annotation, two-photo flow and lifecycle cleanup. Phase 3B-1.1 changes the
+layout and adds optional torch; its physical layout/torch recheck is still pending.
+
+## Phase 3B-1.1 local layout verification — 8 October 2026
+
+- Synthetic browser: Start guided capture immediately opened one stream, with no
+  Open-camera intermediate CTA. Overview and Close-up used the same Cover surface.
+- 375×667 and 390×844 had no horizontal or vertical document overflow. Shutter was
+  fully visible (bottom at 647px and 824px respectively), with 48px icon targets.
+- Instruction appeared above the controls, with quality status above it. Manual
+  close and five-second auto-dismiss collapsed/faded it; status moved down and
+  stayed visible. Help reopened the instruction. Reduced-motion CSS removes animation.
+- Capture → Preview stopped the stream; Retake and Close-up each opened a fresh
+  stream. Peak active streams remained one. Full-frame Preview and annotation
+  alignment were preserved; Cover can hide sensor-frame edges in the live view.
+- Mocked denial retained Retry/native picker/Gallery and disabled shutter. Native
+  picker and icon-only Gallery both reached the existing Preview. Gallery stopped
+  the stream and turned off an enabled mocked torch immediately.
+- Unsupported torch was absent. Supported mocked torch toggled the existing track;
+  capture/exit/Gallery reset it. No physical torch capability is claimed.
+- Browser console had no warnings/errors. No live backend writes were required.
+- Permanent suites: nine unchanged camera tests plus four torch tests (capability,
+  confirmed toggle/constraints, pending-toggle cleanup race and failure degradation).
+  TypeScript and production build passed. Temporary harness and fixture removed.
 
 ## Automated checks
 
@@ -44,36 +69,36 @@ They mock media APIs and do not certify a real camera or Safari permissions.
   Existing requested-evidence and PM Realtime SQL suites had passed with rollback
   earlier in this phase; persistence code did not change during closeout.
 
-## Physical iPhone Safari — pending
+## Physical iPhone Safari — Phase 3B-1.1 recheck pending
 
-After the owner pushes the reviewed branch and Vercel creates its normal HTTPS
-Preview, open that deployment's `/report` path. No current Preview contains these
-uncommitted changes; do not use an older Phase 3A Preview to certify this work.
-Production `https://fix-lens.app/report` should be checked only after merge/deploy.
+Owner action: review/commit/push the current Phase-3B-1 branch, then open its newly
+created Vercel HTTPS Preview at `/report`. No commit, push, merge or deployment was
+performed during this follow-up. Older Previews cannot verify the new layout.
 
-1. Open the new HTTPS Preview in physical iPhone Safari and enter the normal report
-   flow. Confirm AI summary and Safety, reach Overview, then tap Open camera.
-   Confirm Safari asks for camera permission, allow it, and check the embedded
-   live rear-camera view (where available). No microphone permission should appear.
-   Check portrait orientation and “Show the issue and the surrounding area.”
-2. Darken the camera, restore light, move then steady it. Check one readable hint
-   at a time; shutter must remain available. No subject/blur judgment is expected.
-3. Capture, verify the camera indicator turns off and Preview matches the frame
-   with correct orientation and no rear-camera mirroring.
-   Retake: one fresh stream, no old photo retained. Capture again and annotate.
-4. Use photo → Close-up; check generic close-up guidance and fresh stream. Capture,
-   annotate if desired, Use photo → Skip video → Final Review → Submit.
-5. Check exactly two photos and annotations in Submitted Report and PM. Confirm
-   the case appears through existing automatic updates; report fields are intact.
-6. While live, choose Gallery and cancel/select a photo. Camera must stop. Verify
-   selected photo → Preview → Annotation. Deny permission in a fresh permission
-   context and verify native picker/Gallery can still complete both photos.
-7. Background/foreground, Back, exit, rotate portrait/landscape, and re-enter.
-   Check no persistent camera indicator, duplicate stream or inaccessible control.
-8. Check requested-evidence entry and shared capture/Preview without changing an
-   intentional seeded request. Use a disposable case if testing submission.
-9. Remove only the identified disposable report/evidence/Storage objects afterwards.
+1. Enter the normal report flow → Start guided capture. Permission must appear
+   directly when required, without Open Camera. Allow it; verify rear camera and
+   no microphone permission. Live Cover video should fill the app content area.
+2. With Safari toolbars expanded and collapsed, check top/back/help controls,
+   centered shutter and Gallery icon stay reachable within safe areas. No page
+   scrolling or horizontal overflow should be needed. Repeat on Close-up.
+3. Check the instruction card in the lower-middle and local status above it.
+   After about five seconds the card should fade and status move down smoothly.
+   Reopen with Help, then dismiss manually. Darkness/motion/ready status remains
+   dynamic and never blocks shutter. No green box or AI guidance should appear.
+4. Torch must be absent unless the device/browser reports capability. If present,
+   toggle it and confirm physical continuous light, then verify off after capture,
+   Gallery, Back, backgrounding and exit. Report any mismatch; do not assume support.
+5. Capture → Preview: correct orientation, no mirroring, full sensor-frame evidence
+   (more at the edges than live Cover is expected). Annotate → Retake → fresh camera;
+   verify cleanup/indicator and one session. Use photo → Close-up, then capture.
+6. Gallery while live must stop camera/torch and reach Preview/Annotation. In a
+   denied-permission context, Retry and native picker/Gallery must remain usable;
+   no permanent native-picker row should appear during successful live capture.
+7. Background/return, Back/navigation and abandon capture: no camera/torch remains
+   active. Resume is explicit after backgrounding. Finish the existing two-photo
+   report/optional-video skip if desired and verify renter/PM photo continuity.
 
-No physical Android device is available for this verification. Desktop viewport
-checks cannot certify Android Chrome or iPhone Safari. Browser camera hardware,
-autofocus, permission persistence and software camera indicators need device tests.
+Physical Safari toolbar, safe-area and torch behavior remain unverified for this
+revision until the owner reports results. No physical Android verification is
+claimed. Phase 3B-2 AI visual guidance, blur tuning and video persistence remain out
+of scope. Local frames are not sent to AI or uploaded before report submission.

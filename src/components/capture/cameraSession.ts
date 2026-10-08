@@ -67,7 +67,7 @@ export function captureFrame(video: HTMLVideoElement): Promise<File> {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("This photo couldn't be captured. Please use the photo picker.");
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  // No mirroring/cropping: the inline contain preview and saved frame agree.
+  // Keep the full frame: CSS cover crops only the live display, never evidence.
   return new Promise((resolve, reject) => canvas.toBlob(blob => {
     canvas.width = 0; canvas.height = 0;
     if (blob) resolve(new File([blob], "capture.jpg", { type: "image/jpeg" }));

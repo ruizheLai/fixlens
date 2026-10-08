@@ -2,14 +2,17 @@
 
 This document records major UX decisions that should remain stable unless intentionally revisited.
 
-Phase 3B-1: Open camera is the primary photo acquisition action, with Gallery and
-native picker always available. Permission is contextual and never retried in a
-loop. The live feed stays inline and unmirrored, with the entire captured frame
-visible. Overview says “Show the issue and the surrounding area.” Close-up says
-“Move closer and show the affected area clearly.” Only one local advisory warning
-appears at a time; dark/motion hints never disable the shutter. “Ready to capture”
-does not claim evidence sufficiency. Returning from background requires an explicit
-camera restart. Existing post-capture annotation and optional simulated video remain.
+Phase 3B-1.1: Start guided capture initializes the camera directly; no additional
+Open-camera CTA. Cover video fills the capture viewport behind safe-area overlays.
+Overview says “Capture an overview of the issue. Try to include the surrounding
+area.” Close-up says “Move closer and show the affected area clearly.” The card
+fades after five live seconds or manual close; Help can reopen it. Persistent
+local status sits above the card, then smoothly moves down when it closes.
+Gallery is icon-only, shutter stays centered, and torch appears only with real
+track capability. Native picker text is confined to recovery states. Dark/motion
+hints never disable shutter; “Ready to capture” makes no sufficiency claim.
+Background return requires explicit Resume. Full-frame Preview/annotations and
+optional simulated video remain unchanged; Cover is not a persisted crop.
 
 Phase 3A checkpoint: clear issue + location goes directly to a renter-confirmed
 summary; only essential missing information earns a follow-up, one at a time and

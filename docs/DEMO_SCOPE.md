@@ -1,9 +1,11 @@
 # FixLens Exhibition Demo Scope
 
-## Phase 3B-1 — camera scope
+## Phase 3B-1.1 — camera scope
 
 Implemented: in-app getUserMedia photo acquisition, rear-camera preference,
-user-controlled shutter, existing Preview/Retake/annotation reuse, native picker
+direct initialization, Cover overlays, dismissible instructions, persistent quality
+status, icon-only Gallery, optional capability-gated torch, user-controlled shutter,
+existing Preview/Retake/annotation reuse, recovery-only native picker
 and Gallery fallback, local brightness/motion guidance and stream cleanup.
 Overview + Close-up remain required; video remains optional/simulated.
 No image/vision AI, dynamic capture requirements, diagnosis, AR/SLAM, automatic
