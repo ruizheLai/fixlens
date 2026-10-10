@@ -2,3 +2,7 @@
 # Anonymous exhibition renters use a publishable key, not an Auth JWT.
 # The handler validates apikey and restricts browser origins before provider use.
 verify_jwt = false
+
+[functions.analyze-capture-frame]
+# Anonymous exhibition renters; handler validates the project publishable key.
+verify_jwt = false

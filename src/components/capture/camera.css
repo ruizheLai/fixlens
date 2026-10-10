@@ -8,6 +8,18 @@
   --camera-bottom: max(20px, env(safe-area-inset-bottom));
 }
 .camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera-framing { position: absolute; top: calc(94px + env(safe-area-inset-top)); bottom: var(--framing-bottom, 290px); left: 0; right: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.camera-framing-zone { position: relative; width: 76%; height: 76%; max-height: 360px; flex-shrink: 1; color: #ffffff9c; transition: color 250ms ease; }
+.camera-framing[data-mode="close-up"] .camera-framing-zone { width: 48%; height: 48%; max-height: 210px; }
+.camera-framing-zone i { position: absolute; width: 22px; height: 22px; border: 0 solid currentColor; border-radius: 2px; }
+.camera-framing-zone i:nth-child(1) { top: 0; left: 0; border-top-width: 1.5px; border-left-width: 1.5px; }
+.camera-framing-zone i:nth-child(2) { top: 0; right: 0; border-top-width: 1.5px; border-right-width: 1.5px; }
+.camera-framing-zone i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.camera-framing-zone i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+.camera-framing[data-cue="good"] .camera-framing-zone { color: #fff; }
+.camera-framing-message { flex-shrink: 0; min-height: 30px; margin: 0; padding: 5px 12px; border-radius: 16px; font-size: 13px; line-height: 20px; text-align: center; background: #101418c9; }
+.camera-framing-message:empty { visibility: hidden; }
+.camera-framing-message span { display: inline-block; margin-right: 6px; }
 .camera-top {
   position: absolute; top: 0; left: 0; right: 0;
   display: grid; grid-template-columns: 48px 1fr 48px; align-items: start;

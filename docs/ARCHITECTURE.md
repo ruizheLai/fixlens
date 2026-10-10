@@ -1,5 +1,107 @@
 # FixLens Technical Architecture
 
+## Phase 3B-2B — default-off exhibition configuration
+
+`captureVisionEnabled = false` is a source-controlled frontend flag, not a URL,
+storage, header or public environment override. `PhotoSource` returns before
+creating the Vision scheduler; no `framingFrame` encoding or provider request can
+run. Supplemental Vision stability work is also skipped. The unchanged 500ms
+local brightness/motion sampler remains active. Overlay receives no AI guide and
+renders only static corners, with no empty AI message/status container.
+
+The Edge handler's separate `visionEnabled` config must be the boolean true.
+`index.ts` derives it only from server `CAPTURE_VISION_ENABLED === "true"`.
+CORS preflight/origin/method/key/body validation precedes the guard; disabled valid
+POST returns 503 `{"error":"Framing unavailable"}` before provider invocation or
+rate-budget accounting. Client fields/headers cannot enable it. Existing provider,
+schema, limits and tests are retained. No Phase 3A, DB, RLS/Auth or PM changes.
+
+Deployed with owner approval on 10 October 2026: framing v4 replaces v3. No secret
+settings were changed/enabled. Live valid POST returns disabled 503; trusted
+preflight returns 204, unrelated origins 403, header/query overrides 503 and body
+override 400. Existing authorization remains. Phase 3A is still v3 with unchanged
+bundle hash. Future experimental enablement requires accuracy review and
+appropriate server access/cost controls. The frontend alone is not a cost guard.
+
+The following architecture describes the preserved experimental path when enabled.
+
+## Phase 3B-2A — sparse framing with target presence (experimental)
+
+`ReportWorkflow` owns two in-memory `FramingBudget`s and whitelists the confirmed
+Phase 3A result into issue/location/observedCondition/summary. Retake/replacement
+does not reset either budget. Missing/oversized structured context or Phase 3A
+raw-description fallback disables analysis without affecting capture. Requested
+evidence never receives a framing context/budget and renders no AI guide zone.
+
+`PhotoSource` preserves the camera lifecycle and the original 500ms quality algorithm.
+`FramingStability` additionally gates immediately on brightness/motion before the
+debounced local message changes, and checks cumulative movement from an anchor.
+`FramingScheduler` requires 1.5s usable stability, minimum 4s start spacing, no
+overlap and max 5 attempts per stage (10 per report capture). Failures back off
+4/8/16s; all attempts consume budget. Movement, exit, hidden/pagehide, shutter,
+Gallery and stage disposal abort/invalidate generations. Late results cannot
+restore old guidance. Results expire after 8s. No analysis controls the shutter.
+
+`framingFrame` copies only the visible Cover crop into a temporary canvas, bounds
+its longest edge to 768px and encodes JPEG quality 0.65. The canvas is released and
+the data URL remains request-local, never a File/evidence row/Storage upload or
+localStorage value. Final accepted capture continues unchanged through `captureFrame`
+and `preparePhoto`. Images may contain incidental scene details; framing is not
+a privacy filter. No user profile, property address, PM identity or case history
+objects are sent. Only confirmed structured issue text accompanies the image.
+
+`services/captureFraming` calls the separate `analyze-capture-frame` function using
+the publishable project key, no demo-session/PM token, no-store and a 9s timeout.
+The function validates origin using the unchanged Phase 3A CORS helper, validates
+the key explicitly, bounds the streamed body to 410,000 bytes and JPEG to 300,000
+bytes/768px, and validates exact input/output keys. Server timeout is 8s; client
+scheduler watchdog is 10s. Per-isolate limits are 4 active / 30 per minute, not
+distributed production abuse protection. No database credentials/client or writes.
+
+OpenAI Responses uses `gpt-4.1-mini-2025-04-14`, image detail low, `store:false`,
+250 max output tokens and strict JSON schema. Exactly five output fields:
+
+```ts
+{
+  targetPresence: "visible" | "not_visible" | "uncertain";
+  coverage: "too_little_context" | "enough_context" | "too_much_context" | "unknown";
+  distance: "too_close" | "good" | "too_far" | "unknown";
+  position: "move_left" | "move_right" | "move_up" | "move_down" | "centered" | "unknown";
+  confidence: "low" | "medium" | "high";
+}
+```
+
+Position is the renter's camera aim, not a target-position label. Context/image text
+is untrusted data. Prompt prohibits diagnosis, severity, urgency, repair, costs and
+responsibility, defect confirmation and invented target locations. Presence means
+the physical fixture/area is identifiable enough for framing, not visible damage.
+Runtime rejects missing/invalid presence; there is no default to visible. Low
+confidence is silent. High-confidence not_visible gives only “Aim at the affected
+area”, without an arrow/depth cue, ignoring all framing dimensions. Other absent
+or uncertain results are silent. Only visible results reach framing rules.
+Unknown dimensions or opposite coverage/distance judgments are suppressed.
+Overview prioritizes insufficient context/too close, then excessive context/too
+far. Close-up prioritizes distance without requiring room context. Directions
+require high confidence, enough_context and good distance. Good framing requires
+visible + enough_context/good/centered + medium/high confidence. Only one guide
+can be returned; model confidence cannot guarantee that presence is correct.
+
+Static guide corners are a guide zone, not detection/tracking. Overview uses 76%
+of the central area; Close-up 48%. A ResizeObserver keeps it above the existing
+local/instruction panel. Development-only `fixlens:framing` events expose stage,
+event and count, never images/context/credentials. Production has no metric logging.
+
+The model quality gate did **not** pass; see CAMERA_VERIFICATION.md. Evaluation v3
+has been replaced by guarded v4 with Vision disabled. Phase 3A v3, Auth, RLS, PM
+workflow, migrations and evidence persistence are untouched. Sparse frames leave
+the device for provider analysis; `store:false` does not imply zero retention under
+the provider's separate data policy.
+
+The 3B-2A evaluation corrected clear absence but still hallucinated target presence
+in two ambiguous crops. Recommend disabling provider guidance for exhibition,
+retaining static zones and local quality. No disable switch was added in this
+refinement; the branch remains experimental. Physical guidance testing is deferred.
+
 ## Phase 3B-1 — local camera acquisition
 
 `PhotoSource` is shared by reporting and requested evidence. It renders a muted,
@@ -32,7 +134,8 @@ Luminance and mean frame difference produce one advisory state: dark before moti
 then ready. A role instruction overlay fades/collapses after five live seconds or
 manual dismissal; the status moves into its space and remains dynamic. Two matching samples, threshold
 hysteresis and a 1.5-second minimum hold reduce flicker. No subject/framing detection,
-blur verdict, percentage, automatic shutter, frame logging or network call exists.
+blur verdict, percentage, automatic shutter or frame logging exists in that local
+quality module. Phase 3B-2 adds the separate optional network path documented above.
 Error states supersede advisory hints and retain picker/gallery access. No backend,
 AI, Auth, RLS, Realtime, evidence contract or dependency change is required.
 

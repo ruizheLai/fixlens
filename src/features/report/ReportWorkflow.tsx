@@ -19,6 +19,8 @@ import { persistReportPhotos } from "../../services/evidence";
 import { useIssueUnderstanding, reportFromUnderstanding } from "./useIssueUnderstanding";
 import type { IssueUnderstanding } from "../../types/issueUnderstanding";
 import { MAX_DESCRIPTION, MAX_ANSWER, MAX_FOLLOW_UPS } from "../../../supabase/functions/_shared/issueUnderstanding.ts";
+import { validateFramingContext, type FramingContext } from "../../../supabase/functions/_shared/captureFraming.ts";
+import { newFramingBudget } from "../../components/capture/framingScheduler";
 
 // ─── Pre-capture chat cards ───────────────────────────────────────────────────
 
@@ -287,7 +289,7 @@ type ChatStage =
   | "safety-danger"
   | "capture-expectation";
 
-function PreCaptureChat({ onReport, onSafeResponse, onBack, onStartCapture }: { onReport: (value: MaintenanceReportInput) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
+function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, onStartCapture }: { onReport: (value: MaintenanceReportInput) => void; onFramingContext: (value: FramingContext | null) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
   const [stage, setStage] = useState<ChatStage>("confirming-details");
   const [propConfirmed, setPropConfirmed] = useState(false);
   const [issueText, setIssueText] = useState("");
@@ -326,7 +328,13 @@ function PreCaptureChat({ onReport, onSafeResponse, onBack, onStartCapture }: { 
     setStage("describing-issue");
     void understanding.analyze(next);
   };
-  const handleSummaryConfirm = () => { onReport(reportFromUnderstanding(understanding.input, result)); setSummaryConfirmed(true); advance("safety-check"); };
+  const handleSummaryConfirm = () => {
+    onReport(reportFromUnderstanding(understanding.input, result));
+    // Only confirmed structured fields. Raw-description fallback never enters vision.
+    try { onFramingContext(validateFramingContext({ issue: result?.issue, location: result?.location, observedCondition: result?.observedCondition, summary: result?.summary })); }
+    catch { onFramingContext(null); }
+    setSummaryConfirmed(true); advance("safety-check");
+  };
   const editDescription = () => {
     understanding.reset(); setFallback(false); setSummaryConfirmed(false); setSafetyAnswered(false);
     setInputVal(understanding.input.description); setStage("describing-issue");
@@ -432,6 +440,8 @@ function PreCaptureChat({ onReport, onSafeResponse, onBack, onStartCapture }: { 
 }
 
 export default function ReportWorkflow() {
+  const [framingContext, setFramingContext] = useState<FramingContext | null>(null);
+  const [framingBudgets] = useState(() => ({ overview: newFramingBudget(), closeup: newFramingBudget() }));
   const [step, setStep] = useState<ReportStep>("report-chat");
   const [postCapture, setPostCapture] = useState(false);
   const [videoIncluded, setVideoIncluded] = useState(false);
@@ -502,12 +512,12 @@ export default function ReportWorkflow() {
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {postCapture
             ? <PostCaptureView report={report} photos={photos} videoIncluded={videoIncluded} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
-            : <PreCaptureChat onReport={setReport} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
+            : <PreCaptureChat onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
-      {step === "ar-overview" && <PhotoSource role="overview" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "ar-overview" && <PhotoSource role="overview" framingContext={framingContext} framingBudget={framingBudgets.overview} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
       {step === "photo-overview" && <PhotoPreview key={photos.overview?.id} photoType="overview" photo={photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => retake("overview")} onUse={() => setStep(replacing ? "report-chat" : "ar-closeup")} />}
-      {step === "ar-closeup" && <PhotoSource role="closeup" onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
+      {step === "ar-closeup" && <PhotoSource role="closeup" framingContext={framingContext} framingBudget={framingBudgets.closeup} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
       {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => retake("closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-option")} />}
       {step === "video-option" && <div className="absolute inset-0 flex flex-col gap-4 px-5 py-5" style={{ background: "var(--color-surface)" }}>
         <button aria-label="Back to close-up" className="self-start" onClick={() => setStep("photo-closeup")}><IcoChevLeft /></button>

@@ -2,6 +2,40 @@
 
 This document records major UX decisions that should remain stable unless intentionally revisited.
 
+Phase 3B-2B supersedes the experimental runtime below: Vision guidance is disabled
+by default. Keep static 76% Overview / 48% Close-up corners, the five-second
+dismissible/reopenable instruction card and local dynamic brightness/stability.
+No AI message, arrow, confidence indicator or empty AI status container is rendered.
+The fixed Close-up instruction remains “Move closer and show the affected area
+clearly”; this is capture copy, not an AI judgment. Local Ready to capture is not
+an evidence-sufficiency claim. Camera controls and report/evidence flows are unchanged.
+
+Phase 3B-2A: physical target presence is a prerequisite, not defect confirmation.
+High-confidence absence shows only “Aim at the affected area” without an arrow.
+Uncertain/low-confidence results leave the static zone without AI text. Opposite
+coverage/distance judgments are silent. Directions require visible + high
+confidence + enough context + good distance; medium-confidence directions are
+suppressed. Good framing also requires visible + coherent known dimensions.
+The provider still misidentified ambiguous crops, so recommend disabling provider
+guidance for exhibition, keeping the static/local foundation. No new feature
+switch, visual redesign or physical test was included in this refinement.
+
+Phase 3B-2 (experimental): image first, a static central framing guide second,
+separate local quality status lower down, existing Gallery/Shutter/Torch unchanged.
+Overview has thin four-corner marks across 76% of useful central space; Close-up
+uses a smaller 48% focus zone. These are guide zones, never detected-object boxes.
+One short AI message only, with one restrained arrow/depth cue. Good framing makes
+corners slightly more visible and means visual framing only, not sufficient evidence.
+Low confidence/unknown returns no message. Dark/moving clears stale AI guidance;
+local light/Hold steady feedback remains authoritative. No modal or shutter lock
+on analysis failure. No percentages, diagnosis, object labels, WebXR or auto-shutter.
+
+Analysis requires 1.5s usable stability and minimum 4s spacing, with 5 attempts per
+stage even after Retake. Temporary downscaled still frames leave the device for
+provider analysis but are not saved as evidence. Requested-evidence keeps local
+guidance only. Model reliability remains unresolved after the small evaluation;
+do not present this experimental feature as validated intelligent guidance.
+
 Phase 3B-1.1: Start guided capture initializes the camera directly; no additional
 Open-camera CTA. Cover video fills the capture viewport behind safe-area overlays.
 Overview says “Capture an overview of the issue. Try to include the surrounding

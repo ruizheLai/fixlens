@@ -1,5 +1,46 @@
 # FixLens Exhibition Demo Scope
 
+## Phase 3B-2B — exhibition fallback
+
+The exhibition frontend uses **Guided Evidence Capture**: static Overview/Close-up
+zones, fixed instructions, local brightness/stability, Gallery/shutter/torch and
+existing Preview/annotation/private evidence submission. Provider Vision is off by
+default; no analysis frames leave the camera. Phase 3A text AI remains active.
+No object recognition, damage detection, AI movement advice or Good framing claim.
+Experimental code is preserved, not accepted for exhibition accuracy.
+
+Server disable guard deployed with approval on 10 October 2026: framing v4 is
+ACTIVE and all 16 live disabled/CORS/override checks pass. Vision was not enabled;
+Phase 3A remains v3. Final frontend Preview/mobile UX verification remains pending.
+See CAMERA_VERIFICATION.md.
+
+## Phase 3B-2 — experimental framing assistance
+
+Phase 3B-2A adds a strict target-presence prerequisite: high-confidence absence
+gets neutral text only; uncertainty/low confidence gets no AI message. Directions
+need high confidence and otherwise suitable framing. Five output fields now apply.
+The 12-call refinement evaluation still produced two confidently invented targets
+on ambiguous crops. **Do not accept provider guidance for exhibition.** Recommend
+disabling it while preserving static zones/local quality; no disable switch or
+frontend deployment was made. Physical guidance testing is deferred.
+
+Implemented for normal Overview/Close-up only: sparse vision using coverage,
+distance, position and internal confidence, with one deterministic short guide,
+large Overview corners / smaller Close-up focus zone and advisory shutter. Local
+brightness/stability takes priority. First analysis follows 1.5s stable conditions;
+minimum 4s spacing, no overlap, max 5 attempts per stage including Retake.
+
+Temporary JPEGs are downscaled to at most 768px and sent with minimal structured
+issue context through a separate Edge Function. They are not saved as evidence;
+accepted photos retain the existing private submission pipeline. No microphone,
+continuous video, diagnosis, detection boxes, AR/WebXR, completeness score or
+auto-capture. Requested-evidence capture is excluded from this enhancement.
+
+Provider evaluation failed the quality gate (absent-target overconfidence and
+unreliable framing advice). Treat this as experimental work for review, not a
+verified exhibition feature. Physical iPhone guidance checks remain pending;
+the underlying Phase 3B-1 / 3B-1.1 camera baseline is owner-verified.
+
 ## Phase 3B-1.1 — camera scope
 
 Implemented: in-app getUserMedia photo acquisition, rear-camera preference,
@@ -8,8 +49,9 @@ status, icon-only Gallery, optional capability-gated torch, user-controlled shut
 existing Preview/Retake/annotation reuse, recovery-only native picker
 and Gallery fallback, local brightness/motion guidance and stream cleanup.
 Overview + Close-up remain required; video remains optional/simulated.
-No image/vision AI, dynamic capture requirements, diagnosis, AR/SLAM, automatic
-shutter, evidence scoring or video persistence is included. Blur is deferred;
+The Phase 3B-1 baseline did not include image/vision AI; the experimental addition
+is described above. Dynamic capture requirements, diagnosis, AR/SLAM, automatic
+shutter, evidence scoring and video persistence remain excluded. Blur is deferred;
 simple sharpness scores cannot reliably distinguish blur from a low-texture wall.
 HTTPS/localhost is required. Browser logic tests are not physical camera tests;
 see [verification status and device checklist](CAMERA_VERIFICATION.md).
@@ -86,7 +128,8 @@ optionally annotates, reviews and submits. Private storage, request linkage and 
 activity persist; the case status stays unchanged. Renter sees Evidence submitted /
 Awaiting review, while PM sees the associated photo and annotations read-only.
 Original report evidence remains separate. Retry safely recovers partial and lost
-responses. Native picker is used; no adaptive/live camera or video persistence.
+responses. Photo acquisition now uses the shared live camera with native/Gallery
+fallback; requested-evidence does not use the experimental vision layer. No video persistence.
 Draft recovery after reload and Realtime remain deferred. Seeded
 cases remain read-only for renter writes; demonstrate the loop with a new visitor case.
 
