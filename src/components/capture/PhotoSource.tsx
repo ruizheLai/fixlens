@@ -6,12 +6,20 @@ import { IcoX, IcoHelp, IcoGallery, IcoFlash } from "../common/icons";
 import { CameraSession, cameraErrorMessage, captureFrame } from "./cameraSession";
 import { QualityGuidance, sampleLuminance, type QualityHint } from "./cameraQuality";
 import { CameraTorch } from "./cameraTorch";
+import { FramingScheduler, FramingStability, type FramingBudget } from "./framingScheduler";
+import { framingGuide, type FramingGuide } from "./framingRules";
+import { framingFrame } from "./framingFrame";
+import FramingOverlay from "./FramingOverlay";
+import { captureVisionEnabled } from "./captureVision";
+import { analyzeCaptureFrame } from "../../services/captureFraming";
+import type { FramingContext } from "../../../supabase/functions/_shared/captureFraming.ts";
 import "./camera.css";
 
 type CameraState = "idle" | "starting" | "live" | "paused" | "error";
-export default function PhotoSource({ role, onPhoto, onClose, requestInstruction }: {
+export default function PhotoSource({ role, onPhoto, onClose, requestInstruction, framingContext, framingBudget }: {
   role: PhotoType; onPhoto: (photo: LocalPhoto) => void; onClose: () => void;
   requestInstruction?: string;
+  framingContext?: FramingContext | null; framingBudget?: FramingBudget;
 }) {
   const camera = useRef<HTMLInputElement>(null), gallery = useRef<HTMLInputElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -25,9 +33,14 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
   const [state, setState] = useState<CameraState>("starting");
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [hint, setHint] = useState<QualityHint>("framing");
+  const [aiGuide, setAiGuide] = useState<FramingGuide | null>(null);
+  const analysis = useRef<FramingScheduler | null>(null);
+  const guidanceElement = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
   const framing = role === "overview" ? "Capture an overview of the issue. Try to include the surrounding area." : "Move closer and show the affected area clearly.";
 
   const stop = useCallback(() => {
+    analysis.current?.invalidate();
     cameraVersion.current++;
     if (startTimer.current) clearTimeout(startTimer.current);
     startTimer.current = null;
@@ -106,10 +119,35 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
   };
 
   useEffect(() => {
+    if (!captureVisionEnabled || state !== "live" || requestInstruction !== undefined || !framingContext || !framingBudget) return;
+    const captureMode = role === "overview" ? "overview" : "close_up";
+    const scheduler = new FramingScheduler(framingBudget, signal => {
+      if (document.hidden || !video.current?.srcObject) throw new Error("Camera paused");
+      return analyzeCaptureFrame({ captureMode, issueContext: framingContext, image: framingFrame(video.current) }, signal);
+    }, result => { if (active.current) setAiGuide(result ? framingGuide(captureMode, result) : null); },
+    () => performance.now(), import.meta.env.DEV ? (event, count) => {
+      // Opt-in DevTools observation; never log images, context or credentials.
+      window.dispatchEvent(new CustomEvent("fixlens:framing", { detail: { stage: captureMode, event, count } }));
+    } : undefined);
+    analysis.current = scheduler;
+    return () => { scheduler.dispose(); if (analysis.current === scheduler) analysis.current = null; };
+  }, [state, role, requestInstruction, framingContext, framingBudget]);
+
+  useEffect(() => {
+    const element = guidanceElement.current;
+    if (state !== "live" || !element) return;
+    const measure = () => surface.current?.style.setProperty("--framing-bottom", `${element.offsetHeight + parseFloat(getComputedStyle(element).bottom) + 14}px`);
+    const observer = new ResizeObserver(measure); observer.observe(element); measure();
+    window.addEventListener("resize", measure);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, [state]);
+
+  useEffect(() => {
     if (state !== "live") return;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", { willReadFrequently: true });
     const guidance = new QualityGuidance();
+    const stability = captureVisionEnabled ? new FramingStability() : null;
     if (!context) return;
     const interval = setInterval(() => {
       const element = video.current;
@@ -117,8 +155,10 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
       canvas.width = 96; canvas.height = Math.max(1, Math.round(96 * element.videoHeight / element.videoWidth));
       try {
         context.drawImage(element, 0, 0, canvas.width, canvas.height);
-        setHint(guidance.update(sampleLuminance(context.getImageData(0, 0, canvas.width, canvas.height).data), performance.now()));
-      } catch { setHint("framing"); } // Capture still works if advisory sampling is unavailable.
+        const frame = sampleLuminance(context.getImageData(0, 0, canvas.width, canvas.height).data);
+        const next = guidance.update(frame, performance.now()); setHint(next);
+        if (stability) analysis.current?.observe(stability.observe(frame, next === "ready"));
+      } catch { setHint("framing"); analysis.current?.invalidate(); } // Capture still works if advisory sampling is unavailable.
     }, 500);
     return () => { clearInterval(interval); canvas.width = 0; canvas.height = 0; };
   }, [state]);
@@ -156,7 +196,7 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
   const message = hint === "dark" ? "It's a little dark. Try moving to a brighter position."
     : hint === "moving" ? "Hold steady" : hint === "ready" ? "Ready to capture" : "Find your frame";
 
-  return <div className="camera-surface">
+  return <div ref={surface} className="camera-surface">
     <video ref={video} className="camera-video" aria-label="Live camera preview" autoPlay muted playsInline
       onPlaying={() => {
         if (!video.current?.srcObject || document.hidden) return;
@@ -179,7 +219,8 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
         <button className="camera-picker" onClick={() => pick(camera)}>Use camera / photo picker</button>
       </>}
     </div>}
-    {state === "live" && <div className="camera-guidance" data-instruction-visible={instructionVisible}>
+    {state === "live" && requestInstruction === undefined && <FramingOverlay closeUp={role !== "overview"} guide={captureVisionEnabled ? aiGuide : null} />}
+    {state === "live" && <div ref={guidanceElement} className="camera-guidance" data-instruction-visible={instructionVisible}>
       <p className="camera-quality" role="status" aria-live="polite">{message}</p>
       <div className="camera-instruction-wrap" aria-hidden={!instructionVisible} inert={!instructionVisible}>
         <div className="camera-instruction-clip">

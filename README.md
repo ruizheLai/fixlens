@@ -1,5 +1,69 @@
 # FixLens
 
+## Phase 3B-2B — Exhibition Guided Evidence Capture
+
+Experimental Vision guidance is **disabled by default** in
+`src/components/capture/captureVision.ts`. The camera keeps static Overview (76%)
+and Close-up (48%) guides, fixed instructions, local brightness/stability, Gallery,
+shutter, torch, Preview/Retake and annotations. It does not start the Vision
+scheduler, prepare analysis JPEGs, send frames for analysis or show AI messages.
+Accepted photos still use the existing private evidence upload workflow.
+Phase 3A text-based issue understanding remains active and unchanged.
+
+The prepared Edge guard also defaults off: only the server-only
+`CAPTURE_VISION_ENABLED` setting exactly equal to `true` permits provider calls.
+Missing/false/other values return a generic 503 after existing CORS/auth/input
+validation, without calling OpenAI. Never configure this through Vite or client
+headers. **Guard deployed with approval on 10 October 2026: framing v4 is ACTIVE.**
+All 16 live disabled/CORS/override checks passed. No server settings were changed
+or enabled. Phase 3A remains v3. Frontend Preview/final mobile UX verification
+remain owner-controlled next steps.
+
+Preserved Vision code is research-only. Re-enabling requires a deliberate code
+change, server configuration, accuracy review and appropriate access/cost controls.
+Do not market the current camera as object recognition or automated defect detection.
+Historical evaluation below explains the fallback decision.
+
+## Phase 3B-2A — experimental target-presence refinement
+
+The strict output now adds `targetPresence` (visible / not_visible / uncertain).
+Only confidently absent targets receive “Aim at the affected area”; uncertain or
+low-confidence results stay silent. Visible targets still need coherent framing
+dimensions, and directions require high confidence. This means identifying the
+fixture/area, never confirming a defect.
+
+**Provider accuracy blocker:** 12 real calls corrected both clear-absence examples,
+but both unidentifiable crops were confidently called visible. One received Good
+framing and one Move left. Recommend disabling provider guidance for exhibition
+while retaining static zones and local quality feedback. This recommendation has
+not been implemented as a feature switch. No physical testing is requested.
+
+Normal Overview/Close-up capture now has a fixed four-corner guide and optional
+server-side vision judgement. Local rules choose one short message from coverage,
+distance and camera-aim position; confidence is an internal uncertainty control.
+Local brightness/motion checks remain separate and gate analysis. Requests require
+1.5 seconds of usable stability, at least 4 seconds between starts, no overlap and
+at most 5 attempts per stage, including Retake. Shutter remains advisory/user-controlled.
+
+Sparse downscaled JPEG frames (visible Cover crop, at most 768px, quality 0.65)
+leave the device for OpenAI framing analysis through `analyze-capture-frame`.
+They are memory-only and are not saved as case evidence. Accepted shutter photos
+retain the existing private upload path. No microphone or continuous video is sent.
+No identity/property/PM records are included; only four confirmed issue fields.
+OpenAI `store:false` is used; this is not a promise of zero provider retention.
+
+**Experimental, not acceptance-complete:** the small real-provider evaluation found
+confident advice for an absent target and unreliable close-up/directional judgement,
+even after one focused prompt clarification. Do not treat this as verified framing
+accuracy. Physical Phase 3B-2 iPhone Safari verification is pending. See
+[results and device checklist](docs/CAMERA_VERIFICATION.md#phase-3b-2--9-october-2026).
+No diagnosis, object detection, tracked boxes, AR/WebXR, scores or automatic shutter.
+Requested-evidence capture keeps its existing local guidance without this AI layer.
+
+Run `node --experimental-strip-types --test tests/*.test.ts supabase/functions/tests/*.test.ts`,
+`npx tsc --noEmit`, and `npm run build`. The new development-project function is
+version 3; Phase 3A remains version 3. No migration or new dependency is required.
+
 ## Phase 3B-1.1 — camera layout
 
 Start guided capture enters the shared camera directly, preferring the rear camera
@@ -15,9 +79,9 @@ or unverifiable toggles hide it without interrupting capture. Stopping the camer
 also requests torch off. No new stream is opened for torch.
 
 Preview, annotations, two required photos, optional simulated video and private
-submission remain unchanged. No vision AI or pre-capture upload is added; blur
-remains deferred. Phase 3B-1 functionality passed the owner's physical iPhone Safari
-check; the revised layout and physical torch behavior need a fresh Preview check.
+submission remain unchanged. Phase 3B-1 itself added no vision AI; the separate
+Phase 3B-2 enhancement is described above. Blur remains deferred. The owner has
+confirmed the Phase 3B-1 / 3B-1.1 baseline physically works on iPhone Safari.
 See [camera verification](docs/CAMERA_VERIFICATION.md). Run
 `node --experimental-strip-types --test tests/camera.test.ts tests/cameraTorch.test.ts`.
 
