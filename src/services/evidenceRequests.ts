@@ -1,7 +1,7 @@
-import { EVIDENCE_REQUEST_STATE } from "../data/evidenceRequestPresentation";
+import { EVIDENCE_REQUEST_STATE, requestResponseFields, type EvidenceRequestFields } from "../data/evidenceRequestPresentation";
 import type { EvidenceRequest, EvidenceRequestStatus } from "../types/evidence";
 
-interface EvidenceRequestRow {
+interface EvidenceRequestRow extends EvidenceRequestFields {
   id: string;
   instruction: string;
   status: EvidenceRequestStatus;
@@ -14,7 +14,8 @@ export async function getEvidenceRequests(signal?: AbortSignal, caseKey?: string
   const { supabase } = await import("./supabase");
   const timeout = AbortSignal.timeout(15000);
   let query = supabase.from("evidence_requests")
-    .select("id,instruction,status,created_at,case:cases!inner(case_key)")
+    // Additive rollout: absent new fields map explicitly to legacy photo requests.
+    .select("*,case:cases!inner(case_key)")
     .not("case.case_key", "is", null);
   if (caseKey) query = query.eq("case.case_key", caseKey);
   const { data, error, status } = await query
@@ -26,6 +27,6 @@ export async function getEvidenceRequests(signal?: AbortSignal, caseKey?: string
     if (!row.case?.case_key || !Object.prototype.hasOwnProperty.call(EVIDENCE_REQUEST_STATE, row.status) || !Number.isFinite(Date.parse(row.created_at))) {
       throw new Error("Invalid evidence request record");
     }
-    return { id: row.id, caseKey: row.case.case_key, instruction: row.instruction, status: row.status, createdAt: row.created_at };
+    return { id: row.id, caseKey: row.case.case_key, instruction: row.instruction, status: row.status, createdAt: row.created_at, ...requestResponseFields(row) };
   });
 }

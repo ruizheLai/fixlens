@@ -1,9 +1,10 @@
-import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE } from "../../../data/evidenceRequestPresentation";
+import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE, requestPresentation, canRespondToRequest } from "../../../data/evidenceRequestPresentation";
+import { getDemoSessionId } from "../../../utils/demoSession";
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
 import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
 import { CASE_STATUS_COPY, caseHandlerPresentation, caseStatusMessage } from "../../../data/casePresentation";
-import { demoCaseReference } from "../../../data/demo/cases";
+import { renterCaseSubtitle } from "../../../data/caseIdentity";
 import NavBar from "../../../components/navigation/NavBar";
 import Btn from "../../../components/common/Btn";
 import ScreenHeader from "../../../components/common/ScreenHeader";
@@ -19,10 +20,11 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
   const handler = caseHandlerPresentation(detail);
   const request = currentEvidenceRequest(detail.evidenceRequests);
   const requestState = request ? EVIDENCE_REQUEST_STATE[request.status] : null;
-  const actionRequired = requestState?.actionRequired ?? false;
+  const actionRequired = request ? canRespondToRequest(detail, request, getDemoSessionId()) : false;
+  const requestLabel = request?.status === "requested" && !actionRequired ? "Demo request · Read only" : requestState?.label;
   return (
     <div className="flex flex-col h-full">
-      <ScreenHeader title={detail.title} subtitle={demoCaseReference(detail.caseKey)} onBack={onBack} />
+      <ScreenHeader title={detail.title} subtitle={renterCaseSubtitle(detail)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
 
         {/* Action required banner — top priority */}
@@ -32,16 +34,17 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
               <IcoAlert />
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>Action required</p>
             </div>
-            <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.55, marginBottom: 14 }}>
+            <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.55, marginBottom: 14, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              <strong style={{ display: "block", marginBottom: 6 }}>{requestPresentation(request).requested}</strong>
               {request.instruction}
             </p>
-            <Btn onClick={() => onAddEvidence(request.id)}>Add requested evidence</Btn>
+            <Btn onClick={() => onAddEvidence(request.id)}>{requestPresentation(request).action}</Btn>
           </div>
         ) : (
           <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
             <div style={{ color: "#16A34A" }}><IcoCheckCircle /></div>
             <div>
-              <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#16A34A" }}>{requestState?.label ?? "No action required"}</p>
+              <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#16A34A" }}>{requestLabel ?? "No action required"}</p>
               <p style={{ fontSize: 13, color: "#166534" }}>{request?.status === "submitted" ? "Your additional evidence has been sent for review." : request?.status === "resolved" ? "Your property manager has reviewed this evidence. No further response is needed for this request." : request?.instruction}</p>
             </div>
           </div>
@@ -69,7 +72,7 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
               <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-danger)" }}>{request.instruction}</p>
             ) : (
               <div className="flex items-center gap-2" style={{ color: "var(--color-success)" }}>
-                <IcoCheckCircle /><p style={{ fontSize: 14, fontWeight: 600 }}>{requestState?.label ?? "No action required"}</p>
+                <IcoCheckCircle /><p style={{ fontSize: 14, fontWeight: 600 }}>{requestLabel ?? "No action required"}</p>
               </div>
             )}
           </div>

@@ -2,8 +2,11 @@ import { pmSupabase } from "./supabase";
 import { mapCaseRow, type CaseListRow } from "./cases";
 import { getReportPhotos } from "./evidence";
 import { getRequestedPhotos } from "./requestedEvidence";
+import { requestResponseFields, type EvidenceRequestFields } from "../data/evidenceRequestPresentation";
+import type { InformationRequestType } from "../types/evidence";
 import type { CaseListItem, CaseUpdate } from "../types/case";
 import type { EvidenceRequestStatus, StoredPhoto } from "../types/evidence";
+import { caseRenterIdentity } from "../utils/demoPersona";
 
 export interface PMProfile { id: string; name: string; agency_name: string | null }
 export interface PMCase extends CaseListItem {
@@ -21,19 +24,19 @@ interface PMRow extends CaseListRow {
   id: string; description: string; condition: string | null; safety_response: string | null; created_at: string;
   property: { address: string } | null;
   renter: PMCase["renter"]; handler: PMCase["handler"];
-  evidence_requests: { id: string; instruction: string; status: EvidenceRequestStatus; created_at: string }[];
+  evidence_requests: ({ id: string; instruction: string; status: EvidenceRequestStatus; created_at: string } & EvidenceRequestFields)[];
 }
-const projection = `id,case_key,issue_type,location,status,updated_at,created_at,description,condition,safety_response,
+const projection = `id,case_key,demo_session_id,issue_type,location,status,updated_at,created_at,description,condition,safety_response,
   property:properties!cases_property_id_fkey(address),
   renter:profiles!cases_renter_id_fkey(name,email,phone),
   handler:profiles!cases_handled_by_fkey(name,agency_name),
-  evidence_requests(id,instruction,status,created_at)`;
+  evidence_requests(*)`;
 function mapPMCase(row: PMRow): PMCase {
   const item = mapCaseRow(row);
   return { ...item, id: row.id, description: row.description, condition: row.condition,
     safetyResponse: row.safety_response, createdAt: row.created_at, propertyAddress: row.property?.address ?? null,
-    renter: row.renter, handler: row.handler,
-    evidenceRequests: row.evidence_requests.map(r => ({ id: r.id, caseKey: item.caseKey, instruction: r.instruction, status: r.status, createdAt: r.created_at })),
+    renter: caseRenterIdentity(row.demo_session_id, row.renter), handler: row.handler,
+    evidenceRequests: row.evidence_requests.map(r => ({ id: r.id, caseKey: item.caseKey, instruction: r.instruction, status: r.status, createdAt: r.created_at, ...requestResponseFields(r) })),
   };
 }
 export async function getPMProfile(userId: string, signal: AbortSignal): Promise<PMProfile | null> {
@@ -83,7 +86,7 @@ export type PMWorkflowAction = "request_approval" | "record_approval" | "schedul
 export interface PMWriteResult { outcome: "applied" | "already_applied" | "existing_request" }
 export class PMStateConflict extends Error {}
 
-async function writePMAction(rpc: "advance_case" | "request_case_evidence" | "resolve_evidence_request", args: Record<string, string>, signal: AbortSignal): Promise<PMWriteResult> {
+async function writePMAction(rpc: "advance_case" | "request_case_evidence" | "request_case_information" | "resolve_evidence_request", args: Record<string, string>, signal: AbortSignal): Promise<PMWriteResult> {
   const { data, error } = await pmSupabase.rpc(rpc, args)
     .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(15000)]));
   if (error?.code === "22023" || error?.code === "P0002") throw new PMStateConflict("Case state changed");
@@ -95,6 +98,9 @@ export function advancePMCase(caseKey: string, action: PMWorkflowAction, signal:
 }
 export function requestPMEvidence(caseKey: string, requestId: string, instruction: string, signal: AbortSignal) {
   return writePMAction("request_case_evidence", { p_case_key: caseKey, p_request_id: requestId, p_instruction: instruction }, signal);
+}
+export function requestPMInformation(caseKey: string, requestId: string, instruction: string, requestType: InformationRequestType, signal: AbortSignal) {
+  return writePMAction("request_case_information", { p_case_key: caseKey, p_request_id: requestId, p_instruction: instruction, p_request_type: requestType }, signal);
 }
 export function resolvePMEvidence(caseKey: string, requestId: string, signal: AbortSignal) {
   return writePMAction("resolve_evidence_request", { p_case_key: caseKey, p_request_id: requestId }, signal);

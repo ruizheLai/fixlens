@@ -1,7 +1,8 @@
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
+import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
 import { caseStatusMessage, formatCaseDate } from "../../../data/casePresentation";
-import { demoCaseReference } from "../../../data/demo/cases";
+import { renterCaseSubtitle } from "../../../data/caseIdentity";
 import { useState } from "react";
 import NavBar from "../../../components/navigation/NavBar";
 import ScreenHeader from "../../../components/common/ScreenHeader";
@@ -14,7 +15,7 @@ export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav
   const [showPrevActivity, setShowPrevActivity] = useState(false);
   return (
     <div className="flex flex-col h-full">
-      <ScreenHeader title={detail.title} subtitle={demoCaseReference(detail.caseKey)} onBack={onBack} />
+      <ScreenHeader title={detail.title} subtitle={renterCaseSubtitle(detail)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
 
         <div className="flex items-center gap-3">
@@ -36,6 +37,7 @@ export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav
           </div>
         </div>
 
+        {detail.evidenceRequests.some(r => r.status !== "requested") && <RequestedEvidenceGallery caseKey={detail.caseKey} requests={detail.evidenceRequests} />}
         {/* Activity — collapsed by default */}
         <div>
           <SectionLabel>Case activity</SectionLabel>

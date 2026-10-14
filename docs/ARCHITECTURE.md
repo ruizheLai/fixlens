@@ -1,5 +1,47 @@
 # FixLens Technical Architecture
 
+## Batch 2 — authoritative Home and exhibition identities
+
+Home reuses getCases, canonical statuses and the existing serialized read /
+polling/focus-refresh hooks. One eligible pending request is prominent, with
+access to other actionable cases. Recent Case prefers the current session's own
+latest updated_at, falling back to visible shared seeds. When both refer to the
+same case, a combined card retains both response and general-detail access.
+
+Version 1 demoPersona derives fictional names/initials/example.com contacts from
+the existing persisted demo_session_id. PM and renter case mapping use that same
+function, rather than renaming the shared renter profile. Null-session seeds keep
+their historical tenant identity. Display labels do not authorize access.
+Profile and report confirmation read the existing property and manager relation
+through getDemoProperty; case ownership, property IDs and PM assignments stay intact.
+
+No schema migration or RLS/Auth change is needed. The separately prepared
+supabase/maintenance/batch_2_pm_display_name.sql changes only the existing PM
+profile name from Sarah Chen to Brad Lai and was applied with owner approval on 15 October 2026.
+See [HOME_IDENTITY_VERIFICATION.md](HOME_IDENTITY_VERIFICATION.md) for acceptance,
+cleanup, versioning limits and the approved update verification.
+
+## Batch 1.1 — typed information requests (database applied, frontend awaiting review)
+
+The existing evidence_requests lifecycle now supports Overview photo, Close-up
+photo and written details in locally verified code. A backward-compatible additive
+migration adds request_type (legacy_photo default) and response_text, reusing
+submitted_at/resolved_at. Controlled RPCs retain case-first locks, demo-session
+ownership, PM authorization and one unresolved request per case. Written submission
+is atomic, exact-text and retry-safe; it creates no Storage object or case-status
+transition. Photo capture/annotations and PM resolution are reused.
+
+`RequestInformationDialog` is shared by the general PM action and original photo
+card actions. `WrittenDetailsWorkflow` is dispatched inside the existing case
+route; the existing photo workflow chooses its capture role from shared request
+presentation. Renter polling and private PM invalidation stay unchanged.
+Only the approved information_request_types migration was applied to the existing
+FixLens project on 14 October 2026 (remote version 20261014093153, local file
+20261014081934_information_request_types.sql). Live acceptance passed; Production
+frontend remains unchanged. Full scope, SQL/browser evidence, cleanup baseline,
+security boundaries and remaining manual device checks are recorded in
+[INFORMATION_REQUEST_VERIFICATION.md](INFORMATION_REQUEST_VERIFICATION.md).
+
 ## Phase 3B-2B — default-off exhibition configuration
 
 `captureVisionEnabled = false` is a source-controlled frontend flag, not a URL,
