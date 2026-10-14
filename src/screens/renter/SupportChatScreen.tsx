@@ -16,7 +16,7 @@ const SUPPORT_REPLIES: Record<string, string> = {
   "What counts as urgent?": "Urgent issues are those that pose a risk to health, safety, or significant property damage — such as flooding, exposed wiring, gas leaks, or no heating in winter.",
   "How long does maintenance usually take?": "Most repairs are arranged within 5–10 business days. Urgent issues are typically addressed within 24 hours.",
   "Why do I need to upload photos?": "Photos help your property manager understand the issue clearly and give your landlord the evidence needed to approve the repair.",
-  "How do I contact my property manager?": "You can reach your property manager Sarah Chen at Apex Rentals. Contact details are usually in your tenancy agreement.",
+  "How do I contact my property manager?": "Your property manager is listed on your Profile. Contact details are usually in your tenancy agreement.",
 };
 
 export default function SupportChatScreen({ onBack }: { onBack: () => void }) {

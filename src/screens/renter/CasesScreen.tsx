@@ -1,6 +1,7 @@
 import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
 import { useAutomaticInvalidation } from "../../hooks/useAutomaticInvalidation";
-import { hasRequestedEvidence } from "../../data/evidenceRequestPresentation";
+import { actionableRequests } from "../../data/evidenceRequestPresentation";
+import { getDemoSessionId } from "../../utils/demoSession";
 
 import { getCases } from "../../services/cases";
 import { formatCaseDate } from "../../data/casePresentation";
@@ -38,12 +39,13 @@ export default function MyCasesScreen({ onCase, onNav }: {
 
             {state === "ready" && active.map((item) => {
               // Current action is independent of the primary lifecycle.
-              const actionRequired = hasRequestedEvidence(item.evidenceRequests);
+              const actionRequired = actionableRequests(item, getDemoSessionId()).length > 0;
               return (
             <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" style={actionRequired ? { background: "#FFF8F8", border: "1.5px solid #FECACA" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--color-text)", marginBottom: 4 }}>{item.title}</p>
+                  {!item.demoSessionId && <p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Shared demo case</p>}
                   <div className="flex items-center gap-1" style={{ color: "var(--color-muted)", marginBottom: 8 }}>
                     <IcoMapPin /><span style={{ fontSize: 12 }}>{item.locationLabel}</span>
                   </div>
@@ -73,6 +75,7 @@ export default function MyCasesScreen({ onCase, onNav }: {
             <div className="flex items-center justify-between">
               <div>
                 <p style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 14, color: "var(--color-text-secondary)" }}>{item.title}</p>
+                {!item.demoSessionId && <p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Shared demo case</p>}
                 <div className="flex items-center gap-3 mt-1.5">
                   <StatusPill status="completed" />
                   <span style={{ fontSize: 12, color: "var(--color-muted)" }}>{formatCaseDate(item.updatedAt, true)}</span>

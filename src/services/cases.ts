@@ -4,6 +4,7 @@ import type { CaseDetail, CaseListItem, CaseStatus } from "../types/case";
 import type { CaseCreationAttempt, CreatedMaintenanceCase } from "../types/report";
 import { DEMO_BACKEND } from "../config/demoBackend";
 import { getDemoSessionId } from "../utils/demoSession";
+import { caseRenterIdentity } from "../utils/demoPersona";
 
 export async function createMaintenanceCase(input: CaseCreationAttempt, signal?: AbortSignal): Promise<CreatedMaintenanceCase> {
   if (getDemoSessionId() !== input.demoSessionId) throw new Error("Submission session changed");
@@ -11,7 +12,7 @@ export async function createMaintenanceCase(input: CaseCreationAttempt, signal?:
   const { supabase } = await import("./supabase");
   const timeout = AbortSignal.timeout(15000);
   const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  const projection = "case_key,issue_type,location,status,updated_at";
+  const projection = "case_key,demo_session_id,issue_type,location,status,updated_at";
   const findExisting = async () => {
     const { data, error, status } = await supabase.from("cases").select(projection)
       .eq("case_key", input.caseKey).eq("demo_session_id", input.demoSessionId)
@@ -42,6 +43,7 @@ export async function createMaintenanceCase(input: CaseCreationAttempt, signal?:
 
 // Focused projection of the Phase 2A schema; no generated/full-schema abstraction.
 export interface CaseListRow {
+  demo_session_id?: string | null;
   case_key: string | null;
   issue_type: string;
   location: string | null;
@@ -57,6 +59,7 @@ export function mapCaseRow(row: CaseListRow): CaseListItem {
   // Keep useful fixture-style titles without matching particular case IDs.
   const title = row.issue_type === "Water leak" && location ? `${location} leak` : row.issue_type;
   return {
+    demoSessionId: row.demo_session_id ?? null,
     evidenceRequests: [],
     caseKey: row.case_key,
     issueType: row.issue_type,
@@ -75,7 +78,7 @@ export async function getCases(signal?: AbortSignal): Promise<CaseListItem[]> {
   const timeout = AbortSignal.timeout(15000);
   const { data, error, status } = await supabase
     .from("cases")
-    .select("case_key,issue_type,location,status,updated_at")
+    .select("case_key,demo_session_id,issue_type,location,status,updated_at")
     .not("case_key", "is", null)
     .order("updated_at", { ascending: false })
     .order("case_key", { ascending: true })
@@ -91,6 +94,7 @@ export async function getCases(signal?: AbortSignal): Promise<CaseListItem[]> {
 
 interface HandlerRow { name: string; role: string; agency_name: string | null }
 interface CaseDetailRow extends CaseListRow {
+  renter: import("../utils/demoPersona").RenterIdentity | null;
   id: string;
   description: string;
   condition: string | null;
@@ -111,7 +115,8 @@ export async function getCaseByKey(caseKey: string, signal?: AbortSignal): Promi
   const timeout = AbortSignal.timeout(15000);
   const readSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const { data: row, error, status } = await supabase.from("cases")
-    .select(`id,case_key,issue_type,location,description,condition,safety_response,status,created_at,updated_at,
+    .select(`id,case_key,demo_session_id,issue_type,location,description,condition,safety_response,status,created_at,updated_at,
+      renter:profiles!cases_renter_id_fkey(name,email,phone),
       handler:profiles!cases_handled_by_fkey(name,role,agency_name),
       property:properties!cases_property_id_fkey(address,manager:profiles!properties_property_manager_id_fkey(name,role,agency_name))`)
     .eq("case_key", caseKey).abortSignal(readSignal).maybeSingle<CaseDetailRow>();
@@ -128,7 +133,7 @@ export async function getCaseByKey(caseKey: string, signal?: AbortSignal): Promi
   const evidenceRequests = await getEvidenceRequests(readSignal, caseKey);
   const handler = row.handler ?? row.property?.manager;
   return {
-    ...mapCaseRow(row), evidenceRequests, description: row.description, condition: row.condition,
+    ...mapCaseRow(row), renter: caseRenterIdentity(row.demo_session_id, row.renter), evidenceRequests, description: row.description, condition: row.condition,
     safetyResponse: row.safety_response, createdAt: row.created_at,
     propertyAddress: row.property?.address ?? null,
     handler: handler ? { name: handler.name, role: handler.role, agencyName: handler.agency_name } : null,

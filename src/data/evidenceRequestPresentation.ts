@@ -1,4 +1,5 @@
 import type { EvidenceRequest, EvidenceRequestStatus, EvidenceRequestType } from "../types/evidence";
+import type { CaseListItem } from "../types/case";
 
 export const EVIDENCE_REQUEST_STATE: Record<EvidenceRequestStatus, { actionRequired: boolean; label: string }> = {
   requested: { actionRequired: true, label: "Action required" },
@@ -8,6 +9,18 @@ export const EVIDENCE_REQUEST_STATE: Record<EvidenceRequestStatus, { actionRequi
 
 export function hasRequestedEvidence(requests: EvidenceRequest[]) {
   return requests.some((request) => EVIDENCE_REQUEST_STATE[request.status].actionRequired);
+}
+
+// Match submission RPC eligibility; shared seeds are readable, never visitor-owned.
+export function canRespondToRequest(c: Pick<CaseListItem, "caseKey" | "status" | "demoSessionId">, request: EvidenceRequest, sessionId: string) {
+  return Boolean(sessionId) && c.demoSessionId === sessionId && c.status === "under_review"
+    && request.caseKey === c.caseKey && request.status === "requested";
+}
+export function actionableRequests(c: CaseListItem, sessionId: string) {
+  return c.evidenceRequests.filter(r => canRespondToRequest(c, r, sessionId));
+}
+export function requestResponsePath(caseKey: string, requestId: string) {
+  return `/cases/${encodeURIComponent(caseKey)}?request=${encodeURIComponent(requestId)}`;
 }
 
 export const INFORMATION_REQUEST_TYPES = {

@@ -3,8 +3,14 @@ import ScreenHeader from "../../components/common/ScreenHeader";
 import SectionLabel from "../../components/common/SectionLabel";
 import { IcoChevRight } from "../../components/common/icons";
 import type { NavItemId } from "../../types/navigation";
+import { demoPersona } from "../../utils/demoPersona";
+import { getDemoSessionId } from "../../utils/demoSession";
+import { getDemoProperty } from "../../services/demoProperty";
+import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
 
 export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => void }) {
+  const persona = demoPersona(getDemoSessionId());
+  const { data: property, error, refresh } = useAuthoritativeRead(getDemoProperty);
   return (
     <div className="flex flex-col h-full">
       <ScreenHeader title="Profile" topLevel />
@@ -13,11 +19,11 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
         {/* Avatar + name */}
         <div className="flex items-center gap-4 px-5 py-5" style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--color-border)" }}>
           <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 52, height: 52, background: "var(--color-blue-light)", color: "var(--color-blue)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>
-            BL
+            {persona.initials}
           </div>
-          <div>
-            <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "var(--color-text)" }}>Brad Lai</p>
-            <p style={{ fontSize: 13, color: "var(--color-muted)", marginTop: 2 }}>Tenant · 12 Birchwood Ave</p>
+          <div className="min-w-0" style={{ overflowWrap: "anywhere" }}>
+            <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "var(--color-text)" }}>{persona.name}</p>
+            <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 2 }}>Demo profile · Tenant</p>
           </div>
         </div>
 
@@ -28,12 +34,12 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
             <SectionLabel>My Details</SectionLabel>
             <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               {[
-                { label: "Name",  value: "Brad Lai" },
-                { label: "Email", value: "brad.lai@email.com" },
-                { label: "Phone", value: "+61 400 000 000" },
+                { label: "Name",  value: persona.name },
+                { label: "Email", value: persona.email },
+                { label: "Phone", value: persona.phone },
               ].map((row, i, arr) => (
                 <div key={row.label} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-subtle)" : "none" }}>
-                  <div>
+                  <div className="min-w-0" style={{ overflowWrap: "anywhere" }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{row.label}</p>
                     <p style={{ fontSize: 14, color: "var(--color-text)" }}>{row.value}</p>
                   </div>
@@ -45,14 +51,15 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
           {/* Rental Property */}
           <div>
             <SectionLabel>Rental Property</SectionLabel>
+            {error && <p role="alert">Property details unavailable. <button onClick={refresh} style={{ color: "var(--color-blue)" }}>Retry</button></p>}
             <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Property address</p>
-                <p style={{ fontSize: 14, color: "var(--color-text)" }}>12 Birchwood Ave, Fitzroy VIC 3065</p>
+                <p style={{ fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>{property?.address ?? (error ? "Unavailable" : "Loading…")}</p>
               </div>
               <div className="px-5 py-3">
                 <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Property manager</p>
-                <p style={{ fontSize: 14, color: "var(--color-text)" }}>Sarah Chen · Apex Rentals</p>
+                <p style={{ fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>{property?.manager ? [property.manager.name, property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : error ? "Unavailable" : "Loading…"}</p>
               </div>
             </div>
           </div>

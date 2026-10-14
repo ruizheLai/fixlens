@@ -6,6 +6,7 @@ import { requestResponseFields, type EvidenceRequestFields } from "../data/evide
 import type { InformationRequestType } from "../types/evidence";
 import type { CaseListItem, CaseUpdate } from "../types/case";
 import type { EvidenceRequestStatus, StoredPhoto } from "../types/evidence";
+import { caseRenterIdentity } from "../utils/demoPersona";
 
 export interface PMProfile { id: string; name: string; agency_name: string | null }
 export interface PMCase extends CaseListItem {
@@ -25,7 +26,7 @@ interface PMRow extends CaseListRow {
   renter: PMCase["renter"]; handler: PMCase["handler"];
   evidence_requests: ({ id: string; instruction: string; status: EvidenceRequestStatus; created_at: string } & EvidenceRequestFields)[];
 }
-const projection = `id,case_key,issue_type,location,status,updated_at,created_at,description,condition,safety_response,
+const projection = `id,case_key,demo_session_id,issue_type,location,status,updated_at,created_at,description,condition,safety_response,
   property:properties!cases_property_id_fkey(address),
   renter:profiles!cases_renter_id_fkey(name,email,phone),
   handler:profiles!cases_handled_by_fkey(name,agency_name),
@@ -34,7 +35,7 @@ function mapPMCase(row: PMRow): PMCase {
   const item = mapCaseRow(row);
   return { ...item, id: row.id, description: row.description, condition: row.condition,
     safetyResponse: row.safety_response, createdAt: row.created_at, propertyAddress: row.property?.address ?? null,
-    renter: row.renter, handler: row.handler,
+    renter: caseRenterIdentity(row.demo_session_id, row.renter), handler: row.handler,
     evidenceRequests: row.evidence_requests.map(r => ({ id: r.id, caseKey: item.caseKey, instruction: r.instruction, status: r.status, createdAt: r.created_at, ...requestResponseFields(r) })),
   };
 }

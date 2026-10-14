@@ -1,5 +1,9 @@
 # FixLens
 
+Batch 2 Home data and session-derived demo identities are prepared and verified.
+The approved name-only PM profile update is applied; final Preview verification remains pending.
+See [Batch 2 verification](docs/HOME_IDENTITY_VERIFICATION.md).
+
 Batch 1.1 PM information requests passed approved live database acceptance on
 14 October 2026. The frontend remains local and has not been deployed.
 See [implementation and verification](docs/INFORMATION_REQUEST_VERIFICATION.md).

@@ -1,5 +1,26 @@
 # FixLens Technical Architecture
 
+## Batch 2 — authoritative Home and exhibition identities
+
+Home reuses getCases, canonical statuses and the existing serialized read /
+polling/focus-refresh hooks. One eligible pending request is prominent, with
+access to other actionable cases. Recent Case prefers the current session's own
+latest updated_at, falling back to visible shared seeds. When both refer to the
+same case, a combined card retains both response and general-detail access.
+
+Version 1 demoPersona derives fictional names/initials/example.com contacts from
+the existing persisted demo_session_id. PM and renter case mapping use that same
+function, rather than renaming the shared renter profile. Null-session seeds keep
+their historical tenant identity. Display labels do not authorize access.
+Profile and report confirmation read the existing property and manager relation
+through getDemoProperty; case ownership, property IDs and PM assignments stay intact.
+
+No schema migration or RLS/Auth change is needed. The separately prepared
+supabase/maintenance/batch_2_pm_display_name.sql changes only the existing PM
+profile name from Sarah Chen to Brad Lai and was applied with owner approval on 15 October 2026.
+See [HOME_IDENTITY_VERIFICATION.md](HOME_IDENTITY_VERIFICATION.md) for acceptance,
+cleanup, versioning limits and the approved update verification.
+
 ## Batch 1.1 — typed information requests (database applied, frontend awaiting review)
 
 The existing evidence_requests lifecycle now supports Overview photo, Close-up

@@ -21,28 +21,33 @@ import type { IssueUnderstanding } from "../../types/issueUnderstanding";
 import { MAX_DESCRIPTION, MAX_ANSWER, MAX_FOLLOW_UPS } from "../../../supabase/functions/_shared/issueUnderstanding.ts";
 import { validateFramingContext, type FramingContext } from "../../../supabase/functions/_shared/captureFraming.ts";
 import { newFramingBudget } from "../../components/capture/framingScheduler";
+import { demoPersona } from "../../utils/demoPersona";
+import { getDemoProperty } from "../../services/demoProperty";
+import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
 
 // ─── Pre-capture chat cards ───────────────────────────────────────────────────
 
-function PropertyCard({ confirmed, onConfirm }: { confirmed: boolean; onConfirm: () => void }) {
+function PropertyCard({ confirmed, onConfirm, sessionId }: { confirmed: boolean; onConfirm: () => void; sessionId: string }) {
+  const persona = demoPersona(sessionId);
+  const { data: property, error, refresh } = useAuthoritativeRead(getDemoProperty);
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ label: "Name", value: "Brad Lai" }, { label: "Address", value: "12 Thornton St, Apt 4B\nMelbourne VIC 3000" }, { label: "Contact", value: "0412 345 678 · brad.m@email.com" }, { label: "Property manager", value: "Sarah Chen — Apex Rentals" }].map((row, i, arr) => (
+        {[{ label: "Name", value: persona.name }, { label: "Address", value: property?.address ?? (error ? "Unavailable" : "Loading…") }, { label: "Contact", value: `${persona.email} · ${persona.phone}` }, { label: "Property manager", value: property?.manager ? [property.manager.name,property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : "Loading…" }].map((row, i, arr) => (
           <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
-            <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, whiteSpace: "pre-line" }}>{row.value}</p>
+            <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, whiteSpace: "pre-line", overflowWrap: "anywhere" }}>{row.value}</p>
           </div>
         ))}
       </div>
+      {error && <p role="alert" style={{ fontSize: 13 }}>Property details unavailable. <button onClick={refresh} style={{ color: "var(--color-blue)" }}>Retry</button></p>}
       {confirmed ? (
         <div className="flex items-center gap-2 mt-3 px-1" style={{ color: "var(--color-success)" }}>
           <IcoCheck /><span style={{ fontSize: 13, fontWeight: 600 }}>Details confirmed</span>
         </div>
       ) : (
         <div className="flex gap-2.5 mt-3">
-          <div className="flex-1"><Btn variant="secondary">Edit</Btn></div>
-          <div className="flex-1"><Btn onClick={onConfirm}>Confirm</Btn></div>
+          <div className="flex-1"><Btn disabled={!property || error} onClick={onConfirm}>Confirm</Btn></div>
         </div>
       )}
     </div>
@@ -289,7 +294,7 @@ type ChatStage =
   | "safety-danger"
   | "capture-expectation";
 
-function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, onStartCapture }: { onReport: (value: MaintenanceReportInput) => void; onFramingContext: (value: FramingContext | null) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void }) {
+function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, onStartCapture, sessionId }: { onReport: (value: MaintenanceReportInput) => void; onFramingContext: (value: FramingContext | null) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void; sessionId: string }) {
   const [stage, setStage] = useState<ChatStage>("confirming-details");
   const [propConfirmed, setPropConfirmed] = useState(false);
   const [issueText, setIssueText] = useState("");
@@ -365,7 +370,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
         {/* Confirm details */}
         <AssistantBubble>Let's start by confirming your property and contact details.</AssistantBubble>
-        <PropertyCard confirmed={propConfirmed} onConfirm={handleConfirm} />
+        <PropertyCard sessionId={sessionId} confirmed={propConfirmed} onConfirm={handleConfirm} />
 
         {/* Describe issue */}
         {(stage !== "confirming-details" || propConfirmed) && (["describing-issue", "reviewing-summary", ...afterSummary] as ChatStage[]).includes(stage) && (
@@ -440,6 +445,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
 }
 
 export default function ReportWorkflow() {
+  const [reportSessionId] = useState(getDemoSessionId);
   const [framingContext, setFramingContext] = useState<FramingContext | null>(null);
   const [framingBudgets] = useState(() => ({ overview: newFramingBudget(), closeup: newFramingBudget() }));
   const [step, setStep] = useState<ReportStep>("report-chat");
@@ -484,7 +490,7 @@ export default function ReportWorkflow() {
     const controller = new AbortController();
     submitController.current = controller;
     try {
-      submission.current ??= { ...report, demoSessionId: getDemoSessionId(), caseKey: `demo-${crypto.randomUUID()}` };
+      submission.current ??= { ...report, demoSessionId: reportSessionId, caseKey: `demo-${crypto.randomUUID()}` };
       const result = await createMaintenanceCase(submission.current, controller.signal);
       if (controller.signal.aborted) return;
       setCreatedCase(result); setUploading(true);
@@ -512,7 +518,7 @@ export default function ReportWorkflow() {
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {postCapture
             ? <PostCaptureView report={report} photos={photos} videoIncluded={videoIncluded} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
-            : <PreCaptureChat onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
+            : <PreCaptureChat sessionId={reportSessionId} onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
         </div>
       )}
       {step === "ar-overview" && <PhotoSource role="overview" framingContext={framingContext} framingBudget={framingBudgets.overview} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}

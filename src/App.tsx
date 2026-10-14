@@ -1,7 +1,7 @@
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback } from "react";
 import { useAuthoritativeRead } from "./hooks/useAuthoritativeRead";
 import { useAutomaticInvalidation } from "./hooks/useAutomaticInvalidation";
-import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
 import RequestedEvidenceWorkflow from "./features/evidence/RequestedEvidenceWorkflow";
@@ -16,12 +16,13 @@ import HotWaterCaseDetailScreen from "./screens/renter/cases/HotWaterCaseDetailS
 import KitchenCaseDetailScreen from "./screens/renter/cases/KitchenCaseDetailScreen";
 import SubmittedReportScreen from "./screens/renter/SubmittedReportScreen";
 import ReportWorkflow from "./features/report/ReportWorkflow";
-import { casePath } from "./data/demo/cases";
 import type { NavItemId } from "./types/navigation";
 import type { CaseDetail } from "./types/case";
 import { getCaseByKey } from "./services/cases";
 import ScreenHeader from "./components/common/ScreenHeader";
 import NavBar from "./components/navigation/NavBar";
+import { canRespondToRequest, requestResponsePath } from "./data/evidenceRequestPresentation";
+import { getDemoSessionId } from "./utils/demoSession";
 
 const NAV_PATHS: Record<NavItemId, string> = { home: "/", cases: "/cases", inbox: "/inbox", profile: "/profile" };
 const PMPortal = lazy(() => import("./features/pm/PMPortal"));
@@ -67,15 +68,15 @@ function LoadedCaseRoute({ caseKey, onNav }: {
 function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
   detail: CaseDetail; onRefresh: () => void; onNav: (id: NavItemId) => void;
 }) {
-  const [requestId, setRequestId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const request = detail.evidenceRequests.find(r => r.id === requestId && r.status === "requested");
+  const request = detail.evidenceRequests.find(r => r.id === params.get("request") && canRespondToRequest(detail, r, getDemoSessionId()));
   if (request) {
-    const done = () => { setRequestId(null); onRefresh(); };
+    const done = () => { setParams({}, { replace: true }); onRefresh(); };
     return request.requestType === "written_details" ? <WrittenDetailsWorkflow key={request.id} request={request} caseTitle={detail.title} onExit={done} onSubmitted={done} />
       : <RequestedEvidenceWorkflow key={request.id} request={request} onExit={done} onSubmitted={done} />;
   }
-  return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={setRequestId} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
+  return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={id => navigate(requestResponsePath(detail.caseKey, id))} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
 
 function SubmittedReportRoute() {
@@ -91,12 +92,11 @@ export default function App() {
 function RenterApp() {
   const navigate = useNavigate();
   const onNav = (id: NavItemId) => navigate(NAV_PATHS[id]);
-  const bedroom = () => navigate(casePath("bedroom-window-leak"));
 
   return (
     <PhoneShell>
       <Routes>
-        <Route path="/" element={<RenterPage><HomeScreen onReport={() => navigate("/report")} onMyCases={() => navigate("/cases")} onCaseDetail={bedroom} onInbox={() => navigate("/inbox")} onSupportChat={() => navigate("/support")} onNav={onNav} /></RenterPage>} />
+        <Route path="/" element={<RenterPage><HomeScreen onReport={() => navigate("/report")} onMyCases={() => navigate("/cases")} onCaseDetail={key => navigate(`/cases/${encodeURIComponent(key)}`)} onRequest={(key,id) => navigate(requestResponsePath(key,id))} onInbox={() => navigate("/inbox")} onSupportChat={() => navigate("/support")} onNav={onNav} /></RenterPage>} />
         <Route path="/cases" element={<RenterPage><CasesScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
         <Route path="/inbox" element={<RenterPage><InboxScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
         <Route path="/profile" element={<RenterPage><ProfileScreen onNav={onNav} /></RenterPage>} />
