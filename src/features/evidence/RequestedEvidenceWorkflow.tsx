@@ -7,8 +7,10 @@ import ScreenHeader from "../../components/common/ScreenHeader";
 import Btn from "../../components/common/Btn";
 import { getDemoSessionId } from "../../utils/demoSession";
 import { submitRequestedPhoto } from "../../services/requestedEvidence";
+import { requestPresentation } from "../../data/evidenceRequestPresentation";
 
 export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted }: { request: EvidenceRequest; onExit: () => void; onSubmitted: () => void }) {
+  const role = requestPresentation(request).role ?? "closeup";
   const [step, setStep] = useState<"capture" | "preview" | "review">("capture");
   const [photo, setPhoto] = useState<LocalPhoto | null>(null);
   const latest = useRef<LocalPhoto | null>(null);
@@ -36,13 +38,13 @@ export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted
     } catch { if (!current.signal.aborted) setError(true); }
     finally { controller.current = null; if (!current.signal.aborted) setPending(false); }
   }
-  if (step === "capture") return <PhotoSource role="closeup" requestInstruction={request.instruction} onClose={onExit} onPhoto={p => { accept(p); setStep("preview"); }} />;
-  if (step === "preview" && photo) return <PhotoPreview key={photo.id} title="Requested photo" photoType="closeup" photo={photo}
+  if (step === "capture") return <PhotoSource role={role} requestInstruction={request.instruction} onClose={onExit} onPhoto={p => { accept(p); setStep("preview"); }} />;
+  if (step === "preview" && photo) return <PhotoPreview key={photo.id} title="Requested photo" photoType={role} photo={photo}
     onAnnotations={annotations => accept({ ...photo, annotations })} onRetake={retake} onUse={() => setStep("review")} />;
   return <div className="flex flex-col h-full">
     <ScreenHeader title="Review requested evidence" onBack={() => { if (!pending) { if (frozen.current) onExit(); else setStep("preview"); } }} />
     <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
-      <p style={{ fontSize: 14, lineHeight: 1.6 }}>{request.instruction}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{request.instruction}</p>
       {photo && <div style={{ height: 280, flexShrink: 0 }}><AnnotatedPhoto src={photo.previewUrl} metadata={photo} label="Requested photo review" /></div>}
       {!frozen.current && <Btn onClick={() => setStep("capture")}>Replace photo</Btn>}
       <p style={{ fontSize: 13, color: "var(--color-muted)" }}>This photo will be added to your case for review. Your case status will stay the same.</p>

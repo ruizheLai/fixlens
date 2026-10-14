@@ -5,6 +5,7 @@ import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-do
 import PhoneShell from "./app/PhoneShell";
 import FloatingChatBtn from "./components/navigation/FloatingChatBtn";
 import RequestedEvidenceWorkflow from "./features/evidence/RequestedEvidenceWorkflow";
+import WrittenDetailsWorkflow from "./features/evidence/WrittenDetailsWorkflow";
 import HomeScreen from "./screens/renter/HomeScreen";
 import CasesScreen from "./screens/renter/CasesScreen";
 import InboxScreen from "./screens/renter/InboxScreen";
@@ -69,7 +70,11 @@ function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
   const [requestId, setRequestId] = useState<string | null>(null);
   const navigate = useNavigate();
   const request = detail.evidenceRequests.find(r => r.id === requestId && r.status === "requested");
-  if (request) return <RequestedEvidenceWorkflow request={request} onExit={() => { setRequestId(null); onRefresh(); }} onSubmitted={() => { setRequestId(null); onRefresh(); }} />;
+  if (request) {
+    const done = () => { setRequestId(null); onRefresh(); };
+    return request.requestType === "written_details" ? <WrittenDetailsWorkflow key={request.id} request={request} caseTitle={detail.title} onExit={done} onSubmitted={done} />
+      : <RequestedEvidenceWorkflow key={request.id} request={request} onExit={done} onSubmitted={done} />;
+  }
   return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={setRequestId} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
 

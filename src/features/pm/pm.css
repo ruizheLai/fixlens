@@ -55,6 +55,15 @@
 .pm-photo-image { width: 108px; height: 144px; flex: 0 0 108px; background: #F0F2F5; display: flex; justify-content: center; align-items: center; text-align: center; }
 .pm-photo-info { padding: 12px; min-width: 0; }.pm-photo-info h3 { margin-bottom: 4px; }.pm-photo-info p { color: #6B7280; font-size: 11px; margin: 5px 0 10px; }.pm-photo-state { font-size: 11px; color: #14532D; }.pm-photo-open { font-size: 12px; padding: 5px 8px; }.pm-request .pm-photo-card { margin-top: 12px; }
 .pm-photo-image svg, .pm-photo-full svg { object-fit: contain; }
+.pm-photo-request { display: block; margin-top: 8px; color: #4B5563; font-size: 11.5px; text-decoration: underline; text-underline-offset: 3px; }
+.pm-written-response { background: white; border: 1px solid #E2E6ED; border-radius: 8px; padding: 12px; margin: 10px 0; }
+.pm-written-response p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pm-information-dialog { max-height: calc(100dvh - 32px); }
+.pm-information-dialog fieldset { min-width: 0; border: 0; padding: 0; margin-top: 16px; }
+.pm-information-dialog legend { font-weight: 600; }
+.pm-information-dialog .pm-request-option { display: flex; align-items: center; gap: 10px; font-weight: 400; margin-top: 12px; }
+.pm-information-dialog input[type=radio] { width: 16px; height: 16px; flex-shrink: 0; padding: 0; accent-color: #2563EB; }
+.pm-information-dialog textarea { font-size: 16px; }
 .pm-tenant summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }.pm-tenant[open] summary { margin-bottom: 14px; }.pm-tenant p { margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .pm-timeline li { border-left: 1px solid #E2E6ED; position: relative; padding: 0 0 20px 25px; margin-left: 9px; }.pm-timeline li:last-child { padding-bottom: 0; border-color: transparent; }.pm-timeline li::before { content: ''; position: absolute; left: -7px; top: 2px; width: 13px; height: 13px; border-radius: 50%; border: 2px solid #2563EB; background: #EFF4FF; }.pm-timeline time { display: block; font-size: 11px; color: #6B7280; margin-bottom: 3px; }.pm-timeline strong { display: block; }.pm-timeline p { color: #6B7280; font-size: 12.5px; margin-top: 2px; }
 .pm-next h2 { margin-bottom: 4px; }.pm-guidance { border: 1px solid #BFDBFE; background: #EFF4FF; color: #1D4ED8; border-radius: 10px; padding: 12px 14px; margin: 14px 0 16px; }.pm-guidance p { font-size: 12px; line-height: 1.55; margin-top: 4px; }.pm-guidance-complete { background: #F0FDF4; border-color: #BBF7D0; color: #14532D; }

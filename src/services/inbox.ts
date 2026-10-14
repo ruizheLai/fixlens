@@ -1,5 +1,5 @@
 import { caseUpdateTitle } from "../data/casePresentation";
-import { hasRequestedEvidence } from "../data/evidenceRequestPresentation";
+import { hasRequestedEvidence, requestPresentation } from "../data/evidenceRequestPresentation";
 import type { InboxItem } from "../types/inbox";
 import { mapCaseRow, type CaseListRow } from "./cases";
 import { getEvidenceRequests } from "./evidenceRequests";
@@ -27,11 +27,15 @@ export async function getInboxItems(signal?: AbortSignal): Promise<InboxItem[]> 
     if (!Number.isFinite(Date.parse(row.created_at))) throw new Error("Invalid Inbox record");
     const item = mapCaseRow(row.case);
     const update = { id: row.id, updateType: row.update_type, message: row.message, createdAt: row.created_at };
+    const related = requests.filter(request => request.caseKey === item.caseKey);
+    // RPC request/activity share the transaction timestamp. Legacy activity may
+    // not: retain its generic title and existing current-state handling.
+    const request = row.update_type === "evidence_requested" ? related.find(r => r.createdAt === row.created_at) : undefined;
     return {
-      ...update, caseKey: item.caseKey, caseTitle: item.title, title: caseUpdateTitle(update),
+      ...update, caseKey: item.caseKey, caseTitle: item.title, title: request ? requestPresentation(request).inbox : caseUpdateTitle(update),
       // A historical request event alone never establishes current action.
       actionRequired: row.update_type === "evidence_requested" && item.status !== "completed"
-        && hasRequestedEvidence(requests.filter((request) => request.caseKey === item.caseKey)),
+        && (request ? request.status === "requested" : hasRequestedEvidence(related)),
     };
   });
 }

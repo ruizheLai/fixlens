@@ -1,5 +1,26 @@
 # FixLens Technical Architecture
 
+## Batch 1.1 — typed information requests (database applied, frontend awaiting review)
+
+The existing evidence_requests lifecycle now supports Overview photo, Close-up
+photo and written details in locally verified code. A backward-compatible additive
+migration adds request_type (legacy_photo default) and response_text, reusing
+submitted_at/resolved_at. Controlled RPCs retain case-first locks, demo-session
+ownership, PM authorization and one unresolved request per case. Written submission
+is atomic, exact-text and retry-safe; it creates no Storage object or case-status
+transition. Photo capture/annotations and PM resolution are reused.
+
+`RequestInformationDialog` is shared by the general PM action and original photo
+card actions. `WrittenDetailsWorkflow` is dispatched inside the existing case
+route; the existing photo workflow chooses its capture role from shared request
+presentation. Renter polling and private PM invalidation stay unchanged.
+Only the approved information_request_types migration was applied to the existing
+FixLens project on 14 October 2026 (remote version 20261014093153, local file
+20261014081934_information_request_types.sql). Live acceptance passed; Production
+frontend remains unchanged. Full scope, SQL/browser evidence, cleanup baseline,
+security boundaries and remaining manual device checks are recorded in
+[INFORMATION_REQUEST_VERIFICATION.md](INFORMATION_REQUEST_VERIFICATION.md).
+
 ## Phase 3B-2B — default-off exhibition configuration
 
 `captureVisionEnabled = false` is a source-controlled frontend flag, not a URL,

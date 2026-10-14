@@ -1,4 +1,4 @@
-import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE } from "../../../data/evidenceRequestPresentation";
+import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE, requestPresentation } from "../../../data/evidenceRequestPresentation";
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
 import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
@@ -32,10 +32,11 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
               <IcoAlert />
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>Action required</p>
             </div>
-            <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.55, marginBottom: 14 }}>
+            <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.55, marginBottom: 14, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              <strong style={{ display: "block", marginBottom: 6 }}>{requestPresentation(request).requested}</strong>
               {request.instruction}
             </p>
-            <Btn onClick={() => onAddEvidence(request.id)}>Add requested evidence</Btn>
+            <Btn onClick={() => onAddEvidence(request.id)}>{requestPresentation(request).action}</Btn>
           </div>
         ) : (
           <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>

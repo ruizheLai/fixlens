@@ -1,5 +1,6 @@
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
+import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
 import { caseStatusMessage, formatCaseDate } from "../../../data/casePresentation";
 import { demoCaseReference } from "../../../data/demo/cases";
 import { useState } from "react";
@@ -36,6 +37,7 @@ export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav
           </div>
         </div>
 
+        {detail.evidenceRequests.some(r => r.status !== "requested") && <RequestedEvidenceGallery caseKey={detail.caseKey} requests={detail.evidenceRequests} />}
         {/* Activity — collapsed by default */}
         <div>
           <SectionLabel>Case activity</SectionLabel>

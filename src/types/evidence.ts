@@ -29,12 +29,17 @@ export interface StoredPhoto {
 export interface RequestedPhoto extends StoredPhoto { requestId: string }
 
 export type EvidenceRequestStatus = "requested" | "submitted" | "resolved";
+export type InformationRequestType = "overview_photo" | "closeup_photo" | "written_details";
+export type EvidenceRequestType = InformationRequestType | "legacy_photo";
 export interface EvidenceRequest {
   id: string;
   caseKey: string;
   instruction: string;
   status: EvidenceRequestStatus;
   createdAt: string;
+  requestType?: EvidenceRequestType;
+  responseText?: string | null;
+  submittedAt?: string | null;
 }
 
 // Display metadata for the existing simulated media, not a stored evidence record.

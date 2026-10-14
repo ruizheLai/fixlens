@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { advancePMCase, getPMDetail, PMStateConflict, requestPMEvidence, resolvePMEvidence, reviewPMCase, type PMCase, type PMDetail, type PMWorkflowAction } from "../../services/pm";
+import { advancePMCase, getPMDetail, PMStateConflict, resolvePMEvidence, reviewPMCase, type PMCase, type PMDetail, type PMWorkflowAction } from "../../services/pm";
 import type { CaseStatus } from "../../types/case";
+import { canRequestInformation } from "../../data/evidenceRequestPresentation";
 
 const actions = {
   request_approval: { title: "Request landlord approval", confirm: "Request approval", explanation: "Record that landlord approval has been requested for this maintenance case. No external email is sent.", success: "Approval request recorded." },
   record_approval: { title: "Record approval received", confirm: "Record approval", explanation: "Confirm that landlord approval has been received. This is a manual record and starts repair arrangement.", success: "Approval recorded." },
   schedule_repair: { title: "Mark repair scheduled", confirm: "Mark repair scheduled", explanation: "Record that the repair has been scheduled. No contractor or appointment details are created.", success: "Repair schedule recorded." },
   complete_repair: { title: "Mark completed", confirm: "Mark completed", explanation: "Confirm that the repair is complete. This case will have no further workflow action.", success: "Repair marked completed." },
-  evidence: { title: "Request more evidence", confirm: "Send request", explanation: "Create a FixLens request for the renter. No external email is sent.", success: "Evidence request recorded." },
-  resolve: { title: "Mark evidence reviewed", confirm: "Mark reviewed", explanation: "Confirm that you have reviewed the additional evidence provided for this request. This does not approve a repair or change the case status.", success: "Additional evidence reviewed." },
+  resolve: { title: "Mark response reviewed", confirm: "Mark reviewed", explanation: "Confirm that you have reviewed the additional information provided for this request. This does not approve a repair or change the case status.", success: "Additional response reviewed." },
 };
-type ModalAction = PMWorkflowAction | "evidence" | "resolve";
+type ModalAction = PMWorkflowAction | "resolve";
 const guidance: Record<CaseStatus, { title: string; body: string; action?: PMWorkflowAction }> = {
   submitted: { title: "Review case", body: "Review the tenant's report and available evidence to begin the case review." },
   under_review: { title: "Request landlord approval", body: "Record the approval request when you have finished reviewing the report.", action: "request_approval" },
@@ -20,10 +20,9 @@ const guidance: Record<CaseStatus, { title: string; body: string; action?: PMWor
   completed: { title: "Case complete", body: "No further action required." },
 };
 
-export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData: PMCase; onChanged: (detail: PMDetail | null) => void }) {
+export default function PMWorkflowActions({ caseData: c, onChanged, onRequestInformation }: { caseData: PMCase; onChanged: (detail: PMDetail | null) => void; onRequestInformation: () => void }) {
   const [modal, setModal] = useState<ModalAction | null>(null);
-  const [instruction, setInstruction] = useState("");
-  const requestAttempt = useRef<{ id: string; instruction: string } | null>(null);
+
   const resolveAttempt = useRef<{ id: string; instruction: string } | null>(null);
   const controller = useRef<AbortController | null>(null);
   const [pending, setPending] = useState(false);
@@ -39,10 +38,10 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
   const submitted = c.evidenceRequests.filter(r => r.status === "submitted").sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))[0];
   const waiting = c.status === "under_review" && Boolean(requested);
   const unexpected = c.status !== "under_review" && c.status !== "completed" && Boolean(requested || submitted);
-  const next = c.status === "completed" ? guidance.completed : unexpected ? { title: "Evidence request needs attention", body: "An unresolved request is outside the review stage. Refresh the case before continuing.", action: undefined } : waiting ? { title: "Waiting for requested evidence", body: "Additional evidence has been requested from the renter.", action: undefined } : submitted ? { title: "Additional evidence submitted", body: "The renter has provided the requested evidence. Review it before continuing the case.", action: undefined } : guidance[c.status];
+  const next = c.status === "completed" ? guidance.completed : unexpected ? { title: "Information request needs attention", body: "An unresolved request is outside the review stage. Refresh the case before continuing.", action: undefined } : waiting ? { title: "Waiting for requested information", body: "Additional information has been requested from the renter.", action: undefined } : submitted ? { title: "Additional information submitted", body: "The renter has provided the requested information. Review it before continuing the case.", action: undefined } : guidance[c.status];
   function open(action: ModalAction) {
     if (action === "resolve") { if (!submitted) return; resolveAttempt.current = { id: submitted.id, instruction: submitted.instruction }; }
-    setError(""); setNotice(""); setInstruction(""); requestAttempt.current = null; setModal(action);
+    setError(""); setNotice(""); setModal(action);
   }
   function close() { if (!controller.current) { setModal(null); setError(""); } }
   async function run(action: ModalAction | "review") {
@@ -52,11 +51,7 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
     try {
       let outcome = "applied";
       if (action === "review") await reviewPMCase(c.caseKey, current.signal);
-      else if (action === "evidence") {
-        requestAttempt.current ??= { id: crypto.randomUUID(), instruction: instruction.trim() };
-        const attempt = requestAttempt.current;
-        outcome = (await requestPMEvidence(c.caseKey, attempt.id, attempt.instruction, current.signal)).outcome;
-      } else if (action === "resolve") {
+      else if (action === "resolve") {
         if (!resolveAttempt.current) throw new Error("Evidence request unavailable");
         outcome = (await resolvePMEvidence(c.caseKey, resolveAttempt.current.id, current.signal)).outcome;
       } else outcome = (await advancePMCase(c.caseKey, action, current.signal)).outcome;
@@ -77,20 +72,19 @@ export default function PMWorkflowActions({ caseData: c, onChanged }: { caseData
   return <section className="pm-card"><h2>Next action</h2><p className="pm-muted">Current workflow</p>
     <div className={`pm-guidance ${c.status === "completed" ? "pm-guidance-complete" : ""}`}><h3>{next.title}</h3><p>{next.body}</p></div>
     {c.status === "submitted" && !unexpected && <button className="pm-button pm-primary" disabled={pending} onClick={() => run("review")}>{pending ? "Starting review…" : error ? "Retry review" : "Review case"}</button>}
-    {c.status === "under_review" && !waiting && submitted && <><p className="pm-attention">{submitted.instruction}</p><button className="pm-button pm-primary" disabled={pending} onClick={() => open("resolve")}>Mark evidence reviewed</button></>}
+    {c.status === "under_review" && !waiting && submitted && <><p className="pm-attention">{submitted.instruction}</p><button className="pm-button pm-primary" disabled={pending} onClick={() => open("resolve")}>Mark response reviewed</button></>}
     {next.action && <button className="pm-button pm-primary" disabled={pending} onClick={() => open(next.action!)}>{actions[next.action].title}</button>}
-    {c.status === "under_review" && !waiting && !submitted && <button className="pm-button pm-secondary-action" disabled={pending} onClick={() => open("evidence")}>Request more evidence</button>}
+    {canRequestInformation(c) && <button className="pm-button pm-secondary-action" disabled={pending} onClick={onRequestInformation}>Request more information</button>}
     {requested && <p className="pm-attention">{requested.instruction}</p>}
     {error && !modal && <p role="alert">{error}</p>}
     {notice && <div className="pm-toast" role="status">{notice}</div>}
     <div className="pm-handler"><small>Handled by · Property manager</small><strong>{c.handler?.name ?? "Not assigned"}</strong><span>{c.handler?.agency_name}</span></div>
     {modal && <ActionDialog title={actions[modal].title} pending={pending} onClose={close}>
       <form onSubmit={event => { event.preventDefault(); void run(modal); }}>
-        <p><strong>{c.title}</strong></p><p className="pm-case-key">{c.caseKey}</p><p>{actions[modal].explanation}</p>
+        <p><strong>{c.title}</strong></p><p>{c.location}</p><p>{actions[modal].explanation}</p>
         {modal === "resolve" && <p className="pm-attention">{resolveAttempt.current?.instruction}</p>}
-        {modal === "evidence" && <label>Request instruction<textarea autoFocus required maxLength={1000} rows={4} value={instruction} disabled={pending || Boolean(requestAttempt.current)} onChange={e => setInstruction(e.target.value)} /></label>}
         {error && <p role="alert">{error}</p>}
-        <div className="pm-dialog-actions"><button type="button" className="pm-button" disabled={pending} onClick={close}>Cancel</button><button className="pm-button pm-primary" disabled={pending || (modal === "evidence" && !instruction.trim())}>{pending ? "Saving…" : error ? "Retry" : actions[modal].confirm}</button></div>
+        <div className="pm-dialog-actions"><button type="button" className="pm-button" disabled={pending} onClick={close}>Cancel</button><button className="pm-button pm-primary" disabled={pending}>{pending ? "Saving…" : error ? "Retry" : actions[modal].confirm}</button></div>
       </form>
     </ActionDialog>}
   </section>;
