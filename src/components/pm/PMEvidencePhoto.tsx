@@ -27,8 +27,10 @@ export default function PMEvidencePhoto({ photo, label, onRequest, requestPendin
   return <article className="pm-photo-card">
     <div className="pm-photo-image">{image}</div>
     <div className="pm-photo-info"><h3>{label}</h3><span className="pm-photo-state">Provided</span><p>Tenant photo · Annotations read only</p>
-      <button className="pm-button pm-photo-open" disabled={!url} onClick={() => setOpen(true)}>View full photo</button>
-      {onRequest ? <button className="pm-photo-request" onClick={onRequest}>Request another</button> : requestPending && <span className="pm-muted pm-photo-request">Request pending</span>}
+      <div className="pm-photo-actions">
+        <button className="pm-photo-open" disabled={!url} onClick={() => setOpen(true)}>View full photo</button>
+        {onRequest ? <button className="pm-button pm-photo-request" onClick={onRequest}>Request another</button> : requestPending && <span className="pm-muted">Request pending</span>}
+      </div>
     </div>
     {open && <PMImageViewer photo={photo} label={label} onClose={() => setOpen(false)}>{image}</PMImageViewer>}
   </article>;

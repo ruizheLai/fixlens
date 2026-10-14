@@ -46,7 +46,7 @@ export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted
     <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
       <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{request.instruction}</p>
       {photo && <div style={{ height: 280, flexShrink: 0 }}><AnnotatedPhoto src={photo.previewUrl} metadata={photo} label="Requested photo review" /></div>}
-      {!frozen.current && <Btn onClick={() => setStep("capture")}>Replace photo</Btn>}
+      {!frozen.current && <Btn onClick={() => setStep("capture")}>Choose another photo</Btn>}
       <p style={{ fontSize: 13, color: "var(--color-muted)" }}>This photo will be added to your case for review. Your case status will stay the same.</p>
       {error && <p role="alert" style={{ fontSize: 13, color: "var(--color-danger)" }}>We couldn't confirm submission. Your photo is still here. Retry safely to finish without duplicates.</p>}
       <Btn disabled={pending || !photo} onClick={submit}>{pending ? "Submitting evidence…" : error ? "Retry" : "Submit evidence"}</Btn>

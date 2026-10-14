@@ -55,7 +55,9 @@
 .pm-photo-image { width: 108px; height: 144px; flex: 0 0 108px; background: #F0F2F5; display: flex; justify-content: center; align-items: center; text-align: center; }
 .pm-photo-info { padding: 12px; min-width: 0; }.pm-photo-info h3 { margin-bottom: 4px; }.pm-photo-info p { color: #6B7280; font-size: 11px; margin: 5px 0 10px; }.pm-photo-state { font-size: 11px; color: #14532D; }.pm-photo-open { font-size: 12px; padding: 5px 8px; }.pm-request .pm-photo-card { margin-top: 12px; }
 .pm-photo-image svg, .pm-photo-full svg { object-fit: contain; }
-.pm-photo-request { display: block; margin-top: 8px; color: #4B5563; font-size: 11.5px; text-decoration: underline; text-underline-offset: 3px; }
+.pm-photo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.pm-photo-actions .pm-photo-open { border: 0; background: transparent; color: #4B5563; min-height: 44px; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; }
+.pm-photo-actions .pm-photo-request { background: white; border-color: #CBD5E1; min-height: 44px; }
 .pm-written-response { background: white; border: 1px solid #E2E6ED; border-radius: 8px; padding: 12px; margin: 10px 0; }
 .pm-written-response p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .pm-information-dialog { max-height: calc(100dvh - 32px); }
