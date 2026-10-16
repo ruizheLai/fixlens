@@ -1,7 +1,10 @@
 # FixLens
 
-Batch 3 report input and explicit safety reporting are prepared; physical iPhone
-Safari verification remains pending. See [report verification](docs/REPORT_CORE_VERIFICATION.md).
+Batch 4.1 full-screen annotation editing and Batch 4 Final Review are prepared; physical iPhone
+Safari verification remains pending. See [annotation editor verification](docs/ANNOTATION_EDITOR_VERIFICATION.md) and [capture/review verification](docs/CAPTURE_REVIEW_VERIFICATION.md).
+
+Batch 3 report input and explicit safety reporting are accepted.
+See [report verification](docs/REPORT_CORE_VERIFICATION.md).
 
 Batch 2 Home data and session-derived demo identities are prepared and verified.
 The approved name-only PM profile update is applied; final Preview verification remains pending.

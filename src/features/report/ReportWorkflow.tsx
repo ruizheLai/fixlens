@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import IssueComposer from "./IssueComposer";
 import SafetyReportReview from "./SafetyReportReview";
+import FinalReportReview from "./FinalReportReview";
 import { useReportViewport } from "./useReportViewport";
 import { IMMEDIATE_DANGER, SAFETY_GUIDANCE, canSubmitReport, isSafetyReport } from "../../data/reportSafety";
 import { contactDisplay } from "../../utils/contactDisplay";
@@ -11,14 +12,13 @@ import { useNavigate } from "react-router-dom";
 import type { ReportStep } from "../../types/navigation";
 import { casePath } from "../../data/demo/cases";
 import SuccessScreen from "../../screens/renter/SubmissionSuccessScreen";
-import { ARVideoScreen, PhotoPreview, VideoPreview } from "../../components/capture/PrototypeCapture";
+import { PhotoPreview } from "../../components/capture/PrototypeCapture";
 import LogoAvatar from "../../components/brand/LogoAvatar";
 import Btn from "../../components/common/Btn";
 import AssistantBubble from "../../components/chat/AssistantBubble";
 import UserBubble from "../../components/chat/UserBubble";
-import { IcoChevLeft, IcoSend, IcoAlert, IcoEdit, IcoCheck, IcoCheckCircle, IcoImg, IcoVideo } from "../../components/common/icons";
-import type { DemoEvidence, LocalPhoto, PhotoType, PhotoAnnotation } from "../../types/evidence";
-import type { ReportFieldRow } from "../../types/presentation";
+import { IcoChevLeft, IcoSend, IcoAlert, IcoCheck, IcoImg } from "../../components/common/icons";
+import type { LocalPhoto, PhotoType, PhotoAnnotation } from "../../types/evidence";
 import PhotoSource from "../../components/capture/PhotoSource";
 import { persistReportPhotos } from "../../services/evidence";
 import { useIssueUnderstanding, reportFromUnderstanding } from "./useIssueUnderstanding";
@@ -125,7 +125,7 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ n: "1", I: IcoImg, label: "Overview photo · Required", desc: "Show the whole area" }, { n: "2", I: IcoImg, label: "Close-up photo · Required", desc: "Show the affected area" }, { n: "3", I: IcoVideo, label: "Short video · Optional", desc: "You can skip this step" }].map((item, i, arr) => (
+        {[{ n: "1", I: IcoImg, label: "Overview photo · Required", desc: "Show the whole area" }, { n: "2", I: IcoImg, label: "Close-up photo · Required", desc: "Show the affected area" }].map((item, i, arr) => (
           <div key={item.n} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <div className="shrink-0 flex items-center justify-center rounded-full" style={{ width: 30, height: 30, background: "var(--color-blue-light)", color: "var(--color-blue)" }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>{item.n}</span>
@@ -138,154 +138,6 @@ function CapturePlanCard({ onStart }: { onStart: () => void }) {
         ))}
       </div>
       <div className="mt-3"><Btn onClick={onStart}>Start guided capture</Btn></div>
-    </div>
-  );
-}
-
-// ─── Post-capture view ────────────────────────────────────────────────────────
-
-function PostCaptureView({ report, photos, videoIncluded, submitting, error, uploading, locked, onSubmit, onReplace }: { report: MaintenanceReportInput; photos: Partial<Record<PhotoType, LocalPhoto>>; videoIncluded: boolean; submitting: boolean; error: string; uploading: boolean; locked: boolean; onSubmit: () => void; onReplace: (role: PhotoType) => void }) {
-  const [showReview, setShowReview] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showReview) return;
-    const timer = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
-    return () => clearTimeout(timer);
-  }, [showReview]);
-
-  const reportRows: ReportFieldRow[] = [
-    { label: "Issue type", value: report.issueType },
-    { label: "Location", value: report.location || "Not provided" },
-    { label: "Observed details", value: report.condition || "Not provided" },
-    { label: "Description", value: report.description },
-    { label: "Safety", value: report.safetyResponse || "Not provided", green: true },
-  ];
-
-  const mediaItems: DemoEvidence[] = [
-    { label: "Overview photo", note: photos.overview?.annotations.length ? "Annotated" : "Captured", src: photos.overview?.previewUrl ?? null, type: "photo" },
-    { label: "Close-up photo", note: photos.closeup?.annotations.length ? "Annotated" : "Captured", src: photos.closeup?.previewUrl ?? null, type: "photo" },
-    ...(videoIncluded ? [{ label: "Short video", note: "Demo only · Not uploaded", src: null, type: "video" as const }] : []),
-  ];
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <div className="flex-1">
-          <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "var(--color-text)" }}>Report an Issue</p>
-          <p style={{ fontSize: 12, color: "var(--color-muted)" }}>FixLens Assistant</p>
-        </div>
-        <LogoAvatar size={32} />
-      </div>
-
-      {/* Continuity cue */}
-      <div className="shrink-0 flex items-center gap-2 px-5 py-2.5" style={{ background: "var(--color-blue-light)", borderBottom: "1px solid var(--color-blue-mid)" }}>
-        <div style={{ color: "var(--color-blue)" }}><IcoCheckCircle /></div>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-blue)" }}>{report.issueType} · Draft</p>
-      </div>
-
-      {/* Scrollable conversation */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
-
-        {/* Evidence captured */}
-        <AssistantBubble>Your photos are ready to review. {videoIncluded ? "Video is a local demo only." : "Optional video skipped."}</AssistantBubble>
-
-        {/* Evidence completion card */}
-        <div className="ml-9">
-          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-            {[
-              { label: "Overview photo", thumb: photos.overview?.previewUrl, type: "photo" },
-              { label: "Close-up photo", thumb: photos.closeup?.previewUrl, type: "photo" },
-              ...(videoIncluded ? [{ label: "Short video · Demo only", thumb: null, type: "video" }] : []),
-            ].map((item, i, arr) => (
-              <div key={item.label} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
-                <div className="rounded-lg overflow-hidden shrink-0" style={{ width: 40, height: 32, background: "#1a1a2a" }}>
-                  {item.type === "photo" && item.thumb
-                    ? <img src={item.thumb} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
-                  }
-                </div>
-                <p style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--color-text)" }}>{item.label}</p>
-                <div style={{ color: "var(--color-success)" }}><IcoCheck /></div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Prompt to review */}
-        <AssistantBubble>Your report is ready to review. Check the details below and make any changes before submitting.</AssistantBubble>
-
-        {/* Review report action (before expanded) */}
-        {!showReview && (
-          <div className="ml-9">
-            <Btn onClick={() => setShowReview(true)}>Review report</Btn>
-          </div>
-        )}
-
-        {/* Full report review card */}
-        {showReview && (
-          <div className="ml-9">
-            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-              {/* Details rows */}
-              {reportRows.map((row) => (
-                <div key={row.label} className="flex items-start justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <div className="flex-1">
-                    <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
-                    <p style={{ fontSize: 13, color: row.green ? "var(--color-success)" : "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
-                  </div>
-                  <button style={{ color: "var(--color-blue)", marginLeft: 10, marginTop: 1, flexShrink: 0, fontSize: 12, fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 6, background: "var(--color-blue-light)", border: "none", cursor: "pointer" }}>
-                    <IcoEdit /><span>Edit</span>
-                  </button>
-                </div>
-              ))}
-
-              {/* Media rows */}
-              {mediaItems.map((m, index) => (
-                <div key={m.label} className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="rounded-xl overflow-hidden shrink-0" style={{ width: 52, height: 40, background: "#1a1a2a" }}>
-                      {m.type === "photo" && m.src
-                        ? <img src={m.src} alt={m.label} className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
-                      }
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{m.label}</p>
-                      <p style={{ fontSize: 11, color: "var(--color-success)" }}>{m.note}</p>
-                    </div>
-                  </div>
-                  <button disabled={locked || m.type === "video"} aria-label={`Replace ${m.label}`} onClick={() => onReplace(index === 0 ? "overview" : "closeup")} style={{ opacity: locked || m.type === "video" ? 0.4 : 1, color: "var(--color-blue)", fontSize: 12, fontWeight: 600, fontFamily: "var(--font-display)", flexShrink: 0, padding: "2px 8px", borderRadius: 6, background: "var(--color-blue-light)", border: "none", cursor: "pointer" }}>
-                    Replace
-                  </button>
-                </div>
-              ))}
-
-              {/* Ready indicator */}
-              <div className="px-4 py-3 flex items-center gap-2" style={{ color: "var(--color-success)" }}>
-                <IcoCheckCircle />
-                <span style={{ fontSize: 13, fontWeight: 700 }}>Ready for initial review</span>
-              </div>
-            </div>
-
-            {/* Submit CTA */}
-            <div className="mt-3">
-              {error && <p role="alert" className="mb-3" style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>{error}</p>}
-              <Btn disabled={submitting || !photos.overview || !photos.closeup} onClick={onSubmit}>{submitting ? uploading ? "Uploading photos…" : "Submitting…" : error ? "Retry" : "Submit report"}</Btn>
-            </div>
-          </div>
-        )}
-
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Inert input bar */}
-      <div className="shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <div className="flex-1 flex items-center px-4 py-2.5 rounded-full" style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
-          <span style={{ fontSize: 14, color: "var(--color-muted)" }}>Message…</span>
-        </div>
-        <button className="p-2.5 rounded-full" style={{ background: "var(--color-border)", color: "#fff", opacity: 0.5 }}><IcoSend /></button>
-      </div>
     </div>
   );
 }
@@ -454,23 +306,34 @@ export default function ReportWorkflow() {
   const [step, setStep] = useState<ReportStep>("report-chat");
   const [postCapture, setPostCapture] = useState(false);
   const [safetyReview, setSafetyReview] = useState(false);
-  const [videoIncluded, setVideoIncluded] = useState(false);
   const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Maintenance issue", location: null, condition: null, description: "", safetyResponse: null });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<Partial<Record<PhotoType, LocalPhoto>>>({});
   const photoRef = useRef(photos);
+  const [replacing,setReplacing] = useState<PhotoType|null>(null);
+  const [candidate,setCandidate] = useState<LocalPhoto|null>(null);
+  const candidateRef = useRef<LocalPhoto|null>(null);
+  const clearCandidate = () => { if(candidateRef.current) URL.revokeObjectURL(candidateRef.current.previewUrl); candidateRef.current=null;setCandidate(null) };
+  const cancelReplacement = () => { clearCandidate();setReplacing(null);setStep("report-chat") };
+  const useReplacement = () => {
+    const next=candidateRef.current;if(!next)return;
+    const old=photoRef.current[next.role];if(old)URL.revokeObjectURL(old.previewUrl);
+    photoRef.current={...photoRef.current,[next.role]:next};setPhotos(photoRef.current);
+    candidateRef.current=null;setCandidate(null);setReplacing(null);setStep("report-chat");
+  };
   const retake = (role: PhotoType) => {
+    if(replacing){clearCandidate();setStep(role === "overview" ? "ar-overview" : "ar-closeup");return}
     const old = photoRef.current[role];
     if (old) URL.revokeObjectURL(old.previewUrl);
     const next = { ...photoRef.current }; delete next[role];
     photoRef.current = next; setPhotos(next);
     setStep(role === "overview" ? "ar-overview" : "ar-closeup");
   };
-  const [replacing, setReplacing] = useState(false);
-  useEffect(() => () => { Object.values(photoRef.current).forEach(photo => URL.revokeObjectURL(photo.previewUrl)); }, []);
+  useEffect(() => () => { Object.values(photoRef.current).forEach(photo => URL.revokeObjectURL(photo.previewUrl)); if(candidateRef.current)URL.revokeObjectURL(candidateRef.current.previewUrl); }, []);
   const acceptPhoto = (photo: LocalPhoto) => {
+    if(replacing){clearCandidate();candidateRef.current=photo;setCandidate(photo);setStep(photo.role === "overview" ? "photo-overview" : "photo-closeup");return}
     const old = photoRef.current[photo.role];
     if (old) URL.revokeObjectURL(old.previewUrl);
     photoRef.current = { ...photoRef.current, [photo.role]: photo };
@@ -478,6 +341,7 @@ export default function ReportWorkflow() {
     setStep(photo.role === "overview" ? "photo-overview" : "photo-closeup");
   };
   const annotate = (role: PhotoType, annotations: PhotoAnnotation[]) => {
+    if(replacing&&candidateRef.current){candidateRef.current={...candidateRef.current,annotations};setCandidate(candidateRef.current);return}
     const photo = photoRef.current[role]; if (!photo) return;
     photoRef.current = { ...photoRef.current, [role]: { ...photo, annotations } };
     setPhotos(photoRef.current);
@@ -527,22 +391,14 @@ export default function ReportWorkflow() {
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
           {safetyReview && <SafetyReportReview report={report} submitting={submitting} error={submitError} onSubmit={submit} onBack={!submission.current ? () => setSafetyReview(false) : undefined} />}
           <div className="h-full" style={{ display: safetyReview ? "none" : undefined }}>{postCapture
-            ? <PostCaptureView report={report} photos={photos} videoIncluded={videoIncluded} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
+            ? <FinalReportReview report={report} photos={photos} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onEdit={value=>{if(!submission.current)setReport(value)}} onSubmit={submit} onReplace={role => { if(submission.current)return;clearCandidate();setReplacing(role); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
             : <PreCaptureChat sessionId={reportSessionId} onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onDangerResponse={() => setReport(current => ({ ...current, safetyResponse: IMMEDIATE_DANGER }))} onSafetyReview={() => setSafetyReview(true)} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}</div>
         </div>
       )}
-      {step === "ar-overview" && <PhotoSource role="overview" framingContext={framingContext} framingBudget={framingBudgets.overview} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
-      {step === "photo-overview" && <PhotoPreview key={photos.overview?.id} photoType="overview" photo={photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => retake("overview")} onUse={() => setStep(replacing ? "report-chat" : "ar-closeup")} />}
-      {step === "ar-closeup" && <PhotoSource role="closeup" framingContext={framingContext} framingBudget={framingBudgets.closeup} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}
-      {step === "photo-closeup" && <PhotoPreview key={photos.closeup?.id} photoType="closeup" photo={photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => retake("closeup")} onUse={() => setStep(replacing ? "report-chat" : "video-option")} />}
-      {step === "video-option" && <div className="absolute inset-0 flex flex-col gap-4 px-5 py-5" style={{ background: "var(--color-surface)" }}>
-        <button aria-label="Back to close-up" className="self-start" onClick={() => setStep("photo-closeup")}><IcoChevLeft /></button>
-        <AssistantBubble>Your two photos are ready. You can add a short video if movement or sound helps show the issue, or skip for now.</AssistantBubble>
-        <p className="ml-9" style={{ fontSize: 12, color: "var(--color-muted)" }}>Video is a demo simulation and is not uploaded.</p>
-        <div className="ml-9 flex flex-col gap-3"><Btn onClick={() => setStep("video-capture")}>Add video</Btn><Btn variant="secondary" onClick={() => { setVideoIncluded(false); setPostCapture(true); setStep("report-chat"); }}>Skip for now</Btn></div>
-      </div>}
-      {step === "video-capture" && <ARVideoScreen onCapture={() => setStep("video-preview")} onClose={() => setStep("video-option")} />}
-      {step === "video-preview" && <VideoPreview onRetake={() => setStep("video-capture")} onUse={() => { setVideoIncluded(true); setPostCapture(true); setStep("report-chat"); }} />}
+      {step === "ar-overview" && <PhotoSource role="overview" framingContext={framingContext} framingBudget={framingBudgets.overview} onPhoto={acceptPhoto} onClose={replacing?cancelReplacement:()=>setStep("report-chat")} />}
+      {step === "photo-overview" && <PhotoPreview key={(replacing?candidate:photos.overview)?.id} photoType="overview" photo={replacing?candidate??undefined:photos.overview} onAnnotations={items => annotate("overview", items)} onRetake={() => retake("overview")} onCancel={replacing?cancelReplacement:undefined} onUse={replacing?useReplacement:()=>setStep("ar-closeup")} />}
+      {step === "ar-closeup" && <PhotoSource role="closeup" framingContext={framingContext} framingBudget={framingBudgets.closeup} onPhoto={acceptPhoto} onClose={replacing?cancelReplacement:()=>setStep("report-chat")} />}
+      {step === "photo-closeup" && <PhotoPreview key={(replacing?candidate:photos.closeup)?.id} photoType="closeup" photo={replacing?candidate??undefined:photos.closeup} onAnnotations={items => annotate("closeup", items)} onRetake={() => retake("closeup")} onCancel={replacing?cancelReplacement:undefined} onUse={replacing?useReplacement:()=>{setPostCapture(true);setStep("report-chat")}} />}
     </>
   );
 }

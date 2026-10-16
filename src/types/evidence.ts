@@ -6,6 +6,7 @@ export interface PhotoAnnotation {
   tool: AnnotationTool;
   points: AnnotationPoint[];
   text?: string;
+  color?: string;
 }
 export interface PhotoMetadata {
   version: 1;
