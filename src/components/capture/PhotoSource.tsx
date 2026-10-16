@@ -194,7 +194,7 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
     stop(); setState("idle"); setError(""); input.current?.click();
   };
   const message = hint === "dark" ? "It's a little dark. Try moving to a brighter position."
-    : hint === "moving" ? "Hold steady" : hint === "ready" ? "Ready to capture" : "Find your frame";
+    : hint === "moving" ? "Hold steady" : hint === "ready" ? "Steady & well lit" : "Frame the affected area";
 
   return <div ref={surface} className="camera-surface">
     <video ref={video} className="camera-video" aria-label="Live camera preview" autoPlay muted playsInline
@@ -215,8 +215,8 @@ export default function PhotoSource({ role, onPhoto, onClose, requestInstruction
     {state !== "live" && <div className="camera-fallback">
       <p role={error ? "alert" : "status"}>{busy ? "Preparing photo…" : error || (state === "starting" ? "Opening camera…" : state === "paused" ? "Camera paused. Resume when you're ready." : "Choose a photo or resume the camera.")}</p>
       {!busy && state !== "starting" && <>
-        <Btn onClick={() => void start()}>{state === "error" ? "Try camera again" : "Resume camera"}</Btn>
-        <button className="camera-picker" onClick={() => pick(camera)}>Use camera / photo picker</button>
+        <Btn onClick={() => void start()}>{state === "error" ? "Try in-app camera again" : "Resume in-app camera"}</Btn>
+        <button className="camera-picker" onClick={() => pick(camera)}>Open device photo picker</button>
       </>}
     </div>}
     {state === "live" && requestInstruction === undefined && <FramingOverlay closeUp={role !== "overview"} guide={captureVisionEnabled ? aiGuide : null} />}

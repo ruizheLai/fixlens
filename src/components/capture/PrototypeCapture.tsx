@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { IcoX, IcoHelp, IcoUndo, IcoGallery, IcoFlash, IcoRedo, IcoPencil } from "../../components/common/icons";
-import type { AnnotationTool, PhotoType, LocalPhoto, PhotoAnnotation } from "../../types/evidence";
-import AnnotatedPhoto from "./AnnotatedPhoto";
+import { IcoX, IcoHelp, IcoGallery, IcoFlash } from "../../components/common/icons";
 import { IMG_BEDROOM_WIDE, IMG_BEDROOM_LIGHT, IMG_DAMAGED_WALL } from "../../data/demo/evidence";
 
 // ─── AR + Photo screens ───────────────────────────────────────────────────────
@@ -236,110 +234,7 @@ export function ARVideoScreen({ onCapture, onClose }: { onCapture: () => void; o
 
 const PREVIEW_BOTTOM_H = 88;
 
-const ANNO_TOOLS = [
-  { id: "circle" as const, label: "Circle", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/></svg> },
-  { id: "arrow" as const, label: "Arrow", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> },
-  { id: "text" as const, label: "Text", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> },
-  { id: "draw" as const, label: "Draw", icon: <IcoPencil /> },
-];
-
-export function PhotoPreview({ photoType, onRetake, onUse, photo, onAnnotations, title: customTitle }: { photoType: PhotoType; onRetake: () => void; onUse: () => void; photo?: LocalPhoto; onAnnotations?: (annotations: PhotoAnnotation[]) => void; title?: string }) {
-  const [activeTool, setActiveTool] = useState<AnnotationTool | null>(null);
-  const [redo, setRedo] = useState<PhotoAnnotation[]>([]);
-  const [annotationText, setAnnotationText] = useState("Note");
-  const [annotationError, setAnnotationError] = useState("");
-  const [tipVisible, setTipVisible] = useState(photoType === "overview");
-  const src = photoType === "overview" ? IMG_BEDROOM_WIDE : IMG_DAMAGED_WALL;
-  const title = customTitle ?? (photoType === "overview" ? "Overview — 1 of 2" : "Close-up — 2 of 2");
-
-  useEffect(() => {
-    if (photoType !== "overview") return;
-    setTipVisible(true);
-    const t = setTimeout(() => setTipVisible(false), 5000);
-    return () => clearTimeout(t);
-  }, [photoType]);
-
-  return (
-    <div style={{ position: "absolute", inset: 0, background: "#000", overflow: "hidden" }}>
-      {/* Full-bleed image */}
-      {photo ? <div style={{ position: "absolute", top: 80, bottom: PREVIEW_BOTTOM_H, left: 0, right: 0 }}>
-        <AnnotatedPhoto src={photo.previewUrl} metadata={photo} label={`${photoType} photo annotation canvas`} tool={activeTool} text={annotationText}
-          onAdd={annotation => {
-            const next = [...photo.annotations, annotation];
-            if (new TextEncoder().encode(JSON.stringify({ ...photo, file: undefined, previewUrl: undefined, annotations: next })).length > 48000) {
-              setAnnotationError("This photo has enough marks. Undo a mark before adding more."); return;
-            }
-            setAnnotationError(""); onAnnotations?.(next); setRedo([]);
-          }} />
-      </div> : <img src={src} alt={photoType} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
-      {photo && activeTool === "text" && <input aria-label="Annotation text" value={annotationText} maxLength={80} onChange={e => setAnnotationText(e.target.value)} placeholder="Text, then tap photo" style={{ position: "absolute", top: 65, left: 20, right: 20, zIndex: 25, padding: 8, background: "#fff", borderRadius: 8, fontSize: 16 }} />}
-      {annotationError && <p role="alert" style={{ position: "absolute", bottom: PREVIEW_BOTTOM_H + 8, left: 16, right: 16, color: "#fff", background: "#222", padding: 8, fontSize: 12 }}>{annotationError}</p>}
-
-      {/* Annotation overlay */}
-      {!photo && photoType === "overview" && (
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 390 844" preserveAspectRatio="none">
-          <ellipse cx="195" cy="280" rx="60" ry="54" fill="none" stroke="#F59E0B" strokeWidth="2.5"/>
-          <line x1="255" y1="258" x2="295" y2="228" stroke="#F59E0B" strokeWidth="1.8"/>
-          <rect x="283" y="213" width="72" height="22" rx="4" fill="rgba(0,0,0,0.7)"/>
-          <text x="319" y="228" textAnchor="middle" fill="#F59E0B" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Leak point</text>
-        </svg>
-      )}
-      {!photo && photoType === "closeup" && (
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 390 844" preserveAspectRatio="none">
-          <ellipse cx="195" cy="430" rx="80" ry="90" fill="rgba(251,191,36,0.08)" stroke="#F59E0B" strokeWidth="2" strokeDasharray="6,3"/>
-        </svg>
-      )}
-
-      {/* Top strip */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, padding: "14px 20px 10px", background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <button onClick={onRetake} style={{ color: "#fff", fontSize: 14, fontWeight: 500, fontFamily: "var(--font-display)", background: "rgba(0,0,0,0.4)", padding: "6px 14px", borderRadius: 99, border: "none", cursor: "pointer" }}>Retake</button>
-          <p style={{ color: "#fff", fontSize: 17, fontWeight: 700, fontFamily: "var(--font-display)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>{title}</p>
-          <div style={{ display: "flex", gap: 8 }}>
-            {/* Undo — left arrow */}
-            <button aria-label="Undo annotation" onClick={() => { if (photo?.annotations.length) { setRedo([...redo, photo.annotations[photo.annotations.length - 1]]); onAnnotations?.(photo.annotations.slice(0, -1)); } }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-              <IcoUndo />
-            </button>
-            {/* Redo — right arrow */}
-            <button aria-label="Redo annotation" onClick={() => { if (photo && redo.length) { onAnnotations?.([...photo.annotations, redo[redo.length - 1]]); setRedo(redo.slice(0, -1)); } }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-              <IcoRedo />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Annotation tip — overview only */}
-      {tipVisible && (
-        <div style={{ position: "absolute", bottom: PREVIEW_BOTTOM_H + 16, left: 16, right: 16, zIndex: 20 }}>
-          <div style={{ borderRadius: 14, padding: "12px 14px", background: "rgba(0,0,0,0.72)", backdropFilter: "blur(10px)", display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <p style={{ flex: 1, color: "#fff", fontSize: 13, lineHeight: 1.5 }}>You can add simple annotations to help explain the issue more clearly.</p>
-            <button onClick={() => setTipVisible(false)} style={{ color: "rgba(255,255,255,0.6)", flexShrink: 0, marginTop: 1, border: "none", background: "none", cursor: "pointer", padding: 2 }}>
-              <IcoX />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom strip */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: PREVIEW_BOTTOM_H, zIndex: 10, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", padding: "0 20px", gap: 8 }}>
-        {/* Annotation tools — individual lightweight icons, no grouped container */}
-        {ANNO_TOOLS.map(({ id, label, icon }) => (
-          <button key={id} onClick={() => { setActiveTool(activeTool === id ? null : id); setTipVisible(false); }}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: activeTool === id ? "#F59E0B" : "rgba(255,255,255,0.65)" }}>
-            {icon}
-            <span style={{ fontSize: 9, fontWeight: 500 }}>{label}</span>
-          </button>
-        ))}
-        {/* Separator */}
-        <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.18)", flexShrink: 0 }} />
-        {/* Use photo */}
-        <button onClick={onUse} style={{ flexShrink: 0, background: "var(--color-blue)", color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-display)", padding: "12px 18px", borderRadius: 14, border: "none", cursor: "pointer" }}>
-          Use photo
-        </button>
-      </div>
-    </div>
-  );
-}
+export { default as PhotoPreview } from "./PhotoAnnotationEditor";
 
 export function VideoPreview({ onRetake, onUse }: { onRetake: () => void; onUse: () => void }) {
   return (

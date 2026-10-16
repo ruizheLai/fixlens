@@ -17,6 +17,7 @@ export function checkedMetadata(value: PhotoMetadata): PhotoMetadata {
     || value.annotations.some(item => !item || !["circle", "arrow", "text", "draw"].includes(item.tool)
       || !Array.isArray(item.points) || !item.points.length || item.points.length > 200
       || item.points.some(p => !p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1)
+      || (item.color !== undefined && (typeof item.color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(item.color)))
       || (item.text !== undefined && (typeof item.text !== "string" || item.text.length > 80)))) {
     throw new Error("Invalid photo metadata");
   }
