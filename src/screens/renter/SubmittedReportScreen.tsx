@@ -1,4 +1,6 @@
 import { Navigate } from "react-router-dom";
+import SafetyNotice from "../../components/common/SafetyNotice";
+import { isSafetyReport } from "../../data/reportSafety";
 import { getCaseByKey } from "../../services/cases";
 import type { CaseDetail } from "../../types/case";
 import { demoCaseReference } from "../../data/demo/cases";
@@ -50,6 +52,7 @@ function SubmittedReportContent({ detail, photos, onBack }: { detail: CaseDetail
     <div className="flex flex-col h-full">
       <ScreenHeader title="Submitted Report" subtitle={`${detail.title} · ${demoCaseReference(detail.caseKey)}`} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+        <SafetyNotice response={detail.safetyResponse} noPhotos={photos.length === 0} />
 
         {/* Submitted badge */}
         <div className="flex items-center gap-2 shrink-0">
@@ -75,7 +78,7 @@ function SubmittedReportContent({ detail, photos, onBack }: { detail: CaseDetail
 
         <div className="shrink-0">
           <SectionLabel>Evidence</SectionLabel>
-          {photos.length === 0 && <p style={{ fontSize: 13, color: "var(--color-muted)" }}>No evidence available for this report.</p>}
+          {photos.length === 0 && !isSafetyReport(detail.safetyResponse) && <p style={{ fontSize: 13, color: "var(--color-muted)" }}>No evidence available for this report.</p>}
           {photos.length > 0 && <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
             {photos.map((photo, i) => {
               const label = photo.role === "overview" ? "Overview photo" : "Close-up photo";

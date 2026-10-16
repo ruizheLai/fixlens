@@ -1,5 +1,8 @@
 # FixLens
 
+Batch 3 report input and explicit safety reporting are prepared; physical iPhone
+Safari verification remains pending. See [report verification](docs/REPORT_CORE_VERIFICATION.md).
+
 Batch 2 Home data and session-derived demo identities are prepared and verified.
 The approved name-only PM profile update is applied; final Preview verification remains pending.
 See [Batch 2 verification](docs/HOME_IDENTITY_VERIFICATION.md).

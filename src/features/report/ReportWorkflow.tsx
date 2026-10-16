@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import IssueComposer from "./IssueComposer";
+import SafetyReportReview from "./SafetyReportReview";
+import { useReportViewport } from "./useReportViewport";
+import { IMMEDIATE_DANGER, SAFETY_GUIDANCE, canSubmitReport, isSafetyReport } from "../../data/reportSafety";
 import { contactDisplay } from "../../utils/contactDisplay";
 import { createMaintenanceCase } from "../../services/cases";
 import { getDemoSessionId } from "../../utils/demoSession";
@@ -12,7 +16,7 @@ import LogoAvatar from "../../components/brand/LogoAvatar";
 import Btn from "../../components/common/Btn";
 import AssistantBubble from "../../components/chat/AssistantBubble";
 import UserBubble from "../../components/chat/UserBubble";
-import { IcoChevLeft, IcoMic, IcoSend, IcoAlert, IcoEdit, IcoCheck, IcoCheckCircle, IcoImg, IcoVideo } from "../../components/common/icons";
+import { IcoChevLeft, IcoSend, IcoAlert, IcoEdit, IcoCheck, IcoCheckCircle, IcoImg, IcoVideo } from "../../components/common/icons";
 import type { DemoEvidence, LocalPhoto, PhotoType, PhotoAnnotation } from "../../types/evidence";
 import type { ReportFieldRow } from "../../types/presentation";
 import PhotoSource from "../../components/capture/PhotoSource";
@@ -100,17 +104,19 @@ function SafetyCard({ answered, safe, onSafe, onDanger }: { answered: boolean; s
   );
 }
 
-function DangerCard({ onBack }: { onBack: () => void }) {
+function DangerCard({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
   return (
     <div className="ml-9">
       <div className="rounded-2xl px-4 py-4 flex gap-3" style={{ background: "#FEF2F2", border: "1.5px solid #FECACA" }}>
         <div className="shrink-0 mt-0.5" style={{ color: "#DC2626" }}><IcoAlert /></div>
         <div>
-          <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#DC2626", marginBottom: 6 }}>Do not approach the affected area</p>
-          <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.6 }}>Contact your property manager or emergency maintenance immediately. Call 000 for life-threatening emergencies.</p>
-          <button onClick={onBack} className="mt-3" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-blue)" }}>Go back</button>
+          <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "#DC2626", marginBottom: 6 }}>Potential immediate danger</p>
+          <p style={{ fontSize: 13, color: "#7F1D1D", lineHeight: 1.6 }}>{SAFETY_GUIDANCE}</p>
+          <p style={{ fontSize: 13, marginTop: 8 }}>Use the emergency maintenance contact provided in your tenancy agreement.</p>
         </div>
       </div>
+      <div className="mt-3"><Btn onClick={onContinue}>Continue without photos</Btn></div>
+      <button onClick={onBack} className="mt-3 min-h-11" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-blue)" }}>Return to safety question</button>
     </div>
   );
 }
@@ -278,7 +284,6 @@ function PostCaptureView({ report, photos, videoIncluded, submitting, error, upl
         <div className="flex-1 flex items-center px-4 py-2.5 rounded-full" style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
           <span style={{ fontSize: 14, color: "var(--color-muted)" }}>Message…</span>
         </div>
-        <button className="p-2.5 rounded-full" style={{ color: "var(--color-muted)" }}><IcoMic /></button>
         <button className="p-2.5 rounded-full" style={{ background: "var(--color-border)", color: "#fff", opacity: 0.5 }}><IcoSend /></button>
       </div>
     </div>
@@ -295,7 +300,8 @@ type ChatStage =
   | "safety-danger"
   | "capture-expectation";
 
-function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, onStartCapture, sessionId }: { onReport: (value: MaintenanceReportInput) => void; onFramingContext: (value: FramingContext | null) => void; onSafeResponse: () => void; onBack: () => void; onStartCapture: () => void; sessionId: string }) {
+function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onDangerResponse, onSafetyReview, onBack, onStartCapture, sessionId }: { onReport: (value: MaintenanceReportInput) => void; onFramingContext: (value: FramingContext | null) => void; onSafeResponse: () => void; onDangerResponse: () => void; onSafetyReview: () => void; onBack: () => void; onStartCapture: () => void; sessionId: string }) {
+  const viewportRef = useReportViewport();
   const [stage, setStage] = useState<ChatStage>("confirming-details");
   const [propConfirmed, setPropConfirmed] = useState(false);
   const [issueText, setIssueText] = useState("");
@@ -346,7 +352,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
     setInputVal(understanding.input.description); setStage("describing-issue");
   };
   const handleSafe = () => { onSafeResponse(); setSafetyAnswered(true); advance("capture-expectation"); };
-  const handleDanger = () => setStage("safety-danger");
+  const handleDanger = () => { onDangerResponse(); setSafetyAnswered(false); setStage("safety-danger"); };
   const handleDangerBack = () => setStage("safety-check");
 
   const afterSummary: ChatStage[] = ["safety-check", "safety-danger", "capture-expectation"];
@@ -356,7 +362,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
   const inputActive = stage === "describing-issue" && !understanding.pending && !summaryReady && !understanding.failed && (!result || !!question || result.status === "not_maintenance");
 
   return (
-    <div className="flex flex-col h-full">
+    <div ref={viewportRef} className="flex flex-col h-full min-h-0 min-w-0">
       {/* Header */}
       <div className="shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         <button onClick={onBack} className="p-1 -ml-1 rounded-lg active:bg-gray-100"><IcoChevLeft /></button>
@@ -368,7 +374,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
       </div>
 
       {/* Conversation */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-4">
         {/* Confirm details */}
         <AssistantBubble>Let's start by confirming your property and contact details.</AssistantBubble>
         <PropertyCard sessionId={sessionId} confirmed={propConfirmed} onConfirm={handleConfirm} />
@@ -404,7 +410,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
           <>
             <AssistantBubble>Is there any immediate danger to you or anyone else?</AssistantBubble>
             {stage === "safety-danger"
-              ? <DangerCard onBack={handleDangerBack} />
+              ? <DangerCard onBack={handleDangerBack} onContinue={onSafetyReview} />
               : <SafetyCard answered={safetyAnswered} safe={safetyAnswered ? true : null} onSafe={handleSafe} onDanger={handleDanger} />
             }
           </>
@@ -423,21 +429,17 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onBack, on
 
       {/* Input bar */}
       <div className="shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{ background: inputActive ? "#fff" : "var(--color-bg)", border: `1px solid ${inputActive ? "var(--color-blue-mid)" : "var(--color-border)"}`, transition: "border-color 0.2s" }}>
-          <input
-            aria-label={question ? "Your answer" : "Describe the issue"}
+        <div className="flex-1 min-w-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: inputActive ? "#fff" : "var(--color-bg)", border: `1px solid ${inputActive ? "var(--color-blue-mid)" : "var(--color-border)"}`, transition: "border-color 0.2s" }}>
+          <IssueComposer
+            label={question ? "Your answer" : "Describe the issue"}
             maxLength={question ? MAX_ANSWER : MAX_DESCRIPTION}
             value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleIssueSend(); }}
+            onChange={setInputVal}
             placeholder={inputActive ? "Describe the issue…" : "Message…"}
             disabled={!inputActive}
-            className="flex-1 min-w-0 w-full bg-transparent outline-none text-sm"
-            style={{ color: "var(--color-text)", opacity: inputActive ? 1 : 0.4 }}
           />
         </div>
-        <button className="p-2.5 rounded-full" style={{ color: "var(--color-muted)" }}><IcoMic /></button>
-        <button aria-label="Send description" onClick={handleIssueSend} disabled={!inputActive || !inputVal.trim()} className="p-2.5 rounded-full" style={{ background: inputActive ? "var(--color-blue)" : "var(--color-border)", color: "#fff", opacity: inputActive ? 1 : 0.5 }}>
+        <button aria-label="Send description" onClick={handleIssueSend} disabled={!inputActive || !inputVal.trim()} className="shrink-0 p-2.5 rounded-full" style={{ background: inputActive ? "var(--color-blue)" : "var(--color-border)", color: "#fff", opacity: inputActive ? 1 : 0.5 }}>
           <IcoSend />
         </button>
       </div>
@@ -451,6 +453,7 @@ export default function ReportWorkflow() {
   const [framingBudgets] = useState(() => ({ overview: newFramingBudget(), closeup: newFramingBudget() }));
   const [step, setStep] = useState<ReportStep>("report-chat");
   const [postCapture, setPostCapture] = useState(false);
+  const [safetyReview, setSafetyReview] = useState(false);
   const [videoIncluded, setVideoIncluded] = useState(false);
   const [report, setReport] = useState<MaintenanceReportInput>({ issueType: "Maintenance issue", location: null, condition: null, description: "", safetyResponse: null });
   const [submitting, setSubmitting] = useState(false);
@@ -485,7 +488,8 @@ export default function ReportWorkflow() {
   const submitController = useRef<AbortController | null>(null);
   useEffect(() => () => submitController.current?.abort(), []);
   const submit = async () => {
-    if (pending.current || !photos.overview || !photos.closeup) return;
+    if (pending.current || !canSubmitReport(report.safetyResponse, !!photos.overview, !!photos.closeup)) return;
+    if (safetyReview !== isSafetyReport(report.safetyResponse)) return;
     pending.current = true;
     setSubmitting(true); setSubmitError(""); setUploading(false);
     const controller = new AbortController();
@@ -494,15 +498,19 @@ export default function ReportWorkflow() {
       submission.current ??= { ...report, demoSessionId: reportSessionId, caseKey: `demo-${crypto.randomUUID()}` };
       const result = await createMaintenanceCase(submission.current, controller.signal);
       if (controller.signal.aborted) return;
-      setCreatedCase(result); setUploading(true);
-      await persistReportPhotos(result.caseKey, submission.current.demoSessionId, [photos.overview, photos.closeup], controller.signal);
+      setCreatedCase(result);
+      if (!isSafetyReport(submission.current.safetyResponse)) {
+        if (!photos.overview || !photos.closeup) throw new Error("Required photos missing");
+        setUploading(true);
+        await persistReportPhotos(result.caseKey, submission.current.demoSessionId, [photos.overview, photos.closeup], controller.signal);
+      }
       if (controller.signal.aborted) return;
       setStep("success");
     } catch (error: unknown) {
       if (controller.signal.aborted) return;
       // Service errors contain status/code only; never log input or credentials.
       console.error("Report submission could not be confirmed", error instanceof Error && /^(Case submission|Submission lookup) failed \(HTTP/.test(error.message) ? error.message : "Submission unavailable");
-      setSubmitError("We couldn't finish your submission and photo upload. Your report is still here. Try again.");
+      setSubmitError(isSafetyReport(report.safetyResponse) ? "We couldn't confirm your submission. Your report and safety response are still here. Try again." : "We couldn't finish your submission and photo upload. Your report is still here. Try again.");
     } finally {
       pending.current = false;
       if (!controller.signal.aborted) setSubmitting(false);
@@ -517,9 +525,10 @@ export default function ReportWorkflow() {
       {/* Preserve the conversation while capture overlays are shown. */}
       {step !== "success" && (
         <div className="absolute inset-0 flex flex-col" style={{ visibility: inCapture ? "hidden" : "visible", pointerEvents: inCapture ? "none" : "auto" }}>
-          {postCapture
+          {safetyReview && <SafetyReportReview report={report} submitting={submitting} error={submitError} onSubmit={submit} onBack={!submission.current ? () => setSafetyReview(false) : undefined} />}
+          <div className="h-full" style={{ display: safetyReview ? "none" : undefined }}>{postCapture
             ? <PostCaptureView report={report} photos={photos} videoIncluded={videoIncluded} submitting={submitting} error={submitError} uploading={uploading} locked={!!submission.current} onSubmit={submit} onReplace={role => { setReplacing(true); setStep(role === "overview" ? "ar-overview" : "ar-closeup"); }} />
-            : <PreCaptureChat sessionId={reportSessionId} onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}
+            : <PreCaptureChat sessionId={reportSessionId} onReport={setReport} onFramingContext={setFramingContext} onSafeResponse={() => setReport((current) => ({ ...current, safetyResponse: "No immediate danger reported" }))} onDangerResponse={() => setReport(current => ({ ...current, safetyResponse: IMMEDIATE_DANGER }))} onSafetyReview={() => setSafetyReview(true)} onBack={() => navigate("/")} onStartCapture={() => setStep("ar-overview")} />}</div>
         </div>
       )}
       {step === "ar-overview" && <PhotoSource role="overview" framingContext={framingContext} framingBudget={framingBudgets.overview} onPhoto={acceptPhoto} onClose={() => setStep("report-chat")} />}

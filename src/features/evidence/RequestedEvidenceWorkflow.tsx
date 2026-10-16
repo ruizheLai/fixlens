@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import SafetyNotice from "../../components/common/SafetyNotice";
+import { isSafetyReport } from "../../data/reportSafety";
 import type { EvidenceRequest, LocalPhoto } from "../../types/evidence";
 import PhotoSource from "../../components/capture/PhotoSource";
 import { PhotoPreview } from "../../components/capture/PrototypeCapture";
@@ -9,9 +11,9 @@ import { getDemoSessionId } from "../../utils/demoSession";
 import { submitRequestedPhoto } from "../../services/requestedEvidence";
 import { requestPresentation } from "../../data/evidenceRequestPresentation";
 
-export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted }: { request: EvidenceRequest; onExit: () => void; onSubmitted: () => void }) {
+export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted, safetyResponse = null }: { request: EvidenceRequest; onExit: () => void; onSubmitted: () => void; safetyResponse?: string | null }) {
   const role = requestPresentation(request).role ?? "closeup";
-  const [step, setStep] = useState<"capture" | "preview" | "review">("capture");
+  const [step, setStep] = useState<"safety" | "capture" | "preview" | "review">(isSafetyReport(safetyResponse) ? "safety" : "capture");
   const [photo, setPhoto] = useState<LocalPhoto | null>(null);
   const latest = useRef<LocalPhoto | null>(null);
   function retake() {
@@ -38,6 +40,7 @@ export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted
     } catch { if (!current.signal.aborted) setError(true); }
     finally { controller.current = null; if (!current.signal.aborted) setPending(false); }
   }
+  if (step === "safety") return <div className="flex flex-col h-full"><ScreenHeader title="Requested photo" onBack={onExit} /><div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4"><SafetyNotice response={safetyResponse} /><p>Only provide a photo if you can do so safely. If the area remains unsafe, contact your property manager using your tenancy agreement.</p><Btn onClick={onExit}>Return to case</Btn><Btn variant="secondary" onClick={() => setStep("capture")}>It is safe to provide a photo</Btn></div></div>;
   if (step === "capture") return <PhotoSource role={role} requestInstruction={request.instruction} onClose={onExit} onPhoto={p => { accept(p); setStep("preview"); }} />;
   if (step === "preview" && photo) return <PhotoPreview key={photo.id} title="Requested photo" photoType={role} photo={photo}
     onAnnotations={annotations => accept({ ...photo, annotations })} onRetake={retake} onUse={() => setStep("review")} />;

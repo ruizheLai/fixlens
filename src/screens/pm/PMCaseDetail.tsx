@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import SafetyNotice from "../../components/common/SafetyNotice";
 import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
 import { useAutomaticInvalidation } from "../../hooks/useAutomaticInvalidation";
 import { Link, useParams } from "react-router-dom";
@@ -30,6 +31,7 @@ function LoadedPMDetail({ caseKey }: { caseKey: string }) {
       <div className="pm-meta"><span>{c.propertyAddress ?? "Property not provided"}</span><span>Tenant: {c.renter?.name ?? "Not provided"}</span><span>Submitted {pmDate(c.createdAt)}</span><span>Updated {pmDate(c.updatedAt)}</span></div>
     </div>
     <div className="pm-detail-scroll"><div className="pm-detail-grid"><div className="pm-detail-main">
+      <SafetyNotice response={c.safetyResponse} noPhotos={detail.photos.length === 0} />
       <section className="pm-card"><div className="pm-section-heading"><h2>Issue summary</h2><span className="pm-source">Structured from tenant report</span></div><dl className="pm-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "Not provided"}</dd></div>)}</dl><blockquote>{c.description}</blockquote></section>
       <section className="pm-card"><h2>Evidence</h2>{detail.photos.length ? <div className="pm-evidence-grid">{detail.photos.map(photo => <PMEvidencePhoto key={photo.id} photo={photo} label={photo.role === "overview" ? "Overview photo" : "Close-up photo"} onRequest={canRequestInformation(c) ? () => setRequestModal({ type: photo.role === "overview" ? "overview_photo" : "closeup_photo" }) : undefined} requestPending={c.status === "under_review" && c.evidenceRequests.some(r => r.status !== "resolved")} />)}</div> : <p className="pm-muted">No persisted photo evidence is available for this case.</p>}
         {detail.photos.length > 0 && (["overview", "closeup"] as const).filter(role => !detail.photos.some(photo => photo.role === role)).map(role => <p className="pm-muted" key={role}>{role === "overview" ? "Overview" : "Close-up"} photo not provided.</p>)}

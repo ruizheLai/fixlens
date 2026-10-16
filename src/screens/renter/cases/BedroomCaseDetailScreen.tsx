@@ -1,3 +1,5 @@
+import SafetyNotice from "../../../components/common/SafetyNotice";
+import { isSafetyReport, SAFETY_EVIDENCE_NOTE } from "../../../data/reportSafety";
 import type { CaseDetail } from "../../../types/case";
 import { PROTOTYPE_EVIDENCE_COUNTS } from "../../../data/demo/evidence";
 import CaseActivity from "../../../components/case/CaseActivity";
@@ -21,6 +23,7 @@ export default function CaseDetailBedroom({ detail, onBack, onViewReport, onNav 
     <div className="flex flex-col h-full">
       <ScreenHeader title={detail.title} subtitle={renterCaseSubtitle(detail)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+        <SafetyNotice response={detail.safetyResponse} noPhotos />
 
         {/* Status badge */}
         <div className="flex items-center gap-3">
@@ -87,7 +90,7 @@ export default function CaseDetailBedroom({ detail, onBack, onViewReport, onNav 
             {[
               { icon: <IcoFileText />, label: "Issue summary", value: [detail.issueType, detail.location].filter(Boolean).join(" · ") },
               { icon: <IcoFileText />, label: "Description", value: detail.description },
-              { icon: <IcoImg />, label: "Photos", value: prototypeEvidence ? `${prototypeEvidence.photos} captured` : "No saved evidence" },
+              { icon: <IcoImg />, label: "Photos", value: isSafetyReport(detail.safetyResponse) ? SAFETY_EVIDENCE_NOTE : prototypeEvidence ? `${prototypeEvidence.photos} captured` : "No saved evidence" },
               { icon: <IcoVideo />, label: "Video", value: prototypeEvidence ? `${prototypeEvidence.videos} captured` : "No saved evidence" },
               { icon: <IcoShield />, label: "Safety", value: detail.safetyResponse || "Not recorded" },
             ].map((row, i, arr) => (

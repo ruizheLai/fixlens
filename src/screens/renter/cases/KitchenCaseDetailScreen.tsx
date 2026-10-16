@@ -1,3 +1,4 @@
+import SafetyNotice from "../../../components/common/SafetyNotice";
 import { currentEvidenceRequest, EVIDENCE_REQUEST_STATE, requestPresentation, canRespondToRequest } from "../../../data/evidenceRequestPresentation";
 import { getDemoSessionId } from "../../../utils/demoSession";
 import type { CaseDetail } from "../../../types/case";
@@ -26,6 +27,7 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
     <div className="flex flex-col h-full">
       <ScreenHeader title={detail.title} subtitle={renterCaseSubtitle(detail)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+        <SafetyNotice response={detail.safetyResponse} noPhotos />
 
         {/* Action required banner — top priority */}
         {actionRequired && request ? (
