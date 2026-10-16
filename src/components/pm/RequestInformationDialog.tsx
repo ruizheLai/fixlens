@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import SafetyNotice from "../common/SafetyNotice";
 import type { InformationRequestType } from "../../types/evidence";
 import { INFORMATION_REQUEST_TYPES, canRequestInformation } from "../../data/evidenceRequestPresentation";
 import { getPMDetail, requestPMInformation, type PMCase, type PMDetail } from "../../services/pm";
@@ -33,6 +34,7 @@ export default function RequestInformationDialog({ caseData, initialType, onClos
   }
   return <dialog ref={dialog} className="pm-action-dialog pm-information-dialog" aria-label="Request more information" onCancel={e => { e.preventDefault(); if (!pending) onClose(); }}>
     <h2>Request more information</h2><p><strong>{caseData.title}</strong>{caseData.location && ` · ${caseData.location}`}</p>
+    <SafetyNotice response={caseData.safetyResponse} />
     <form onSubmit={send}><fieldset disabled={pending || !!attempt.current}><legend>What do you need from the renter?</legend>
       {(["overview_photo", "closeup_photo", "written_details"] as const).map(value => <label className="pm-request-option" key={value}><input type="radio" name="requestType" value={value} required checked={type === value} onChange={() => setType(value)} />{INFORMATION_REQUEST_TYPES[value].label}</label>)}
       <label>Instructions to renter<textarea required maxLength={1000} rows={4} value={instruction} onChange={e => setInstruction(e.target.value)} /></label>

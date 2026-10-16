@@ -1,3 +1,5 @@
+import SafetyNotice from "../../../components/common/SafetyNotice";
+import { isSafetyReport, SAFETY_EVIDENCE_NOTE } from "../../../data/reportSafety";
 import type { CaseDetail } from "../../../types/case";
 import CaseActivity from "../../../components/case/CaseActivity";
 import RequestedEvidenceGallery from "../../../components/case/RequestedEvidenceGallery";
@@ -17,6 +19,7 @@ export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav
     <div className="flex flex-col h-full">
       <ScreenHeader title={detail.title} subtitle={renterCaseSubtitle(detail)} onBack={onBack} />
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+        <SafetyNotice response={detail.safetyResponse} noPhotos />
 
         <div className="flex items-center gap-3">
           <StatusPill status={detail.status} />
@@ -55,7 +58,7 @@ export default function CaseDetailHotwater({ detail, onBack, onViewReport, onNav
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", opacity: 0.85 }}>
             {[
               { icon: <IcoFileText />, label: "Issue summary", value: [detail.issueType, detail.location].filter(Boolean).join(" · ") },
-              { icon: <IcoImg />, label: "Photos", value: "2 captured" },
+              { icon: <IcoImg />, label: "Photos", value: isSafetyReport(detail.safetyResponse) ? SAFETY_EVIDENCE_NOTE : "2 captured" },
               { icon: <IcoShield />, label: "Safety", value: detail.safetyResponse || "Not recorded" },
             ].map((row, i, arr) => (
               <div key={row.label} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>

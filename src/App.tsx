@@ -74,7 +74,7 @@ function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
   if (request) {
     const done = () => { setParams({}, { replace: true }); onRefresh(); };
     return request.requestType === "written_details" ? <WrittenDetailsWorkflow key={request.id} request={request} caseTitle={detail.title} onExit={done} onSubmitted={done} />
-      : <RequestedEvidenceWorkflow key={request.id} request={request} onExit={done} onSubmitted={done} />;
+      : <RequestedEvidenceWorkflow key={request.id} request={request} safetyResponse={detail.safetyResponse} onExit={done} onSubmitted={done} />;
   }
   return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={id => navigate(requestResponsePath(detail.caseKey, id))} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
