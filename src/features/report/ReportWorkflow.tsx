@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { contactDisplay } from "../../utils/contactDisplay";
 import { createMaintenanceCase } from "../../services/cases";
 import { getDemoSessionId } from "../../utils/demoSession";
 import type { MaintenanceReportInput, CaseCreationAttempt, CreatedMaintenanceCase } from "../../types/report";
@@ -33,7 +34,7 @@ function PropertyCard({ confirmed, onConfirm, sessionId }: { confirmed: boolean;
   return (
     <div className="ml-9">
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        {[{ label: "Name", value: persona.name }, { label: "Address", value: property?.address ?? (error ? "Unavailable" : "Loading…") }, { label: "Contact", value: `${persona.email} · ${persona.phone}` }, { label: "Property manager", value: property?.manager ? [property.manager.name,property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : "Loading…" }].map((row, i, arr) => (
+        {[{ label: "Name", value: persona.name }, { label: "Address", value: property?.address ?? (error ? "Unavailable" : "Loading…") }, { label: "Contact", value: contactDisplay(persona.email, persona.phone) }, { label: "Property manager", value: property?.manager ? [property.manager.name,property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : "Loading…" }].map((row, i, arr) => (
           <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
             <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, whiteSpace: "pre-line", overflowWrap: "anywhere" }}>{row.value}</p>

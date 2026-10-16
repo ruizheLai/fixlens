@@ -63,15 +63,15 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
         {error && <div role="alert" style={{ fontSize: 13 }}><p>We couldn't refresh your cases.</p><button onClick={refresh} style={{ color: "var(--color-blue)", marginTop: 6 }}>Retry</button></div>}
         {action && <section>
           <SectionLabel>Action required</SectionLabel>
-          <div className="rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid #FECACA", overflowWrap: "anywhere" }}>
+          <div className="relative rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid #FECACA", overflowWrap: "anywhere" }}>
+            <button type="button" aria-label={`View case details: ${action.case.title}`} onClick={() => onCaseDetail(action.case.caseKey)} className="absolute inset-0 z-10 rounded-2xl hover:bg-blue-50/20 active:bg-blue-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
             {combined && <p style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>Recent case</p>}
             <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, marginBottom: 8 }}>{action.case.title}</p>
             <div className="flex flex-wrap gap-2"><StatusPill status={action.case.status}/><StatusPill status="action"/></div>
             <p style={{ fontSize: 13, marginTop: 12, color: "var(--color-text-secondary)" }}>{requestPresentation(action.request).requested}</p>
             <p style={{ fontSize: 13, marginTop: 4, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{action.request.instruction}</p>
             <div className="flex flex-wrap gap-4 mt-3">
-              <button onClick={() => onRequest(action.case.caseKey, action.request.id)} style={{ color: "var(--color-blue)", fontWeight: 600, minHeight: 44 }}>{requestPresentation(action.request).action}</button>
-              <button onClick={() => onCaseDetail(action.case.caseKey)} style={{ color: "var(--color-text-secondary)", textDecoration: "underline", minHeight: 44 }}>View case details</button>
+              <button type="button" onClick={() => onRequest(action.case.caseKey, action.request.id)} className="relative z-20 min-h-11 max-w-full px-5 py-3.5 rounded-2xl text-sm font-semibold hover:brightness-95 active:opacity-75 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "var(--color-blue)", color: "#fff", fontFamily: "var(--font-display)" }}>{requestPresentation(action.request).action}</button>
             </div>
             {combined && <p style={{ fontSize: 12, color: "var(--color-text-secondary)", marginTop: 8 }}>Updated {formatCaseDate(action.case.updatedAt, true)} · {formatActivityTime(action.case.updatedAt)}</p>}
           </div>

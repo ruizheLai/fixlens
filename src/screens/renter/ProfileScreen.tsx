@@ -1,4 +1,5 @@
 import NavBar from "../../components/navigation/NavBar";
+import { availableContact, contactDisplay } from "../../utils/contactDisplay";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import SectionLabel from "../../components/common/SectionLabel";
 import { IcoChevRight } from "../../components/common/icons";
@@ -35,8 +36,9 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
             <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               {[
                 { label: "Name",  value: persona.name },
-                { label: "Email", value: persona.email },
-                { label: "Phone", value: persona.phone },
+                ...(availableContact(persona.email) ? [{ label: "Email", value: availableContact(persona.email) }] : []),
+                ...(availableContact(persona.phone) ? [{ label: "Phone", value: availableContact(persona.phone) }] : []),
+                ...(!availableContact(persona.email) && !availableContact(persona.phone) ? [{ label: "Contact", value: contactDisplay() }] : []),
               ].map((row, i, arr) => (
                 <div key={row.label} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-subtle)" : "none" }}>
                   <div className="min-w-0" style={{ overflowWrap: "anywhere" }}>
