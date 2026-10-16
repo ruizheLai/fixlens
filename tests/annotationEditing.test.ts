@@ -13,3 +13,30 @@ test("All text edits, colour, movement, deletion and draw undo atomically withou
  for(let i=1;i<states.length;i++){h=redoAnnotations(h);assert.deepEqual(h.present,states[i])}
  h=undoAnnotations(h);h=editAnnotations(h,[historical,text]);assert.equal(h.future.length,0);assert.deepEqual(redoAnnotations(h),h);
 });
+
+test("Multiline wrapping preserves stored text and anchors and stays inside the available photo height", async () => {
+  const { annotationTextLayout } = await import(
+    "../src/components/capture/annotationEditing.ts"
+  )
+  for (const [width, height] of [
+    [600, 900],
+    [1200, 600],
+  ]) {
+    const text =
+      "Lower frame\n\nWater enters here during heavy rain. " + "W".repeat(25)
+    const point = { x: 0.3, y: 0.8 }
+    const before = JSON.stringify(point)
+    const layout = annotationTextLayout(text, width, height, point.x, point.y)
+    assert.ok(layout.lines.includes(""))
+    assert.equal(
+      layout.lines.join("").replaceAll(" ", ""),
+      text.replaceAll("\n", "").replaceAll(" ", ""),
+    )
+    assert.ok(
+      (layout.lines.length - 1) * layout.fontSize * 1.2 +
+        layout.fontSize * 0.25 <=
+        height * (1 - point.y),
+    )
+    assert.equal(JSON.stringify(point), before)
+  }
+})

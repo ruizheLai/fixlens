@@ -49,3 +49,35 @@ for (const [width, height] of [[600, 900], [1200, 600]]) {
     assert.equal(thumb.replace('Overview photo', ''), full.replace('Close-up photo', ''));
   });
 }
+
+test("Editing hides only the active text; persisted multiline text renders in both shared viewers", () => {
+  const annotations = [
+    {
+      tool: "text",
+      text: "Lower frame\nLeak here",
+      points: [{ x: 0.3, y: 0.4 }],
+      color: "#FFFFFF",
+    },
+    {
+      tool: "circle",
+      points: [
+        { x: 0.1, y: 0.1 },
+        { x: 0.2, y: 0.2 },
+      ],
+    },
+  ]
+  const props = {
+    src: "blob:fixture",
+    metadata: { width: 600, height: 900, annotations },
+    label: "Evidence",
+  }
+  const saved = renderToStaticMarkup(React.createElement(AnnotatedPhoto, props))
+  assert.ok(saved.includes("Lower frame</tspan>"))
+  assert.ok(saved.includes("Leak here</tspan>"))
+  const editing = renderToStaticMarkup(
+    React.createElement(AnnotatedPhoto, { ...props, hiddenIndex: 0 }),
+  )
+  assert.ok(!editing.includes("<text"))
+  assert.ok(editing.includes("<ellipse"))
+  assert.equal(annotations[0].text, "Lower frame\nLeak here")
+})

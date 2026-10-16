@@ -1,0 +1,22 @@
+.annotation-editor { position:absolute; inset:0; height:100%; overflow:hidden; background:#000; color:#fff; isolation:isolate; }
+.annotation-canvas { position:absolute; left:0; right:0; }
+.annotation-editor button { min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; padding:0 8px; cursor:pointer; }
+.annotation-editor button:disabled { opacity:.3; cursor:default; }
+.annotation-editor button:focus-visible { outline:2px solid white; outline-offset:-3px; }
+.annotation-header { position:absolute; top:0; left:0; right:0; display:grid; grid-template-columns:88px minmax(0,1fr) 88px; align-items:center; padding: max(8px,env(safe-area-inset-top)) 8px 8px; background:rgba(0,0,0,.62); }
+.annotation-header>button:first-child { justify-self:start; }
+.annotation-header>button:last-child { justify-self:end; }
+.annotation-header p { font-size:14px; font-weight:600; text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin:0; }
+.annotation-history { display:flex; }
+.annotation-footer { position:absolute; bottom:0; left:0; right:0; padding:8px 12px max(8px,env(safe-area-inset-bottom)); background:rgba(0,0,0,.62); }
+.annotation-actions { display:flex; gap:8px; align-items:center; }
+.annotation-actions [aria-pressed=true] { background:rgba(255,255,255,.22); }
+.annotation-use { margin-left:auto; background:var(--color-blue); font-weight:600; }
+.annotation-palette { display:flex; justify-content:space-evenly; gap:2px; }
+.annotation-palette span { width:22px; height:22px; border:1px solid #999; border-radius:50%; }
+.annotation-palette [aria-pressed=true] span { box-shadow:0 0 0 2px #111,0 0 0 4px #fff; }
+.annotation-input { position:absolute; resize:none; padding:0; border:0; outline:none; background:transparent; border-radius:0; line-height:1.2; font-family:Inter,sans-serif; overflow-wrap:anywhere; white-space:pre-wrap; text-shadow:0 1px 2px #000; caret-color:currentColor; }
+.annotation-tip { position:absolute; top:calc(max(8px,env(safe-area-inset-top)) + 60px); left:50%; transform:translateX(-50%); max-width:calc(100% - 32px); width:max-content; display:flex; align-items:center; background:rgba(0,0,0,.65); border-radius:12px; padding-left:12px; font-size:12px; pointer-events:none; }
+.annotation-tip button { pointer-events:auto; }
+.annotation-footer [role=alert] { font-size:12px; margin:0 0 4px; }
+.annotation-delete { display:flex; justify-content:center; }

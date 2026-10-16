@@ -1,5 +1,9 @@
 # Batch 4 — Capture and Final Review
 
+The annotation-editor presentation below records Batch 4. It is superseded by
+[Batch 4.1 direct photo editing](ANNOTATION_EDITOR_VERIFICATION.md). Batch 4
+workflow/persistence results remain applicable.
+
 Prepared on `fix/capture-review-batch-4` from accepted main `a307ea5`.
 Physical iPhone Safari verification remains required. No commit, push, deployment,
 schema migration, Auth change or Edge Function change was performed.
