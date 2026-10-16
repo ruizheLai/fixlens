@@ -17,8 +17,8 @@ export default function RequestedEvidenceGallery({ caseKey, requests }: { caseKe
       .catch(() => { if (!controller.signal.aborted) setState("error"); });
     return () => controller.abort();
   }, [caseKey, attempt, requestRevision]);
-  return <section className="flex flex-col gap-3"><p style={{ fontWeight: 600, fontSize: 14 }}>Additional information</p>
-    {requests.filter(r => r.requestType === "written_details" || r.responseText != null).map(r => <div key={r.id} className="rounded-2xl p-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", overflowWrap: "anywhere" }}>
+  return <section className="flex flex-col gap-3"><p className="rv-section-label" style={{ fontWeight: 600, fontSize: 14 }}>Additional information</p>
+    {requests.filter(r => r.requestType === "written_details" || r.responseText != null).map(r => <div key={r.id} className="rv-card rounded-2xl p-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", overflowWrap: "anywhere" }}>
       <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", color: "var(--color-text-secondary)" }}>MORE WRITTEN DETAILS</p>
       <dl>
         <dt style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)", marginTop: 12 }}>Property manager requested</dt>
@@ -32,10 +32,10 @@ export default function RequestedEvidenceGallery({ caseKey, requests }: { caseKe
     </div>)}
     {state === "loading" && <p role="status">Loading additional evidence…</p>}
     {state === "error" && <button onClick={() => setAttempt(a => a + 1)}>Additional evidence unavailable · Retry</button>}
-    {photos.map(p => <div key={p.id} className="rounded-2xl p-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+    {photos.map(p => <div key={p.id} className="rv-card rounded-2xl p-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
       <p style={{ fontSize: 13, marginBottom: 12 }}>{requests.find(r => r.id === p.requestId)?.instruction}</p>
       <div style={{ height: 240 }}><StoredPhotoView photo={p} label="Requested evidence photo" /></div>
-      <p style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 8 }}>Submitted by you · {requests.find(r => r.id === p.requestId)?.status === "resolved" ? "Evidence reviewed" : "Awaiting review"}</p>
+      <p className="rv-metadata" style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 8 }}>Submitted by you · {requests.find(r => r.id === p.requestId)?.status === "resolved" ? "Evidence reviewed" : "Awaiting review"}</p>
     </div>)}
     {state === "ready" && !photos.length && photoRequests.some(r => r.status !== "requested") && <p style={{ fontSize: 13 }}>No stored additional photo is available.</p>}
   </section>;

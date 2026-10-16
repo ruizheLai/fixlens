@@ -14,7 +14,7 @@ export default function StatusPill({ status }: { status: StatusPillStatus | Case
     submitted:{ label: CASE_STATUS_LABELS.submitted, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
   }[status];
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: 11, letterSpacing: "0.01em", background: map.bg, color: map.color }}>
+    <span data-status={status} className="rv-status inline-flex items-center px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: 11, letterSpacing: "0.01em", background: map.bg, color: map.color }}>
       {map.label}
     </span>
   );

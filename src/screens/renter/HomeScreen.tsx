@@ -23,26 +23,26 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
   const action = !error ? actions[0] : undefined;
   const combined = recent?.caseKey === action?.case.caseKey;
   return (
-    <div className="flex flex-col h-full">
+    <div className="renter-screen flex flex-col h-full">
       {/* White header: wordmark + bell */}
-      <div className="shrink-0 px-6 pt-5 pb-4" style={{ background: "var(--color-surface)" }}>
+      <div className="rv-home-header shrink-0 px-6 pt-5 pb-4" style={{ background: "var(--color-surface)" }}>
         <div className="flex items-center justify-between">
           <HomeWordmark />
-          <button onClick={onInbox} className="relative p-2 rounded-full" style={{ background: "#FFFFFF", border: "1px solid var(--color-border)" }}>
+          <button aria-label="Open inbox" onClick={onInbox} className="relative p-2 rounded-full" style={{ background: "#FFFFFF", border: "1px solid var(--color-border)" }}>
             <IcoBell />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: "#DC2626" }} />
           </button>
         </div>
       </div>
       {/* Content area on normal page background */}
-      <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-6" style={{ paddingTop: 22 }}>
+      <div className="rv-scroll flex-1 min-h-0 overflow-y-auto px-6 pb-4 flex flex-col gap-6">
         <div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--color-text)", lineHeight: 1.2, marginBottom: 6 }}>Hi, {persona.firstName}!</h1>
+          <h1 className="rv-greeting" style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--color-text)", lineHeight: 1.2, marginBottom: 6 }}>Hi, {persona.firstName}!</h1>
           <p style={{ fontSize: 15, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>What can we help you with today?</p>
         </div>
         <div className="flex flex-col gap-2.5">
           {/* Primary CTA — dominant */}
-          <button onClick={onReport} className="flex items-center justify-between px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" style={{ background: "var(--color-blue)", color: "#fff", boxShadow: "0 2px 12px rgba(37,99,235,0.22)" }}>
+          <button onClick={onReport} className="rv-primary flex items-center justify-between px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" style={{ background: "var(--color-blue)", color: "#fff", boxShadow: "0 2px 12px rgba(37,99,235,0.22)" }}>
             <div className="flex items-center gap-3">
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><IcoPlus /></div>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>Report an issue</span>
@@ -50,11 +50,11 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
             <IcoChevRight />
           </button>
           {/* Secondary actions — quieter */}
-          <button onClick={onMyCases} className="flex items-center justify-between px-5 py-3.5 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}>
+          <button onClick={onMyCases} className="rv-secondary flex items-center justify-between px-5 py-3.5 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}>
             <div className="flex items-center gap-3" style={{ color: "var(--color-text-secondary)" }}><IcoCases /><span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 14, color: "var(--color-text)" }}>My cases</span></div>
             <span style={{ color: "var(--color-muted)" }}><IcoChevRight /></span>
           </button>
-          <button onClick={onSupportChat} className="flex items-center justify-between px-5 py-3.5 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}>
+          <button onClick={onSupportChat} className="rv-secondary flex items-center justify-between px-5 py-3.5 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}>
             <div className="flex items-center gap-3" style={{ color: "var(--color-text-secondary)" }}><IcoChat /><span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 14, color: "var(--color-text)" }}>Other questions</span></div>
             <span style={{ color: "var(--color-muted)" }}><IcoChevRight /></span>
           </button>
@@ -63,9 +63,9 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
         {error && <div role="alert" style={{ fontSize: 13 }}><p>We couldn't refresh your cases.</p><button onClick={refresh} style={{ color: "var(--color-blue)", marginTop: 6 }}>Retry</button></div>}
         {action && <section>
           <SectionLabel>Action required</SectionLabel>
-          <div className="relative rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid #FECACA", overflowWrap: "anywhere" }}>
+          <div className="rv-card rv-request relative rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid #FECACA", overflowWrap: "anywhere" }}>
             <button type="button" aria-label={`View case details: ${action.case.title}`} onClick={() => onCaseDetail(action.case.caseKey)} className="absolute inset-0 z-10 rounded-2xl hover:bg-blue-50/20 active:bg-blue-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
-            {combined && <p style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>Recent case</p>}
+            {combined && <p className="rv-field-label" style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>Recent case</p>}
             <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, marginBottom: 8 }}>{action.case.title}</p>
             <div className="flex flex-wrap gap-2"><StatusPill status={action.case.status}/><StatusPill status="action"/></div>
             <p style={{ fontSize: 13, marginTop: 12, color: "var(--color-text-secondary)" }}>{requestPresentation(action.request).requested}</p>
@@ -79,12 +79,12 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
         </section>}
         {recent && !combined && <div>
           <SectionLabel>Recent case</SectionLabel>
-          <button onClick={() => onCaseDetail(recent.caseKey)} className="w-full flex items-start justify-between px-5 py-4 rounded-2xl text-left active:opacity-80 transition-opacity" style={{ background: "var(--color-surface)", border: "1.5px solid var(--color-border)", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+          <button onClick={() => onCaseDetail(recent.caseKey)} className="rv-card rv-recent w-full flex items-start justify-between px-5 py-4 rounded-2xl text-left active:opacity-80 transition-opacity" style={{ background: "var(--color-surface)", border: "1.5px solid var(--color-border)", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
             <div className="flex-1 min-w-0" style={{ overflowWrap: "anywhere" }}>
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--color-text)", marginBottom: 6 }}>{recent.title}</p>
               {!recent.demoSessionId && <p style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 6 }}>Shared demo case</p>}
               <StatusPill status={recent.status} />
-              <div className="flex items-center gap-1 mt-2.5" style={{ color: "var(--color-muted)" }}>
+              <div className="rv-metadata flex items-center gap-1 mt-2.5" style={{ color: "var(--color-muted)" }}>
                 <IcoClock /><span style={{ fontSize: 12 }}>Updated {formatCaseDate(recent.updatedAt, true)} · {formatActivityTime(recent.updatedAt)}</span>
               </div>
             </div>
