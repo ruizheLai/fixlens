@@ -85,3 +85,6 @@
 .pm-toast { margin-top: 12px; padding: 10px 12px; border: 1px solid #BBF7D0; border-radius: 8px; background: #F0FDF4; color: #14532D; }
 @media (max-width: 850px) { .pm-detail-grid { grid-template-columns: 1fr; }.pm-next { position: static; }.pm-dashboard { padding: 20px; }.pm-table-card { overflow-x: auto; }.pm-table { min-width: 900px; } }
 @media (max-width: 550px) { .pm-topbar { padding: 0 14px; }.pm-brand { gap: 6px; }.pm-account { gap: 6px; }.pm-account small, .pm-avatar { display: none; }.pm-table-heading { align-items: stretch; flex-direction: column; gap: 12px; }.pm-tools input { width: 100%; }.pm-case-header { padding: 14px 16px; }.pm-title-row { align-items: flex-start; flex-wrap: wrap; }.pm-detail-scroll { padding: 16px; }.pm-card { padding: 16px; }.pm-table-card { padding: 0; }.pm-fields { grid-template-columns: 1fr; }.pm-section-heading { flex-wrap: wrap; } }
+
+/* Only the renter's outstanding response, not PM review or landlord approval. */
+.pm-renter-action { display:inline-block; color:var(--color-action-text); background:var(--color-action-bg); border:1px solid var(--color-action-border); border-radius:999px; padding:2px 8px; }

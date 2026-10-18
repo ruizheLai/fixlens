@@ -22,6 +22,10 @@ body,
   --color-blue: #2563EB;
   --color-blue-light: #EBF0FD;
   --color-blue-mid: #BFCFFB;
+  /* Outstanding renter response; separate from immediate-danger safety. */
+  --color-action-text: #B91C1C;
+  --color-action-bg: #FEF2F2;
+  --color-action-border: #FECACA;
   --color-danger: #DC2626;
   --color-danger-light: #FFF1F1;
   --color-danger-text: #991B1B;

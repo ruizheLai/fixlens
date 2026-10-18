@@ -31,12 +31,12 @@ export default function ProgressTracker({ currentIndex, completedAll = false, su
             </div>
             {/* Label */}
             <div className="pb-5">
-              <p style={{
+              <p className={future ? "rv-metadata" : undefined} style={{
                 fontFamily: "var(--font-display)", fontSize: 14, fontWeight: current ? 700 : done ? 500 : 400,
                 color: future ? "var(--color-muted)" : "var(--color-text)", marginTop: current ? 0 : 1,
               }}>{stage}</p>
               {current && <p style={{ fontSize: 12, color: "var(--color-blue)", fontWeight: 500, marginTop: 2 }}>Current</p>}
-              {done && i === 0 && submittedLabel && <p style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 1 }}>{submittedLabel}</p>}
+              {done && i === 0 && submittedLabel && <p className="rv-metadata" style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 1 }}>{submittedLabel}</p>}
             </div>
           </div>
         );

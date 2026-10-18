@@ -23,9 +23,9 @@ export default function MyCasesScreen({ onCase, onNav }: {
   const active = cases.filter((item) => item.status !== "completed");
   const history = cases.filter((item) => item.status === "completed");
   return (
-    <div className="flex flex-col h-full">
+    <div className="renter-screen flex flex-col h-full">
       <ScreenHeader title="My Cases" topLevel />
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-6">
+      <div className="rv-scroll flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-6">
 
         {state === "loading" && <p role="status" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading your cases…</p>}
         {state === "error" && <div role="alert" style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
@@ -41,18 +41,18 @@ export default function MyCasesScreen({ onCase, onNav }: {
               // Current action is independent of the primary lifecycle.
               const actionRequired = actionableRequests(item, getDemoSessionId()).length > 0;
               return (
-            <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" style={actionRequired ? { background: "#FFF8F8", border: "1.5px solid #FECACA" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="rv-card rv-case-row w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" data-attention={actionRequired || undefined} style={actionRequired ? { background: "var(--color-surface)", border: "1px solid var(--color-action-border)" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--color-text)", marginBottom: 4 }}>{item.title}</p>
                   {!item.demoSessionId && <p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Shared demo case</p>}
-                  <div className="flex items-center gap-1" style={{ color: "var(--color-muted)", marginBottom: 8 }}>
+                  <div className="rv-metadata flex items-center gap-1" style={{ color: "var(--color-muted)", marginBottom: 8 }}>
                     <IcoMapPin /><span style={{ fontSize: 12 }}>{item.locationLabel}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <StatusPill status={item.status} />
                     {actionRequired && <StatusPill status="action" />}
-                    <div className="flex items-center gap-1" style={{ color: "var(--color-muted)" }}>
+                    <div className="rv-metadata flex items-center gap-1" style={{ color: "var(--color-muted)" }}>
                       <IcoClock /><span style={{ fontSize: 11 }}>{formatCaseDate(item.updatedAt, false)}</span>
                     </div>
                   </div>
@@ -63,29 +63,31 @@ export default function MyCasesScreen({ onCase, onNav }: {
 
               );
             })}
-            {state === "ready" && active.length === 0 && <p style={{ fontSize: 13, color: "var(--color-muted)" }}>No active cases.</p>}
+            {state === "ready" && active.length === 0 && <p className="rv-metadata" style={{ fontSize: 13, color: "var(--color-muted)" }}>No active cases.</p>}
           </div>
         </div>
 
         {/* History */}
         <div>
           <SectionLabel>History</SectionLabel>
+          <div className="flex flex-col gap-3">
           {state === "ready" && history.map((item) => (
-          <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
-            <div className="flex items-center justify-between">
+          <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="rv-card rv-case-row w-full text-left px-5 py-4 rounded-2xl active:opacity-75 transition-opacity" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 14, color: "var(--color-text-secondary)" }}>{item.title}</p>
+                <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--color-text)" }}>{item.title}</p>
                 {!item.demoSessionId && <p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Shared demo case</p>}
                 <div className="flex items-center gap-3 mt-1.5">
                   <StatusPill status="completed" />
-                  <span style={{ fontSize: 12, color: "var(--color-muted)" }}>{formatCaseDate(item.updatedAt, true)}</span>
+                  <span className="rv-metadata" style={{ fontSize: 12, color: "var(--color-muted)" }}>{formatCaseDate(item.updatedAt, true)}</span>
                 </div>
               </div>
               <span style={{ color: "var(--color-muted)" }}><IcoChevRight /></span>
             </div>
           </button>
           ))}
-          {state === "ready" && history.length === 0 && <p style={{ fontSize: 13, color: "var(--color-muted)" }}>No completed cases.</p>}
+          {state === "ready" && history.length === 0 && <p className="rv-metadata" style={{ fontSize: 13, color: "var(--color-muted)" }}>No completed cases.</p>}
+          </div>
         </div>
       </div>
       <NavBar active="cases" onNav={onNav} />

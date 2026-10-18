@@ -1,3 +1,4 @@
+import "./styles/renterVisual.css";
 import { lazy, Suspense, useCallback } from "react";
 import { useAuthoritativeRead } from "./hooks/useAuthoritativeRead";
 import { useAutomaticInvalidation } from "./hooks/useAutomaticInvalidation";
@@ -27,9 +28,10 @@ import { getDemoSessionId } from "./utils/demoSession";
 const NAV_PATHS: Record<NavItemId, string> = { home: "/", cases: "/cases", inbox: "/inbox", profile: "/profile" };
 const PMPortal = lazy(() => import("./features/pm/PMPortal"));
 
-function RenterPage({ children }: { children: React.ReactNode }) {
+function RenterPage({ children, polished = false, support = true }: { children: React.ReactNode; polished?: boolean; support?: boolean }) {
   const navigate = useNavigate();
-  return <>{children}<FloatingChatBtn onClick={() => navigate("/support")} /></>;
+  const content = <>{children}{support && <FloatingChatBtn onClick={() => navigate("/support")} />}</>;
+  return polished ? <div className="renter-visual renter-page">{content}</div> : content;
 }
 
 function CaseRoute({ onNav }: {
@@ -48,7 +50,7 @@ function LoadedCaseRoute({ caseKey, onNav }: {
   useAutomaticInvalidation("renter", caseKey, refresh);
   const state = detail !== undefined ? "ready" : error ? "error" : "loading";
   if (state === "ready" && !detail) return <Navigate to="/cases" replace />;
-  if (state !== "ready" || !detail) return <RenterPage><div className="flex flex-col h-full">
+  if (state !== "ready" || !detail) return <RenterPage polished><div className="flex flex-col h-full">
     <ScreenHeader title="Case details" onBack={() => navigate("/cases")} />
     <div className="flex-1 overflow-y-auto px-5 py-5">
       {state === "loading" ? <p role="status" style={{ fontSize: 13, color: "var(--color-muted)" }}>Loading case details…</p> :
@@ -60,9 +62,9 @@ function LoadedCaseRoute({ caseKey, onNav }: {
     <NavBar active="cases" onNav={onNav} />
   </div></RenterPage>;
   const common = { detail, onBack: () => navigate("/cases"), onViewReport: () => navigate(`/cases/${encodeURIComponent(caseKey)}/report`), onNav };
-  if (detail.status === "completed") return <RenterPage><HotWaterCaseDetailScreen {...common} /></RenterPage>;
+  if (detail.status === "completed") return <RenterPage polished><HotWaterCaseDetailScreen {...common} /></RenterPage>;
   if (detail.evidenceRequests.length > 0) return <RequestedEvidenceCaseRoute detail={detail} onRefresh={refresh} onNav={onNav} />;
-  return <RenterPage><BedroomCaseDetailScreen {...common} /></RenterPage>;
+  return <RenterPage polished><BedroomCaseDetailScreen {...common} /></RenterPage>;
 }
 
 function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
@@ -76,7 +78,7 @@ function RequestedEvidenceCaseRoute({ detail, onRefresh, onNav }: {
     return request.requestType === "written_details" ? <WrittenDetailsWorkflow key={request.id} request={request} caseTitle={detail.title} onExit={done} onSubmitted={done} />
       : <RequestedEvidenceWorkflow key={request.id} request={request} safetyResponse={detail.safetyResponse} onExit={done} onSubmitted={done} />;
   }
-  return <RenterPage><KitchenCaseDetailScreen detail={detail} onAddEvidence={id => navigate(requestResponsePath(detail.caseKey, id))} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
+  return <RenterPage polished><KitchenCaseDetailScreen detail={detail} onAddEvidence={id => navigate(requestResponsePath(detail.caseKey, id))} onBack={() => navigate("/cases")} onViewReport={() => navigate(`/cases/${encodeURIComponent(detail.caseKey)}/report`)} onNav={onNav} /></RenterPage>;
 }
 
 function SubmittedReportRoute() {
@@ -96,10 +98,10 @@ function RenterApp() {
   return (
     <PhoneShell>
       <Routes>
-        <Route path="/" element={<RenterPage><HomeScreen onReport={() => navigate("/report")} onMyCases={() => navigate("/cases")} onCaseDetail={key => navigate(`/cases/${encodeURIComponent(key)}`)} onRequest={(key,id) => navigate(requestResponsePath(key,id))} onInbox={() => navigate("/inbox")} onSupportChat={() => navigate("/support")} onNav={onNav} /></RenterPage>} />
-        <Route path="/cases" element={<RenterPage><CasesScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
+        <Route path="/" element={<RenterPage polished support={false}><HomeScreen onReport={() => navigate("/report")} onMyCases={() => navigate("/cases")} onCaseDetail={key => navigate(`/cases/${encodeURIComponent(key)}`)} onRequest={(key,id) => navigate(requestResponsePath(key,id))} onInbox={() => navigate("/inbox")} onSupportChat={() => navigate("/support")} onNav={onNav} /></RenterPage>} />
+        <Route path="/cases" element={<RenterPage polished><CasesScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
         <Route path="/inbox" element={<RenterPage><InboxScreen onCase={(caseKey) => navigate(`/cases/${encodeURIComponent(caseKey)}`)} onNav={onNav} /></RenterPage>} />
-        <Route path="/profile" element={<RenterPage><ProfileScreen onNav={onNav} /></RenterPage>} />
+        <Route path="/profile" element={<RenterPage polished><ProfileScreen onNav={onNav} /></RenterPage>} />
         <Route path="/support" element={<SupportChatScreen onBack={() => navigate("/")} />} />
         <Route path="/cases/:caseId" element={<CaseRoute onNav={onNav} />} />
         <Route path="/cases/:caseId/report" element={<SubmittedReportRoute />} />

@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import NavBar from "../../components/navigation/NavBar";
 import { availableContact, contactDisplay } from "../../utils/contactDisplay";
 import ScreenHeader from "../../components/common/ScreenHeader";
@@ -10,15 +11,17 @@ import { getDemoProperty } from "../../services/demoProperty";
 import { useAuthoritativeRead } from "../../hooks/useAuthoritativeRead";
 
 export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => void }) {
+  const contactDialog = useRef<HTMLDialogElement>(null);
   const persona = demoPersona(getDemoSessionId());
   const { data: property, error, refresh } = useAuthoritativeRead(getDemoProperty);
+  const manager = property?.manager ? [property.manager.name, property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : error ? "Unavailable" : "Loading…";
   return (
-    <div className="flex flex-col h-full">
+    <div className="rv-profile renter-screen flex flex-col h-full">
       <ScreenHeader title="Profile" topLevel />
-      <div className="flex-1 overflow-y-auto">
+      <div className="rv-scroll flex-1 min-h-0 overflow-y-auto">
 
         {/* Avatar + name */}
-        <div className="flex items-center gap-4 px-5 py-5" style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--color-border)" }}>
+        <div className="rv-profile-identity flex items-center gap-4 px-5 py-5" style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--color-border)" }}>
           <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 52, height: 52, background: "var(--color-blue-light)", color: "var(--color-blue)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>
             {persona.initials}
           </div>
@@ -33,35 +36,29 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
           {/* My Details */}
           <div>
             <SectionLabel>My Details</SectionLabel>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            {error && <p role="alert">Property details unavailable. <button onClick={refresh} style={{ color: "var(--color-blue)" }}>Retry</button></p>}
+            <div className="rv-card rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               {[
                 { label: "Name",  value: persona.name },
                 ...(availableContact(persona.email) ? [{ label: "Email", value: availableContact(persona.email) }] : []),
                 ...(availableContact(persona.phone) ? [{ label: "Phone", value: availableContact(persona.phone) }] : []),
                 ...(!availableContact(persona.email) && !availableContact(persona.phone) ? [{ label: "Contact", value: contactDisplay() }] : []),
-              ].map((row, i, arr) => (
-                <div key={row.label} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-subtle)" : "none" }}>
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                   <div className="min-w-0" style={{ overflowWrap: "anywhere" }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{row.label}</p>
+                    <p className="rv-field-label" style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{row.label}</p>
                     <p style={{ fontSize: 14, color: "var(--color-text)" }}>{row.value}</p>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Rental Property */}
-          <div>
-            <SectionLabel>Rental Property</SectionLabel>
-            {error && <p role="alert">Property details unavailable. <button onClick={refresh} style={{ color: "var(--color-blue)" }}>Retry</button></p>}
-            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Property address</p>
+                <p className="rv-field-label" style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Rental address</p>
                 <p style={{ fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>{property?.address ?? (error ? "Unavailable" : "Loading…")}</p>
               </div>
               <div className="px-5 py-3">
-                <p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Property manager</p>
-                <p style={{ fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>{property?.manager ? [property.manager.name, property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : error ? "Unavailable" : "Loading…"}</p>
+                <p className="rv-field-label" style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Property manager</p>
+                <p style={{ fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>{manager}</p>
+                <button type="button" className="rv-email-action" disabled={!property?.manager?.name} aria-haspopup="dialog" onClick={() => contactDialog.current?.showModal()}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg><span>Email property manager</span><span className="rv-demo-tag">Demo</span></button>
               </div>
             </div>
           </div>
@@ -69,7 +66,7 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
           {/* Preferences + Support — grouped lighter */}
           <div>
             <SectionLabel>Preferences</SectionLabel>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            <div className="rv-card rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               <div className="flex items-center justify-between px-5 py-3.5">
                 <p style={{ fontSize: 14, color: "var(--color-text)" }}>Notifications</p>
                 <div style={{ width: 44, height: 26, borderRadius: 13, background: "var(--color-blue)", display: "flex", alignItems: "center", padding: "0 3px", justifyContent: "flex-end" }}>
@@ -81,10 +78,9 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
 
           <div>
             <SectionLabel>Support</SectionLabel>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            <div className="rv-card rounded-2xl overflow-hidden" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
               {[
                 { label: "Help & FAQs" },
-                { label: "Contact property manager" },
               ].map((row, i, arr) => (
                 <button key={row.label} className="w-full flex items-center justify-between px-5 py-3.5 text-left active:opacity-70 transition-opacity" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-subtle)" : "none" }}>
                   <p style={{ fontSize: 14, color: "var(--color-text)" }}>{row.label}</p>
@@ -97,12 +93,18 @@ export default function ProfileScreen({ onNav }: { onNav: (id: NavItemId) => voi
           {/* Footer links */}
           <div className="flex justify-center gap-6 pb-2">
             {["Privacy", "Terms"].map((t) => (
-              <button key={t} style={{ fontSize: 12, color: "var(--color-muted)" }}>{t}</button>
+              <button key={t} className="rv-metadata" style={{ fontSize: 12, color: "var(--color-muted)" }}>{t}</button>
             ))}
           </div>
         </div>
       </div>
       <NavBar active="profile" onNav={onNav} />
+      <dialog ref={contactDialog} className="rv-contact-dialog" aria-labelledby="pm-contact-title" aria-describedby="pm-contact-description">
+        <h2 id="pm-contact-title">Email property manager</h2>
+        <p className="rv-contact-manager">{manager}</p>
+        <p id="pm-contact-description">Email contact is simulated for this exhibition demo. No email will be sent and no message is stored.</p>
+        <form method="dialog"><button autoFocus className="rv-contact-close">Close</button></form>
+      </dialog>
     </div>
   );
 }

@@ -4,6 +4,7 @@ export default function FloatingChatBtn({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
+      aria-label="Open support chat"
       style={{
         position: "absolute", bottom: 82, right: 18, zIndex: 40,
         width: 52, height: 52, borderRadius: "50%",
@@ -13,7 +14,7 @@ export default function FloatingChatBtn({ onClick }: { onClick: () => void }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         border: "none", cursor: "pointer",
       }}
-      className="active:scale-95 transition-transform"
+      className="renter-support active:scale-95 transition-transform"
     >
       <IcoChat />
     </button>
