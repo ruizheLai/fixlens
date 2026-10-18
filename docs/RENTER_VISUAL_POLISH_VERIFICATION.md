@@ -131,3 +131,43 @@ approved Preview and check it on iPhone Safari. If committing before Preview, us
 the legacy local reflog naming collision first. No automatic commit/deploy.
 
 BATCH 5A — FIRST VISUAL ITERATION READY FOR REVIEW
+
+## Batch 5A.1 — Action Required and Profile follow-up (18 October 2026)
+
+Continued the existing renamed local `batch-5a-renter-visual` branch. Home alone
+now uses #FECACA attention borders and #FEF2F2/#B91C1C Action required badges.
+Its card stays white and response CTA stays #2563EB. Canonical Under review,
+Awaiting approval and Completed colours remain blue, amber and green; Case Detail
+and Cases request styles are not changed by this follow-up. Danger labels and
+safety meaning are unchanged.
+
+Profile combines the existing contact/property information into My Details:
+Name, Email, Rental address, Property manager. Existing optional phone/contact
+fallback rules remain intact. The property address and Brad Lai · Apex Rentals
+are read from the existing authoritative property result; no identity is hardcoded.
+The separate Rental Property section and duplicate Support contact row are removed.
+Help & FAQs is preserved exactly (it already had no click/navigation handler).
+
+Email property manager has a mail icon, Demo indicator and 44px minimum target.
+A native labelled modal displays the loaded PM identity and explicitly states
+that no email is sent and no message is stored. Its only action is Close via
+`method="dialog"`; Escape also closes it. Browser checks confirmed initial Close
+focus, keyboard opening, dismissal and focus restoration to the trigger. Background
+content is excluded from the accessibility tree while the modal is open. There is
+no mailto, email address, external URL, email API, message storage or send handler.
+Opening/closing preserved the current URL. Existing property reads are unchanged.
+
+Verification: 13 relevant contact/persona/Home/request/report/safety tests passed;
+TypeScript and production build passed. Home fixture checks confirmed exact red
+accents, white surface, blue 48px response CTA with correct case/request IDs, amber
+Awaiting approval, blue Under review and green Completed. Profile and Home checked
+at 375px/390px without horizontal overflow. The four current Profile rows and real
+tenant address were verified. Safe-area header/navigation styles are retained;
+the modal height accounts for both safe-area insets. Physical iPhone inset/VoiceOver
+acceptance is not claimed. Normal browser console had no warnings/errors.
+
+Screenshots outside the repository: `batch5a1-profile-375.jpg`,
+`batch5a1-dialog-390.jpg`, `batch5a1-home-390.jpg`. Local fixture sources were
+removed; no database writes or unrelated screen changes. No commit/push/deploy.
+Modified files: HomeScreen.tsx, ProfileScreen.tsx, renterVisual.css and this record.
+Recommended commit: `style: refine Home action accents and Profile demo contact`.

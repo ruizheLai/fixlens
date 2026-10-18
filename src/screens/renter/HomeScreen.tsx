@@ -23,7 +23,7 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
   const action = !error ? actions[0] : undefined;
   const combined = recent?.caseKey === action?.case.caseKey;
   return (
-    <div className="renter-screen flex flex-col h-full">
+    <div className="rv-home renter-screen flex flex-col h-full">
       {/* White header: wordmark + bell */}
       <div className="rv-home-header shrink-0 px-6 pt-5 pb-4" style={{ background: "var(--color-surface)" }}>
         <div className="flex items-center justify-between">

@@ -70,3 +70,14 @@
 .renter-visual .rv-request button:not(.absolute) { border-radius:var(--rv-radius-control); }
 
 
+/* Batch 5A.1: Home attention is distinct from canonical status and danger notices. */
+.renter-visual .rv-home .rv-request { border-color:#FECACA !important; }
+.renter-visual .rv-home .rv-status[data-status=action] { background:#FEF2F2 !important; color:#B91C1C !important; }
+.renter-visual .rv-email-action { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; padding:4px 0; color:var(--color-blue); font-size:13px; font-weight:600; text-align:left; }
+.rv-demo-tag { font-size:11px; line-height:1.5; font-weight:500; padding:2px 8px; border-radius:8px; background:var(--color-blue-light); color:var(--color-blue); }
+.rv-contact-dialog { margin:auto; width:min(360px,calc(100% - 32px)); max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px); overflow:auto; padding:24px; border:1px solid var(--color-border); border-radius:18px; background:var(--color-surface); color:var(--color-text); font-size:14px; line-height:1.6; }
+.rv-contact-dialog::backdrop { background:rgb(17 24 39 / .4); }
+.rv-contact-dialog h2 { font-family:var(--font-display); font-size:18px; font-weight:600; }
+.rv-contact-manager { margin:12px 0; font-weight:600; overflow-wrap:anywhere; }
+.rv-contact-close { margin-top:20px; width:100%; min-height:44px; border-radius:12px; background:var(--color-blue); color:white; font-weight:600; }
+.renter-visual .rv-email-action:disabled { opacity:.5; cursor:default; }
