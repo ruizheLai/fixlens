@@ -3,7 +3,7 @@ import StatusPill from "../../components/case/StatusPill";
 
 export default function SuccessScreen({ title, onViewCase, onHome }: { title: string; onViewCase: () => void; onHome: () => void }) {
   return (
-    <div className="flex flex-col h-full">
+    <div className="fixlens-visual report-experience report-success flex flex-col h-full">
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
         <div className="rounded-full flex items-center justify-center" style={{ width: 80, height: 80, background: "#F0FDF4", color: "#16A34A" }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>

@@ -36,10 +36,10 @@ function PropertyCard({ confirmed, onConfirm, sessionId }: { confirmed: boolean;
   const persona = demoPersona(sessionId);
   const { data: property, error, refresh } = useAuthoritativeRead(getDemoProperty);
   return (
-    <div className="ml-9">
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+    <div className="report-card-group ml-9">
+      <div className="report-info-card rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         {[{ label: "Name", value: persona.name }, { label: "Address", value: property?.address ?? (error ? "Unavailable" : "Loading…") }, { label: "Contact", value: contactDisplay(persona.email, persona.phone) }, { label: "Property manager", value: property?.manager ? [property.manager.name,property.manager.agency_name].filter(Boolean).join(" · ") : property ? "Not assigned" : "Loading…" }].map((row, i, arr) => (
-          <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+          <div key={row.label} className="report-field px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
             <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, whiteSpace: "pre-line", overflowWrap: "anywhere" }}>{row.value}</p>
           </div>
@@ -61,10 +61,10 @@ function PropertyCard({ confirmed, onConfirm, sessionId }: { confirmed: boolean;
 
 function IssueSummaryCard({ description, result, confirmed, onContinue, onEdit }: { description: string; result: IssueUnderstanding | null; confirmed: boolean; onContinue: () => void; onEdit: () => void }) {
   return (
-    <div className="ml-9">
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+    <div className="report-card-group report-summary ml-9">
+      <div className="report-info-card rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         {[{ label: "Issue type", value: result?.issue ?? "Maintenance issue" }, { label: "Location", value: result?.location ?? "Not provided" }, { label: "Observed condition", value: result?.observedCondition ?? "Not provided" }, { label: result ? "Summary" : "Your description", value: result?.summary ?? description }].map((row, i, arr) => (
-          <div key={row.label} className="px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
+          <div key={row.label} className="report-field px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{row.label}</p>
             <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5 }}>{row.value}</p>
           </div>
@@ -86,7 +86,7 @@ function IssueSummaryCard({ description, result, confirmed, onContinue, onEdit }
 
 function SafetyCard({ answered, safe, onSafe, onDanger }: { answered: boolean; safe: boolean | null; onSafe: () => void; onDanger: () => void }) {
   return (
-    <div className="ml-9 flex flex-col gap-2.5">
+    <div className="report-card-group ml-9 flex flex-col gap-2.5">
       <div className="rounded-2xl px-4 py-3" style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
         <p style={{ fontSize: 12, color: "var(--color-muted)", lineHeight: 1.6 }}>Examples: fire, exposed electricity, major flooding, or unsafe structure.</p>
       </div>
@@ -106,7 +106,7 @@ function SafetyCard({ answered, safe, onSafe, onDanger }: { answered: boolean; s
 
 function DangerCard({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
   return (
-    <div className="ml-9">
+    <div className="report-card-group ml-9">
       <div className="rounded-2xl px-4 py-4 flex gap-3" style={{ background: "#FEF2F2", border: "1.5px solid #FECACA" }}>
         <div className="shrink-0 mt-0.5" style={{ color: "#DC2626" }}><IcoAlert /></div>
         <div>
@@ -123,8 +123,8 @@ function DangerCard({ onBack, onContinue }: { onBack: () => void; onContinue: ()
 
 function CapturePlanCard({ onStart }: { onStart: () => void }) {
   return (
-    <div className="ml-9">
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+    <div className="report-card-group ml-9">
+      <div className="report-info-card rounded-2xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         {[{ n: "1", I: IcoImg, label: "Overview photo · Required", desc: "Show the whole area" }, { n: "2", I: IcoImg, label: "Close-up photo · Required", desc: "Show the affected area" }].map((item, i, arr) => (
           <div key={item.n} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--color-border)" : "none" }}>
             <div className="shrink-0 flex items-center justify-center rounded-full" style={{ width: 30, height: 30, background: "var(--color-blue-light)", color: "var(--color-blue)" }}>
@@ -214,10 +214,10 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onDangerRe
   const inputActive = stage === "describing-issue" && !understanding.pending && !summaryReady && !understanding.failed && (!result || !!question || result.status === "not_maintenance");
 
   return (
-    <div ref={viewportRef} className="flex flex-col h-full min-h-0 min-w-0">
+    <div ref={viewportRef} className="fixlens-visual report-experience flex flex-col h-full min-h-0 min-w-0">
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <button onClick={onBack} className="p-1 -ml-1 rounded-lg active:bg-gray-100"><IcoChevLeft /></button>
+      <div className="report-header shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+        <button aria-label="Back" onClick={onBack} className="p-1 -ml-1 rounded-lg active:bg-gray-100"><IcoChevLeft /></button>
         <div className="flex-1">
           <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "var(--color-text)" }}>Report an Issue</p>
           <p style={{ fontSize: 12, color: "var(--color-muted)" }}>FixLens Assistant</p>
@@ -226,7 +226,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onDangerRe
       </div>
 
       {/* Conversation */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+      <div className="report-conversation flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-4">
         {/* Confirm details */}
         <AssistantBubble>Let's start by confirming your property and contact details.</AssistantBubble>
         <PropertyCard sessionId={sessionId} confirmed={propConfirmed} onConfirm={handleConfirm} />
@@ -242,7 +242,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onDangerRe
         {result?.status === "not_maintenance" && <AssistantBubble>This report is for maintenance issues. Tell me what needs repair or attention at the property.</AssistantBubble>}
         {(understanding.failed && !fallback || result && !summaryReady && !question && result.status !== "not_maintenance") && stage === "describing-issue" && <>
           <AssistantBubble>{understanding.failed ? "I couldn't structure that description right now. Your words are still here." : "Let's keep the details you've provided. You can edit your description or continue without an automatic summary."}</AssistantBubble>
-          <div className="ml-9 flex flex-col gap-2">
+          <div className="report-card-group ml-9 flex flex-col gap-2">
             {understanding.failed && <Btn onClick={() => void understanding.analyze(understanding.input)}>Retry</Btn>}
             <Btn variant="secondary" onClick={() => { setFallback(true); setStage("reviewing-summary"); }}>Continue with my description</Btn>
             <Btn variant="secondary" onClick={editDescription}>Edit description</Btn>
@@ -280,7 +280,7 @@ function PreCaptureChat({ onReport, onFramingContext, onSafeResponse, onDangerRe
       </div>
 
       {/* Input bar */}
-      <div className="shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+      <div className="report-composer shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
         <div className="flex-1 min-w-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: inputActive ? "#fff" : "var(--color-bg)", border: `1px solid ${inputActive ? "var(--color-blue-mid)" : "var(--color-border)"}`, transition: "border-color 0.2s" }}>
           <IssueComposer
             label={question ? "Your answer" : "Describe the issue"}

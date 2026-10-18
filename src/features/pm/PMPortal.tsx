@@ -45,13 +45,13 @@ export default function PMPortal() {
   else if (login) {
     const from = (location.state as { from?: string } | null)?.from;
     body = <Navigate to={from?.startsWith("/pm/") && from !== "/pm/login" ? from : "/pm"} replace />;
-  } else return <div className="pm-portal">
+  } else return <div className="fixlens-visual pm-portal">
     <header className="pm-topbar"><Link to="/pm" className="pm-brand"><HomeWordmark /><span>PM PORTAL</span></Link>
       <div className="pm-account"><span className="pm-avatar">{profile.name.split(" ").map(n => n[0]).join("")}</span><div><strong>{profile.name}</strong><small>{profile.agency_name}</small></div><button className="pm-button" onClick={signOut} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button></div>
     </header>
     <Routes><Route index element={<PMDashboard profile={profile} />} /><Route path="cases/:caseKey" element={<PMCaseDetail />} /><Route path="*" element={<Navigate to="/pm" replace />} /></Routes>
   </div>;
-  return <div className="pm-portal pm-auth"><div className="pm-card pm-auth-card"><div className="pm-brand"><HomeWordmark /><span>PM PORTAL</span></div>{body}</div></div>;
+  return <div className="fixlens-visual pm-portal pm-auth"><div className="pm-card pm-auth-card"><div className="pm-brand"><HomeWordmark /><span>PM PORTAL</span></div>{body}</div></div>;
 }
 
 function PMLogin() {

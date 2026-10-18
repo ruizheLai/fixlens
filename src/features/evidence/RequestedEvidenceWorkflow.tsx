@@ -40,14 +40,14 @@ export default function RequestedEvidenceWorkflow({ request, onExit, onSubmitted
     } catch { if (!current.signal.aborted) setError(true); }
     finally { controller.current = null; if (!current.signal.aborted) setPending(false); }
   }
-  if (step === "safety") return <div className="flex flex-col h-full"><ScreenHeader title="Requested photo" onBack={onExit} /><div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4"><SafetyNotice response={safetyResponse} /><p>Only provide a photo if you can do so safely. If the area remains unsafe, contact your property manager using your tenancy agreement.</p><Btn onClick={onExit}>Return to case</Btn><Btn variant="secondary" onClick={() => setStep("capture")}>It is safe to provide a photo</Btn></div></div>;
+  if (step === "safety") return <div className="fixlens-visual report-experience request-experience flex flex-col h-full"><ScreenHeader title="Requested photo" onBack={onExit} /><div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4"><SafetyNotice response={safetyResponse} /><p>Only provide a photo if you can do so safely. If the area remains unsafe, contact your property manager using your tenancy agreement.</p><Btn onClick={onExit}>Return to case</Btn><Btn variant="secondary" onClick={() => setStep("capture")}>It is safe to provide a photo</Btn></div></div>;
   if (step === "capture") return <PhotoSource role={role} requestInstruction={request.instruction} onClose={onExit} onPhoto={p => { accept(p); setStep("preview"); }} />;
   if (step === "preview" && photo) return <PhotoPreview key={photo.id} title="Requested photo" photoType={role} photo={photo}
     onAnnotations={annotations => accept({ ...photo, annotations })} onRetake={retake} onUse={() => setStep("review")} />;
-  return <div className="flex flex-col h-full">
+  return <div className="fixlens-visual report-experience request-experience flex flex-col h-full">
     <ScreenHeader title="Review requested evidence" onBack={() => { if (!pending) { if (frozen.current) onExit(); else setStep("preview"); } }} />
     <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
-      <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{request.instruction}</p>
+      <p className="request-instruction" style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{request.instruction}</p>
       {photo && <div style={{ height: 280, flexShrink: 0 }}><AnnotatedPhoto src={photo.previewUrl} metadata={photo} label="Requested photo review" /></div>}
       {!frozen.current && <Btn onClick={() => setStep("capture")}>Choose another photo</Btn>}
       <p style={{ fontSize: 13, color: "var(--color-muted)" }}>This photo will be added to your case for review. Your case status will stay the same.</p>

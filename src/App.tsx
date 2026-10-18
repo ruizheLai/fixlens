@@ -1,3 +1,4 @@
+import "./styles/reportVisual.css";
 import "./styles/renterVisual.css";
 import { lazy, Suspense, useCallback } from "react";
 import { useAuthoritativeRead } from "./hooks/useAuthoritativeRead";
