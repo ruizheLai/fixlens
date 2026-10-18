@@ -34,9 +34,9 @@ export default function InboxScreen({ onCase, onNav }: {
           const prominent = index === 0 || item.actionRequired;
           return <Fragment key={item.id}>
             {day !== previousDay && <div className="px-5 pt-5 pb-2"><p style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{day}</p></div>}
-            <button onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 active:opacity-80 transition-opacity" style={{ borderBottom: "1px solid var(--color-border)", background: item.actionRequired ? "#FFF8F8" : prominent ? "#FAFBFF" : "var(--color-surface)" }}>
+            <button onClick={() => onCase(item.caseKey)} className="w-full text-left px-5 py-4 active:opacity-80 transition-opacity" style={{ borderBottom: item.actionRequired ? "1px solid var(--color-action-border)" : "1px solid var(--color-border)", background: item.actionRequired ? "var(--color-surface)" : prominent ? "#FAFBFF" : "var(--color-surface)" }}>
               <div className="flex items-start gap-3">
-                <div className="shrink-0 w-2 h-2 rounded-full" style={{ background: item.actionRequired ? "#DC2626" : prominent ? "var(--color-blue)" : "transparent", border: prominent ? undefined : "1.5px solid var(--color-border)", marginTop: 6 }} />
+                <div className="shrink-0 w-2 h-2 rounded-full" style={{ background: item.actionRequired ? "var(--color-action-text)" : prominent ? "var(--color-blue)" : "transparent", border: prominent ? undefined : "1.5px solid var(--color-border)", marginTop: 6 }} />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p style={{ fontSize: 14, fontWeight: prominent ? 700 : 600, color: prominent ? "var(--color-text)" : "var(--color-text-secondary)" }}>{item.title}</p>
@@ -44,9 +44,9 @@ export default function InboxScreen({ onCase, onNav }: {
                   </div>
                   <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-muted)", marginTop: 2 }}>{item.caseTitle}</p>
                   {item.message && <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5, marginTop: 5 }}>{item.message}</p>}
-                  {item.actionRequired && <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full" style={{ background: "var(--color-danger-light)" }}>
-                    <span style={{ color: "var(--color-danger-text)" }}><IcoAlert /></span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--color-danger-text)" }}>Action required</span>
+                  {item.actionRequired && <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full" style={{ background: "var(--color-action-bg)", border: "1px solid var(--color-action-border)" }}>
+                    <span style={{ color: "var(--color-action-text)" }}><IcoAlert /></span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--color-action-text)" }}>Action required</span>
                   </div>}
                 </div>
               </div>

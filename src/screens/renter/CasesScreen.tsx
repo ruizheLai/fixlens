@@ -41,7 +41,7 @@ export default function MyCasesScreen({ onCase, onNav }: {
               // Current action is independent of the primary lifecycle.
               const actionRequired = actionableRequests(item, getDemoSessionId()).length > 0;
               return (
-            <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="rv-card rv-case-row w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" data-attention={actionRequired || undefined} style={actionRequired ? { background: "#FFF8F8", border: "1.5px solid #FECACA" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <button key={item.caseKey} onClick={() => onCase(item.caseKey)} className="rv-card rv-case-row w-full text-left px-5 py-4 rounded-2xl active:opacity-80 transition-opacity" data-attention={actionRequired || undefined} style={actionRequired ? { background: "var(--color-surface)", border: "1px solid var(--color-action-border)" } : { background: "var(--color-surface)", border: "1px solid var(--color-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--color-text)", marginBottom: 4 }}>{item.title}</p>

@@ -27,7 +27,7 @@ export default function PMDashboard({ profile }: { profile: PMProfile }) {
         navigate(`/pm/cases/${encodeURIComponent(c.caseKey)}`);
       }} onKeyDown={e => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); navigate(`/pm/cases/${encodeURIComponent(c.caseKey)}`); } }}>
         <td><Link className="pm-case-title" to={`/pm/cases/${encodeURIComponent(c.caseKey)}`}>{c.title?.trim() || "Maintenance issue"}</Link></td><td>{c.propertyAddress ?? "Not provided"}</td><td>{c.renter?.name ?? "Not provided"}</td>
-        <td><PMStatus status={c.status} />{c.evidenceRequests.some(r => r.status === "requested") ? <small className="pm-attention">Action required</small> : c.evidenceRequests.some(r => r.status === "submitted") && <small className="pm-attention">Evidence awaiting review</small>}</td>
+        <td><PMStatus status={c.status} />{c.evidenceRequests.some(r => r.status === "requested") ? <small className="pm-attention pm-renter-action">Action required</small> : c.evidenceRequests.some(r => r.status === "submitted") && <small className="pm-attention">Evidence awaiting review</small>}</td>
         <td className="pm-muted">{pmDate(c.updatedAt)}</td><td>{c.handler?.name ?? "Not assigned"}</td>
       </tr>)}</tbody></table></div>{visible?.length === 0 && <p className="pm-empty">No cases match this view.</p>}</>}
     </section></main>;

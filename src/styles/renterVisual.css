@@ -4,7 +4,7 @@
   --color-border-subtle:#F0F2F5; --color-text:#111827;
   --color-text-secondary:#6B7280; --color-muted:#9CA3AF;
   --color-blue:#2563EB; --color-blue-light:#EFF6FF; --rv-blue-hover:#1D4ED8;
-  --color-success:#15803D; --rv-attention-border:#F2D59B; --rv-radius-card:18px; --rv-radius-control:12px;
+  --color-success:#15803D; --rv-attention-border:var(--color-action-border); --rv-radius-card:18px; --rv-radius-control:12px;
   background:var(--color-bg); color:var(--color-text); font-size:14px; line-height:1.5;
 }
 .renter-page { position:absolute; inset:0; min-height:0; }
@@ -36,7 +36,7 @@
 .renter-visual .rv-secondary { padding:16px; border-radius:16px; }
 .renter-visual .rv-secondary svg { width:22px; height:22px; flex-shrink:0; }
 .renter-visual .rv-status { font-size:12px !important; line-height:1.4; white-space:normal; }
-.renter-visual .rv-status[data-status=action] { background:var(--color-amber-light) !important; color:var(--color-amber-text) !important; }
+.renter-visual .rv-status[data-status=action] { background:var(--color-action-bg) !important; color:var(--color-action-text) !important; }
 .renter-visual .rv-profile-identity { margin:20px 20px 0; padding:20px 16px; border:1px solid var(--color-border); border-radius:var(--rv-radius-card); }
 .renter-visual button:focus-visible { outline:2px solid var(--color-blue); outline-offset:3px; }
 .renter-visual button { min-width:44px; min-height:44px; }
@@ -70,9 +70,6 @@
 .renter-visual .rv-request button:not(.absolute) { border-radius:var(--rv-radius-control); }
 
 
-/* Batch 5A.1: Home attention is distinct from canonical status and danger notices. */
-.renter-visual .rv-home .rv-request { border-color:#FECACA !important; }
-.renter-visual .rv-home .rv-status[data-status=action] { background:#FEF2F2 !important; color:#B91C1C !important; }
 .renter-visual .rv-email-action { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; padding:4px 0; color:var(--color-blue); font-size:13px; font-weight:600; text-align:left; }
 .rv-demo-tag { font-size:11px; line-height:1.5; font-weight:500; padding:2px 8px; border-radius:8px; background:var(--color-blue-light); color:var(--color-blue); }
 .rv-contact-dialog { margin:auto; width:min(360px,calc(100% - 32px)); max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px); overflow:auto; padding:24px; border:1px solid var(--color-border); border-radius:18px; background:var(--color-surface); color:var(--color-text); font-size:14px; line-height:1.6; }

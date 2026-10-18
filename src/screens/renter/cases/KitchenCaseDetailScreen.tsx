@@ -31,8 +31,8 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
 
         {/* Action required banner — top priority */}
         {actionRequired && request ? (
-          <div className="rv-card rv-request rounded-2xl px-5 py-4" style={{ background: "var(--color-amber-light)", border: "1px solid var(--rv-attention-border)" }}>
-            <div className="flex items-center gap-2 mb-2" style={{ color: "var(--color-amber-text)" }}>
+          <div className="rv-card rv-request rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-action-border)" }}>
+            <div className="flex items-center gap-2 mb-2" style={{ color: "var(--color-action-text)" }}>
               <IcoAlert />
               <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>Action required</p>
             </div>
@@ -71,7 +71,7 @@ export default function CaseDetailKitchen({ detail, onBack, onAddEvidence, onVie
           <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
             <p className="rv-field-label" style={{ fontSize: 11, fontWeight: 600, color: "var(--color-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Your action</p>
             {actionRequired && request ? (
-              <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-amber-text)" }}>{request.instruction}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-action-text)" }}>{request.instruction}</p>
             ) : (
               <div className="flex items-center gap-2" style={{ color: "var(--color-success)" }}>
                 <IcoCheckCircle /><p style={{ fontSize: 14, fontWeight: 600 }}>{requestLabel ?? "No action required"}</p>

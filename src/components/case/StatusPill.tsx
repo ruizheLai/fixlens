@@ -8,13 +8,13 @@ export default function StatusPill({ status }: { status: StatusPillStatus | Case
     under_review: { label: CASE_STATUS_LABELS.under_review, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
     arranging_repair: { label: CASE_STATUS_LABELS.arranging_repair, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
     repair_scheduled: { label: CASE_STATUS_LABELS.repair_scheduled, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
-    action:   { label: "Action required",   bg: "var(--color-danger-light)", color: "var(--color-danger-text)" },
+    action:   { label: "Action required",   bg: "var(--color-action-bg)", color: "var(--color-action-text)" },
     completed:{ label: CASE_STATUS_LABELS.completed, bg: "var(--color-success-light)", color: "#166534" },
     review:   { label: CASE_STATUS_LABELS.under_review, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
     submitted:{ label: CASE_STATUS_LABELS.submitted, bg: "var(--color-blue-light)", color: "var(--color-blue)" },
   }[status];
   return (
-    <span data-status={status} className="rv-status inline-flex items-center px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: 11, letterSpacing: "0.01em", background: map.bg, color: map.color }}>
+    <span data-status={status} className="rv-status inline-flex items-center px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: 11, letterSpacing: "0.01em", background: map.bg, color: map.color, border: status === "action" ? "1px solid var(--color-action-border)" : undefined }}>
       {map.label}
     </span>
   );

@@ -63,7 +63,7 @@ export default function HomeScreen({ onReport, onMyCases, onCaseDetail, onReques
         {error && <div role="alert" style={{ fontSize: 13 }}><p>We couldn't refresh your cases.</p><button onClick={refresh} style={{ color: "var(--color-blue)", marginTop: 6 }}>Retry</button></div>}
         {action && <section>
           <SectionLabel>Action required</SectionLabel>
-          <div className="rv-card rv-request relative rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid #FECACA", overflowWrap: "anywhere" }}>
+          <div className="rv-card rv-request relative rounded-2xl px-5 py-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-action-border)", overflowWrap: "anywhere" }}>
             <button type="button" aria-label={`View case details: ${action.case.title}`} onClick={() => onCaseDetail(action.case.caseKey)} className="absolute inset-0 z-10 rounded-2xl hover:bg-blue-50/20 active:bg-blue-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
             {combined && <p className="rv-field-label" style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>Recent case</p>}
             <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, marginBottom: 8 }}>{action.case.title}</p>
