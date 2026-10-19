@@ -1,0 +1,49 @@
+diff --git a/supabase/migrations/20261018112420_support_request_budget.sql b/supabase/migrations/20261018112420_support_request_budget.sql
+index 29384f5..00caa61 100644
+--- a/supabase/migrations/20261018112420_support_request_budget.sql
++++ b/supabase/migrations/20261018112420_support_request_budget.sql
+@@ -16,7 +16,7 @@ revoke all on fixlens_support_private.request_budget from public, anon, authenti
+ insert into fixlens_support_private.request_budget(singleton, minute_start, day_start)
+ values (true, '-infinity', '-infinity');
+ 
+-create function public.consume_support_budget(p_minute_limit integer default 30, p_day_limit integer default 300)
++create function fixlens_support_private.consume_support_budget(p_minute_limit integer, p_day_limit integer)
+ returns jsonb
+ language plpgsql security definer
+ set search_path = pg_catalog
+@@ -53,7 +53,20 @@ begin
+   return jsonb_build_object('allowed', wait_seconds=0, 'retry_after', wait_seconds);
+ end;
+ $$;
++alter function fixlens_support_private.consume_support_budget(integer,integer) owner to postgres;
++revoke all on function fixlens_support_private.consume_support_budget(integer,integer) from public, anon, authenticated, service_role;
++grant usage on schema fixlens_support_private to service_role;
++grant execute on function fixlens_support_private.consume_support_budget(integer,integer) to service_role;
++
++-- Stable PostgREST entry point; no elevated privileges in the exposed schema.
++create function public.consume_support_budget(p_minute_limit integer default 30, p_day_limit integer default 300)
++returns jsonb
++language sql security invoker
++set search_path = pg_catalog
++as $$
++  select fixlens_support_private.consume_support_budget(p_minute_limit, p_day_limit);
++$$;
+ alter function public.consume_support_budget(integer,integer) owner to postgres;
+-revoke all on function public.consume_support_budget(integer,integer) from public, anon, authenticated;
++revoke all on function public.consume_support_budget(integer,integer) from public, anon, authenticated, service_role;
+ grant execute on function public.consume_support_budget(integer,integer) to service_role;
+ commit;
+diff --git a/supabase/maintenance/rollback_support_request_budget.sql b/supabase/maintenance/rollback_support_request_budget.sql
+index ee320a8..19887c5 100644
+--- a/supabase/maintenance/rollback_support_request_budget.sql
++++ b/supabase/maintenance/rollback_support_request_budget.sql
+@@ -3,6 +3,9 @@
+ begin;
+ revoke all on function public.consume_support_budget(integer,integer) from service_role;
+ drop function public.consume_support_budget(integer,integer);
++revoke all on function fixlens_support_private.consume_support_budget(integer,integer) from service_role;
++revoke usage on schema fixlens_support_private from service_role;
++drop function fixlens_support_private.consume_support_budget(integer,integer);
+ drop table fixlens_support_private.request_budget;
+ drop schema fixlens_support_private;
+ commit;

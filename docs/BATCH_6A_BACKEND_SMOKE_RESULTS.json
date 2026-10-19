@@ -1,0 +1,215 @@
+{
+  "startedAt": "2026-10-18T13:57:53.695Z",
+  "checks": [
+    {
+      "mode": "preflight",
+      "label": "trusted preflight http://localhost:5173",
+      "status": 204,
+      "latencyMs": 1265,
+      "allowOrigin": "http://localhost:5173",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": ""
+    },
+    {
+      "mode": "preflight",
+      "label": "trusted preflight http://127.0.0.1:5173",
+      "status": 204,
+      "latencyMs": 52,
+      "allowOrigin": "http://127.0.0.1:5173",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": ""
+    },
+    {
+      "mode": "preflight",
+      "label": "trusted preflight https://fix-lens.app",
+      "status": 204,
+      "latencyMs": 936,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": ""
+    },
+    {
+      "mode": "preflight",
+      "label": "trusted preflight https://fixlens-git-batch6a-brad-s-team2.vercel.app",
+      "status": 204,
+      "latencyMs": 103,
+      "allowOrigin": "https://fixlens-git-batch6a-brad-s-team2.vercel.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": ""
+    },
+    {
+      "mode": "preflight",
+      "label": "untrusted preflight",
+      "status": 403,
+      "latencyMs": 57,
+      "allowOrigin": null,
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "error": "Origin denied"
+      }
+    },
+    {
+      "mode": "preflight",
+      "label": "untrusted POST",
+      "status": 403,
+      "latencyMs": 366,
+      "allowOrigin": null,
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "error": "Origin denied"
+      }
+    },
+    {
+      "mode": "preflight",
+      "label": "wrong client key",
+      "status": 401,
+      "latencyMs": 112,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "mode": "preflight",
+      "label": "invalid client budget override",
+      "status": 400,
+      "latencyMs": 57,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "error": "Invalid support question"
+      }
+    },
+    {
+      "mode": "preflight",
+      "label": "anonymous budget RPC",
+      "status": 401,
+      "latencyMs": 371,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": null,
+      "exposeHeaders": "Content-Encoding, Content-Location, Content-Range, Content-Type, Date, Location, Server, Transfer-Encoding, Range-Unit",
+      "retryAfter": null,
+      "data": {
+        "code": "42501",
+        "details": null,
+        "hint": null,
+        "message": "permission denied for function consume_support_budget"
+      }
+    },
+    {
+      "mode": "normal",
+      "label": "normal maintenance",
+      "status": 200,
+      "latencyMs": 4582,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "scope": "in_scope",
+        "answer": "To report a leaking tap, start by confirming your current rental property and renter details in the FixLens app. Describe the issue clearly, noting the location of the leaking tap and when you noticed it. Provide two photos: an Overview showing the tap in context and a Close-up capturing the visible leak detail. Submit this through the 'Report an issue' feature. Avoid any repairs yourself and do not approach if there's an immediate hazard. After submission, monitor your Case Detail for updates or requests for more information."
+      }
+    },
+    {
+      "mode": "normal",
+      "label": "out of scope",
+      "status": 200,
+      "latencyMs": 1985,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "scope": "out_of_scope",
+        "answer": "I'm here to help with rental maintenance, reporting issues, photo evidence and case updates. You can ask me about those topics."
+      }
+    },
+    {
+      "mode": "normal",
+      "label": "safety",
+      "status": 200,
+      "latencyMs": 1249,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": null,
+      "data": {
+        "scope": "safety_sensitive",
+        "answer": "Keep away from the hazard and do not try to repair it or approach it for photos. Use the property manager or emergency maintenance contact in your tenancy agreement. For an immediate life-threatening emergency in Australia, call 000. FixLens supports reporting immediate danger without photographs: in Report an issue, indicate immediate danger at the safety check, then choose Continue without photos to reach Safety Report Review. FixLens is not an emergency response service and does not notify anyone through this chat."
+      }
+    },
+    {
+      "mode": "normal",
+      "label": "Report AI regression",
+      "status": 200,
+      "latencyMs": 1074,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": null,
+      "retryAfter": null,
+      "data": {
+        "status": "sufficient",
+        "issue": "leaking tap",
+        "location": "kitchen",
+        "observedCondition": null,
+        "summary": "The kitchen tap is leaking.",
+        "followUpQuestions": []
+      }
+    },
+    {
+      "mode": "minute-limit",
+      "label": "controlled minute boundary",
+      "status": 429,
+      "latencyMs": 1496,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After",
+      "retryAfter": "19",
+      "data": {
+        "error": "Maintenance support has reached its shared request limit. Please try again later.",
+        "retryAfter": 19
+      }
+    },
+    {
+      "mode": "unavailable",
+      "label": "controlled missing-counter availability failure",
+      "status": 503,
+      "latencyMs": 1070,
+      "allowOrigin": "https://fix-lens.app",
+      "allowHeaders": "authorization, x-client-info, apikey, content-type",
+      "exposeHeaders": "Retry-After, sb-error-code",
+      "retryAfter": null,
+      "data": {
+        "error": "Maintenance support is temporarily unavailable. Your question is still here; please retry."
+      }
+    }
+  ],
+  "fixtureDetails": {
+    "minuteBoundary": "Temporary minute_count=30, unchanged day_count=3; conditional restore returned original minute_count=2/day_count=3.",
+    "unavailableBudget": "Temporary removal of new singleton counter row, exact restore to minute_count=2/day_count=3.",
+    "lockAttempt": "Management SQL serialized lock observation; transaction rolled back, no HTTP request sent."
+  },
+  "providerUsage": {
+    "supportAdmissions": 3,
+    "providerCallsInferredFromFrozenCodeAndResponses": 5,
+    "meteredTokenUsageAvailable": false,
+    "conservativePlanningUsd": 0.0652016
+  }
+}

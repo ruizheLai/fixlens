@@ -1,91 +1,73 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import LogoAvatar from "../../components/brand/LogoAvatar";
 import AssistantBubble from "../../components/chat/AssistantBubble";
 import UserBubble from "../../components/chat/UserBubble";
-import { IcoChevLeft, IcoMic, IcoSend } from "../../components/common/icons";
-import type { ChatMessage } from "../../types/chat";
+import IssueComposer from "../../features/report/IssueComposer";
+import { useReportViewport } from "../../features/report/useReportViewport";
+import { IcoChevLeft, IcoSend } from "../../components/common/icons";
+import { answerMaintenanceQuestion, SupportError } from "../../services/support";
+import { MAX_HISTORY, MAX_QUESTION, SUPPORT_OPENING, SUPPORT_SUGGESTIONS, type SupportTurn } from "../../../supabase/functions/_shared/support.ts";
 
-const SUPPORT_CHIPS = [
-  "What counts as urgent?",
-  "How long does maintenance usually take?",
-  "Why do I need to upload photos?",
-  "How do I contact my property manager?",
-];
-
-const SUPPORT_REPLIES: Record<string, string> = {
-  "What counts as urgent?": "Urgent issues are those that pose a risk to health, safety, or significant property damage — such as flooding, exposed wiring, gas leaks, or no heating in winter.",
-  "How long does maintenance usually take?": "Most repairs are arranged within 5–10 business days. Urgent issues are typically addressed within 24 hours.",
-  "Why do I need to upload photos?": "Photos help your property manager understand the issue clearly and give your landlord the evidence needed to approve the repair.",
-  "How do I contact my property manager?": "Your property manager is listed on your Profile. Contact details are usually in your tenancy agreement.",
-};
-
+interface Attempt { question: string; history: SupportTurn[] }
 export default function SupportChatScreen({ onBack }: { onBack: () => void }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputVal, setInputVal] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (scrollTimer.current) clearTimeout(scrollTimer.current);
-  }, []);
-  const scrollDown = () => {
-    if (scrollTimer.current) clearTimeout(scrollTimer.current);
-    scrollTimer.current = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
-  };
-
-  const sendChip = (chip: string) => {
-    const reply = SUPPORT_REPLIES[chip] || "Thanks for your question. We'll look into this and follow up.";
-    setMessages((m) => [...m, { from: "user", text: chip }, { from: "assistant", text: reply }]);
-    scrollDown();
-  };
-  const sendInput = () => {
-    if (!inputVal.trim()) return;
-    setMessages((m) => [...m, { from: "user", text: inputVal.trim() }, { from: "assistant", text: "Thanks for reaching out. Your property manager has been notified and will follow up shortly." }]);
-    setInputVal("");
-    scrollDown();
-  };
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <button onClick={onBack} className="p-1 -ml-1 rounded-lg active:bg-gray-100"><IcoChevLeft /></button>
-        <div className="flex-1">
-          <p style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "var(--color-text)" }}>Support</p>
-          <p style={{ fontSize: 12, color: "var(--color-muted)" }}>FixLens Assistant</p>
-        </div>
-        <LogoAvatar size={32} />
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
-        <AssistantBubble>What can I help you with today?</AssistantBubble>
-
-        {messages.length === 0 && (
-          <div className="ml-9 flex flex-col gap-2">
-            {SUPPORT_CHIPS.map((chip) => (
-              <button key={chip} onClick={() => sendChip(chip)} className="text-left px-4 py-3 rounded-2xl active:opacity-80" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", fontSize: 13, color: "var(--color-blue)", fontWeight: 500 }}>
-                {chip}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          msg.from === "user"
-            ? <UserBubble key={i}>{msg.text}</UserBubble>
-            : <AssistantBubble key={i}>{msg.text}</AssistantBubble>
-        ))}
-
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="shrink-0 flex items-center gap-2 px-4 py-3" style={{ borderTop: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-        <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{ background: "#fff", border: "1px solid var(--color-blue-mid)" }}>
-          <input value={inputVal} onChange={(e) => setInputVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendInput(); }}
-            placeholder="Ask a question…" className="flex-1 bg-transparent outline-none text-sm" style={{ color: "var(--color-text)" }} />
-        </div>
-        <button className="p-2.5 rounded-full" style={{ color: "var(--color-muted)" }}><IcoMic /></button>
-        <button onClick={sendInput} className="p-2.5 rounded-full" style={{ background: "var(--color-blue)", color: "#fff" }}><IcoSend /></button>
-      </div>
+  const [messages, setMessages] = useState<SupportTurn[]>([]);
+  const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [failed, setFailed] = useState<Attempt | null>(null);
+  const [retryAt, setRetryAt] = useState(0);
+  const controller = useRef<AbortController | null>(null);
+  const bottom = useRef<HTMLDivElement>(null);
+  const viewport = useReportViewport();
+  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    const timer = setTimeout(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), 80);
+    return () => clearTimeout(timer);
+  }, [messages, pending, error]);
+  useEffect(() => {
+    if (!retryAt) return;
+    const timer = setTimeout(() => setRetryAt(0), Math.max(0, retryAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [retryAt]);
+  async function send(question = input, retry?: Attempt) {
+    if (!question.trim() || question.length > MAX_QUESTION || controller.current || retryAt > Date.now()) return;
+    const attempt = retry ?? { question: question.trim(), history: messages.slice(-MAX_HISTORY) };
+    const active = new AbortController(); controller.current = active;
+    setPending(true); setError(""); setFailed(null);
+    if (!retry) { setMessages(m => [...m, { role: "user", text: attempt.question }].slice(-40) as SupportTurn[]); setInput(""); }
+    try {
+      const reply = await answerMaintenanceQuestion(attempt.question, attempt.history, active.signal);
+      if (!active.signal.aborted) setMessages(m => [...m, { role: "assistant", text: reply.answer }].slice(-40) as SupportTurn[]);
+    } catch (failure) {
+      if (!active.signal.aborted) {
+        setFailed(attempt);
+        setError(failure instanceof SupportError ? failure.message : "I couldn't answer right now. Your question is still here. Please retry.");
+        if (failure instanceof SupportError && failure.retryAfter) setRetryAt(Date.now() + failure.retryAfter * 1000);
+      }
+    } finally { if (controller.current === active) controller.current = null; if (!active.signal.aborted) setPending(false); }
+  }
+  return <div ref={viewport} className="fixlens-visual report-experience support-experience flex flex-col h-full min-h-0 min-w-0">
+    <div className="report-header shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+      <button aria-label="Back" onClick={onBack} className="rounded-lg"><IcoChevLeft /></button>
+      <div className="flex-1"><h1 style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600 }}>FixLens Assistant</h1><p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Maintenance support</p></div>
+      <LogoAvatar size={32} />
     </div>
-  );
+    <div className="report-conversation flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+      <AssistantBubble>{SUPPORT_OPENING}</AssistantBubble>
+      <div role="log" aria-label="Maintenance support conversation" aria-live="polite" aria-relevant="additions" className="flex flex-col gap-4">
+        {messages.map((message, i) => message.role === "user" ? <UserBubble key={i}>{message.text}</UserBubble> : <AssistantBubble key={i}>{message.text}</AssistantBubble>)}
+      </div>
+      {pending && <AssistantBubble><span role="status">Thinking about your question…</span></AssistantBubble>}
+      {error && <div role="alert" className="ml-9"><p>{error}</p>{retryAt > 0 && <p style={{ fontSize: 12 }}>Available to retry after {new Date(retryAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</p>}<button disabled={pending || retryAt > Date.now()} className="w-full mt-3 font-semibold" onClick={() => failed && void send(failed.question, failed)}>Retry question</button></div>}
+      <div className="ml-9 flex flex-col gap-2" aria-label="Suggested questions">
+        {SUPPORT_SUGGESTIONS.map(question => <button key={question} disabled={pending || retryAt > Date.now()} onClick={() => void send(question)} className="text-left px-4 py-3 rounded-xl" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-blue)", fontSize: 13 }}>{question}</button>)}
+      </div>
+      <p style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>General maintenance support. This chat cannot inspect your cases or contact your property manager.</p>
+      <div ref={bottom} />
+    </div>
+    <div className="report-composer shrink-0 flex items-center gap-2 px-4 py-3" style={{ background: "var(--color-surface)", borderTop: "1px solid var(--color-border)" }}>
+      <div className="flex-1 min-w-0 px-4 py-2.5" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}><IssueComposer value={input} onChange={setInput} disabled={pending} maxLength={MAX_QUESTION} label="Maintenance question" placeholder="Ask a maintenance question…" /></div>
+      <button aria-label="Send question" disabled={pending || retryAt > Date.now() || !input.trim()} onClick={() => void send()} style={{ background: "var(--color-blue)", color: "#fff" }}><IcoSend /></button>
+    </div>
+  </div>;
 }
