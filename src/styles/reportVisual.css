@@ -43,3 +43,6 @@
 
 .report-experience .report-summary .report-field:first-child > p + p { font-size:15px !important; font-weight:600; }
 .report-experience .report-summary .report-field:last-child > p + p { font-weight:500; }
+
+.support-experience .assistant-message-body { white-space:pre-wrap; overflow-wrap:anywhere; }
+.support-experience [role=log] { flex-shrink:0; }

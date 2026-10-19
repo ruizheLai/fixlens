@@ -1,0 +1,29 @@
+{
+  "acceptedLocalDate": "2026-10-19",
+  "timezone": "Australia/Sydney",
+  "projectRef": "ycnilqoqtgjmptxzuhty",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "globalRequestsPerMinute": 30,
+  "globalRequestsPerDay": 300,
+  "maxModelCallsPerRequest": 2,
+  "classificationAndGenerationFrozen": true,
+  "acceptedLimitations": [
+    "Ordinary sink leak can over-trigger safety guidance (case 14).",
+    "Manager-request response can be vague or include ungrounded workflow wording (H04).",
+    "Combined photo/annotation question can omit photography instructions (F08)."
+  ],
+  "operationalOnlyChange": "Expose Retry-After on support endpoint; no shared CORS or answer behavior changes.",
+  "sha256": {
+    "supabase/functions/_shared/support.ts": "4db9b2394fc8f6bddd043d46e0c5c8e855d16bed719ecb0dd097a205c5a59e56",
+    "supabase/functions/answer-maintenance-question/provider.ts": "ea950f5e7c758eaf5a95cee7b741b7aebff55dc681c7a6fe180f4a94fc6323cd",
+    "supabase/functions/answer-maintenance-question/knowledge.ts": "7fdd020d40dfa13a6d0b95e7fbe93309be9a285787f69e0949e52c3e928989bc",
+    "supabase/functions/answer-maintenance-question/handler.ts": "f00e560ae209d5778750997268b523a080c22985b12ad32a7bf4cb7ebfc9f05a",
+    "supabase/functions/answer-maintenance-question/budget.ts": "314173671e970af6778930c898cb8b4e200cfc72da8c6f50e5ef5d4cb3be540d",
+    "supabase/functions/answer-maintenance-question/index.ts": "1e01be9c8f5fb979590989eb6e51c3be49499effc318e3897eed3893c9ed473b",
+    "supabase/functions/analyze-maintenance-issue/cors.ts": "6fc9299725aecb6025357bc15e835cdd4306afbd33dbef914198e40ca3a3127a",
+    "src/services/support.ts": "31d8d0e5c26dbe42ff47396333d5f830f326b1f4a7ae0539d15b6cba5606d642",
+    "src/screens/renter/SupportChatScreen.tsx": "7f0680c94e3a8736d08cb62d69ad44178b09a7127fe1c2f2cfc739bbbdb5c93a",
+    "supabase/migrations/20261018112420_support_request_budget.sql": "fd1be557188d758996f1bc980e7cd56dfd78c60060841db3c956a65fbbb1143e",
+    "supabase/maintenance/rollback_support_request_budget.sql": "1a8124d59b20f111f3a088d28156187133e333d47aea33e5b407dbdb45713dd9"
+  }
+}

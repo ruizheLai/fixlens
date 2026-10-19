@@ -6,3 +6,7 @@ verify_jwt = false
 [functions.analyze-capture-frame]
 # Anonymous exhibition renters; handler validates the project publishable key.
 verify_jwt = false
+
+[functions.answer-maintenance-question]
+# Public exhibition support; handler enforces origins, project key and durable budget.
+verify_jwt = false
