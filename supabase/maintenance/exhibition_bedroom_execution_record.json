@@ -1,0 +1,258 @@
+{
+  "project": "ycnilqoqtgjmptxzuhty",
+  "state": "executed_and_database_verified",
+  "applied_updated_at": "2026-10-20T09:33:01.478727+00:00",
+  "preflight": {
+    "counts": {
+      "cases": 20,
+      "storage": 35,
+      "updates": 100,
+      "evidence": 35,
+      "requests": 14
+    },
+    "target": {
+      "id": "30000000-0000-4000-8000-000000000001",
+      "status": "completed",
+      "case_key": "bedroom-window-leak",
+      "location": "Bedroom window",
+      "condition": "When it rains",
+      "renter_id": "10000000-0000-4000-8000-000000000001",
+      "created_at": "2026-09-09T00:30:00+00:00",
+      "handled_by": "10000000-0000-4000-8000-000000000002",
+      "issue_type": "Water leak",
+      "updated_at": "2026-10-02T04:42:27.625203+00:00",
+      "description": "Water enters through the bedroom window frame during rain.",
+      "property_id": "20000000-0000-4000-8000-000000000001",
+      "demo_session_id": null,
+      "safety_response": "No immediate danger reported"
+    },
+    "history": [
+      {
+        "id": "2b621994-755e-401a-9ced-094f9fcb505b",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Landlord approval recorded. Repair arrangement started.",
+        "created_at": "2026-10-02T04:41:51.217158+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "approval_recorded"
+      },
+      {
+        "id": "50000000-0000-4000-8000-000000000001",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Bedroom window leak report received.",
+        "created_at": "2026-09-09T00:30:00+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000001",
+        "update_type": "submitted"
+      },
+      {
+        "id": "50000000-0000-4000-8000-000000000002",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Property manager requested landlord approval.",
+        "created_at": "2026-09-10T05:20:00+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "status_changed"
+      },
+      {
+        "id": "abc4c794-67a8-49c5-9fd3-85d340cf20b1",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Repair scheduled.",
+        "created_at": "2026-10-02T04:42:14.694568+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "repair_scheduled"
+      },
+      {
+        "id": "bbdc6bce-6285-4cca-b6b2-e518ee81823e",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Repair marked completed.",
+        "created_at": "2026-10-02T04:42:27.625203+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "completed"
+      }
+    ],
+    "triggers": [
+      {
+        "table": "cases",
+        "function": "CREATE OR REPLACE FUNCTION public.set_case_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$function$\n",
+        "definition": "CREATE TRIGGER cases_set_updated_at BEFORE UPDATE ON public.cases FOR EACH ROW EXECUTE FUNCTION set_case_updated_at()"
+      },
+      {
+        "table": "cases",
+        "function": "CREATE OR REPLACE FUNCTION fixlens_private.notify_pm_invalidation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  case_key_value text;\n  case_id_value uuid;\nbegin\n  if tg_table_name = 'cases' then\n    case_key_value := case when tg_op = 'DELETE' then old.case_key else new.case_key end;\n  else\n    case_id_value := case when tg_op = 'DELETE' then old.case_id else new.case_id end;\n    select case_key into case_key_value from public.cases where id = case_id_value;\n  end if;\n  if case_key_value is not null then\n    perform realtime.send('{}'::jsonb, 'invalidate', 'fixlens:pm:case:' || case_key_value, true);\n  end if;\n  if tg_table_name in ('cases', 'evidence_requests') then\n    perform realtime.send('{}'::jsonb, 'invalidate', 'fixlens:pm:cases', true);\n  end if;\n  return null;\nexception when others then\n  -- Notifications are best effort; never roll back a business write for transport.\n  return null;\nend;\n$function$\n",
+        "definition": "CREATE TRIGGER notify_pm_cases AFTER INSERT OR DELETE OR UPDATE ON public.cases FOR EACH ROW EXECUTE FUNCTION fixlens_private.notify_pm_invalidation()"
+      },
+      {
+        "table": "cases",
+        "function": "CREATE OR REPLACE FUNCTION fixlens_private.record_case_submission()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nbegin\n  insert into public.case_updates (case_id, update_type, message, created_by, created_at)\n  values (new.id, 'submitted', 'Maintenance report submitted.', new.renter_id, new.created_at);\n  return new;\nend;\n$function$\n",
+        "definition": "CREATE TRIGGER record_visitor_case_submission AFTER INSERT ON public.cases FOR EACH ROW WHEN ((new.demo_session_id IS NOT NULL)) EXECUTE FUNCTION fixlens_private.record_case_submission()"
+      },
+      {
+        "table": "case_updates",
+        "function": "CREATE OR REPLACE FUNCTION fixlens_private.notify_pm_invalidation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  case_key_value text;\n  case_id_value uuid;\nbegin\n  if tg_table_name = 'cases' then\n    case_key_value := case when tg_op = 'DELETE' then old.case_key else new.case_key end;\n  else\n    case_id_value := case when tg_op = 'DELETE' then old.case_id else new.case_id end;\n    select case_key into case_key_value from public.cases where id = case_id_value;\n  end if;\n  if case_key_value is not null then\n    perform realtime.send('{}'::jsonb, 'invalidate', 'fixlens:pm:case:' || case_key_value, true);\n  end if;\n  if tg_table_name in ('cases', 'evidence_requests') then\n    perform realtime.send('{}'::jsonb, 'invalidate', 'fixlens:pm:cases', true);\n  end if;\n  return null;\nexception when others then\n  -- Notifications are best effort; never roll back a business write for transport.\n  return null;\nend;\n$function$\n",
+        "definition": "CREATE TRIGGER notify_pm_updates AFTER INSERT OR DELETE OR UPDATE ON public.case_updates FOR EACH ROW EXECUTE FUNCTION fixlens_private.notify_pm_invalidation()"
+      }
+    ],
+    "fingerprints": {
+      "storage": "642ae52cb2075a061378dd1c42670b06",
+      "evidence": "17f558ae1cfb2ef131e18cd77d8834ae",
+      "policies": "d6e358d364414a5acc342f78fcbdade9",
+      "profiles": "289ab823fd6d904ba551a567d881c246",
+      "requests": "8e4c300bee8eaadee6b61904fb354a76",
+      "properties": "8a989a4edeedd0db68a01cbe1c121148",
+      "other_cases": "c9a7a6b1a7760e72fe2f2617b41d1368",
+      "other_updates": "5b31794c3a71a55e454261df689e1313"
+    },
+    "event_columns": [
+      {
+        "type": "uuid",
+        "column": "id",
+        "generated": "NEVER"
+      },
+      {
+        "type": "uuid",
+        "column": "case_id",
+        "generated": "NEVER"
+      },
+      {
+        "type": "text",
+        "column": "update_type",
+        "generated": "NEVER"
+      },
+      {
+        "type": "text",
+        "column": "message",
+        "generated": "NEVER"
+      },
+      {
+        "type": "uuid",
+        "column": "created_by",
+        "generated": "NEVER"
+      },
+      {
+        "type": "timestamp with time zone",
+        "column": "created_at",
+        "generated": "NEVER"
+      }
+    ],
+    "incoming_foreign_keys": []
+  },
+  "post_execution": {
+    "counts": {
+      "cases": 20,
+      "storage": 35,
+      "updates": 99,
+      "evidence": 35,
+      "requests": 14
+    },
+    "target": {
+      "id": "30000000-0000-4000-8000-000000000001",
+      "status": "repair_scheduled",
+      "case_key": "bedroom-window-leak",
+      "location": "Bedroom window",
+      "condition": "When it rains",
+      "renter_id": "10000000-0000-4000-8000-000000000001",
+      "created_at": "2026-09-09T00:30:00+00:00",
+      "handled_by": "10000000-0000-4000-8000-000000000002",
+      "issue_type": "Water leak",
+      "updated_at": "2026-10-20T09:33:01.478727+00:00",
+      "description": "Water enters through the bedroom window frame during rain.",
+      "property_id": "20000000-0000-4000-8000-000000000001",
+      "demo_session_id": null,
+      "safety_response": "No immediate danger reported"
+    },
+    "history": [
+      {
+        "id": "2b621994-755e-401a-9ced-094f9fcb505b",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Landlord approval recorded. Repair arrangement started.",
+        "created_at": "2026-10-02T04:41:51.217158+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "approval_recorded"
+      },
+      {
+        "id": "50000000-0000-4000-8000-000000000001",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Bedroom window leak report received.",
+        "created_at": "2026-09-09T00:30:00+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000001",
+        "update_type": "submitted"
+      },
+      {
+        "id": "50000000-0000-4000-8000-000000000002",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Property manager requested landlord approval.",
+        "created_at": "2026-09-10T05:20:00+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "status_changed"
+      },
+      {
+        "id": "abc4c794-67a8-49c5-9fd3-85d340cf20b1",
+        "case_id": "30000000-0000-4000-8000-000000000001",
+        "message": "Repair scheduled.",
+        "created_at": "2026-10-02T04:42:14.694568+00:00",
+        "created_by": "10000000-0000-4000-8000-000000000002",
+        "update_type": "repair_scheduled"
+      }
+    ],
+    "fingerprints": {
+      "storage": "642ae52cb2075a061378dd1c42670b06",
+      "evidence": "17f558ae1cfb2ef131e18cd77d8834ae",
+      "policies": "d6e358d364414a5acc342f78fcbdade9",
+      "profiles": "289ab823fd6d904ba551a567d881c246",
+      "requests": "8e4c300bee8eaadee6b61904fb354a76",
+      "properties": "8a989a4edeedd0db68a01cbe1c121148",
+      "other_cases": "c9a7a6b1a7760e72fe2f2617b41d1368",
+      "other_updates": "5b31794c3a71a55e454261df689e1313"
+    },
+    "expected_cases": [
+      {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "status": "repair_scheduled",
+        "case_key": "bedroom-window-leak",
+        "issue_type": "Water leak",
+        "shared_demo": true
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000002",
+        "status": "completed",
+        "case_key": "hot-water",
+        "issue_type": "Hot water issue",
+        "shared_demo": true
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000003",
+        "status": "under_review",
+        "case_key": "kitchen-tap",
+        "issue_type": "Water leak",
+        "shared_demo": true
+      },
+      {
+        "id": "9eb59d11-76f5-4e9d-88a9-caeb8b6e1635",
+        "status": "completed",
+        "case_key": "demo-8bf819d6-eb0e-49ae-8a23-60f057259b91",
+        "issue_type": "window broken",
+        "shared_demo": false
+      }
+    ],
+    "removed_event_count": 0
+  },
+  "verification": {
+    "unchanged_fingerprints": [
+      "storage",
+      "evidence",
+      "policies",
+      "profiles",
+      "requests",
+      "properties",
+      "other_cases",
+      "other_updates"
+    ],
+    "changed_case_fields": [
+      "status",
+      "updated_at"
+    ],
+    "exactly_one_completion_event_removed": true,
+    "remaining_history_unchanged": true,
+    "rollback": "Not executed. Replace REPLACE_WITH_APPLY_RETURNED_UPDATED_AT in reviewed rollback with applied_updated_at above; separate user approval required.",
+    "ui_source": "Active/History classification and scheduled-status copy checked; no appointment/contractor fields created.",
+    "browser_mobile": "Not performed; refresh Production Cases and Bedroom Detail manually."
+  }
+}
